@@ -71,6 +71,8 @@
 </head>
 
 <body>
+<input type="text" id="searchBox" placeholder="what's happening?" 
+       style="margin: 10px 20px; width: 300px; padding:5px;">
 
 <div id="grid"></div>
 
@@ -84,6 +86,7 @@
 
   <label>Log Entry</label>
   <textarea id="entryText" rows="4"></textarea>
+  
 <div id="historyBox" 
      style="max-height:120px; overflow-y:auto; border:1px solid #ccc; padding:5px; margin-bottom:10px; font-size:12px;">
 </div>
@@ -293,6 +296,30 @@ $(document).ready(function() {
   $(".tile").draggable({
     revert: "invalid"
   });
+});
+
+// 🔎 Live search: filter tiles by name or logs content
+$("#searchBox").on("keyup", function() {
+  let q = $(this).val().toLowerCase().trim();
+
+  if(q === "") {
+    // show all tiles if search empty
+    $(".tile").show();
+    return;
+  }
+
+  // loop all tiles
+  for(let i = 0; i < 36; i++) {
+    let t = tiles[i];
+    let nameMatch = (t.name || "").toLowerCase().includes(q);
+    let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
+
+    if(nameMatch || logsMatch) {
+      $(`.tile[data-index='${i}']`).show();
+    } else {
+      $(`.tile[data-index='${i}']`).hide();
+    }
+  }
 });
 
 
