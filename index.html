@@ -37,8 +37,9 @@
     .tile {
        width:100%;
   aspect-ratio: 1 / 1;  /* keeps it square automatically */
-      background:#e0e0e0;
+      background:#f5f5f5;
       border:1px solid #ccc;
+	  border-radius:6px;     
       position:relative;
       cursor:pointer;
       display:flex;
@@ -255,8 +256,8 @@
     let $tile = $(`.tile[data-index='${i}']`);
 
     if (count === 0) {
-      $tile.css("background", "#e0e0e0");
-    }
+	  $tile.css("background", "#f5f5f5");   // same pale gray as default
+	}
     else if (count >= 1 && count <= 3) {
       $tile.css("background", "#fff6b3"); // pastel yellow
     }
@@ -279,7 +280,7 @@
       $("#grid").append(`
         <div class="tile" data-index="${i}">
           <div class="tileName">${t.name || ""}</div>
-          <div class="count">${t.logs.length}</div>
+          <div class="count">${t.logs.length > 0 ? t.logs.length : ""}</div>
           <div class="timestamp">${t.lastUpdate || ""}</div>
         </div>
       `);
