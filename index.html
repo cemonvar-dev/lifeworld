@@ -504,12 +504,17 @@ body {
     // Show history
     let logs = tiles[activeIndex].logs;
     if (logs.length > 0) {
-      $("#historyBox").html(
-        logs.map((l, i) => `<div>• ${l}</div>`).join("")
-      );
-    } else {
-      $("#historyBox").html("<div style='color:#888;'>No history yet</div>");
-    }
+  $("#historyBox").html(
+    logs.map((item) => `
+      <div class="timelineItem">
+        <div class="timelineText">${item}</div>
+        <div class="timelineDate">${tiles[activeIndex].lastUpdate || ""}</div>
+      </div>
+    `).join("")
+  );
+} else {
+  $("#historyBox").html("<div style='color:#888;'>No history yet</div>");
+}
 
     $("#overlay").show();
     $("#popup").show();
