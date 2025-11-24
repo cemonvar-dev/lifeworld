@@ -639,6 +639,28 @@ checkAuth = async function() {
   updateProfileUI();
 };
 
+// ESC closes popup
+$(document).on("keydown", function (e) {
+  if (e.key === "Escape") {
+    if ($("#popup").is(":visible")) {
+      $("#cancelBtn").click();
+    }
+  }
+});
+
+// Click outside popup closes it
+$(document).on("mousedown", function (e) {
+  const popup = $("#popup");
+
+  // if popup is not visible, do nothing
+  if (!popup.is(":visible")) return;
+
+  // if click is inside popup → ignore
+  if ($(e.target).closest("#popup").length > 0) return;
+
+  // otherwise → behave as cancel
+  $("#cancelBtn").click();
+});
 
 </script>
 <footer>
