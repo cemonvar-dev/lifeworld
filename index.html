@@ -5,191 +5,240 @@
   <title>LifeWorld Grid</title>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
+body {
+     font-family: Arial, sans-serif;
+}
+ #topBar {
+     margin: 10px 20px;
+}
+ #grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+     gap: 6px;
+     margin: 20px;
+}
+ @media (max-width: 600px) {
+     .tile {
+         width: 100%;
+         height: 100px;
+         font-size: 18pt;
     }
-
-    #topBar {
-      margin: 10px 20px;
+     .tileName {
+         font-size: 10px;
     }
-
-  #grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 6px;
-  margin: 20px;
+     .timestamp {
+         font-size: 8px;
+    }
+}
+ .tile {
+     width:100%;
+     aspect-ratio: 1 / 1;
+    /* keeps it square automatically */
+     background:#F5F5F0;
+     border:1px solid #ccc;
+     border-radius:6px;
+     position:relative;
+     cursor:pointer;
+     display:flex;
+     justify-content:center;
+     align-items:center;
+     font-size:24pt;
+     user-select:none;
+}
+ .tileName {
+     position:absolute;
+     top:5px;
+     right:5px;
+     font-size:12px;
+     color:#333;
+     font-weight:bold;
+     max-width: 70%;
+     text-align: right;
+     word-wrap: break-word;
+}
+ .count {
+     pointer-events:none;
+}
+ .timestamp {
+     position:absolute;
+     bottom:5px;
+     right:5px;
+     font-size:10px;
+     color:#555;
 }
 
-@media (max-width: 600px) {
-  .tile {
-    width: 100%;
-    height: 100px;
-    font-size: 18pt;
-  }
-  .tileName {
-    font-size: 10px;
-  }
-  .timestamp {
-    font-size: 8px;
-  }
+/* Popup layout */
+
+ #popup {
+     position:fixed;
+     top:50%;
+     left:50%;
+     transform:translate(-50%,-50%);
+     background:white;
+     padding:20px;
+     border:2px solid black;
+     display:none;
+     width:320px;
+     z-index:1001;
 }
 
-    .tile {
-       width:100%;
-  aspect-ratio: 1 / 1;  /* keeps it square automatically */
-      background:#F5F5F0;
-      border:1px solid #ccc;
-	  border-radius:6px;     
-      position:relative;
-      cursor:pointer;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      font-size:24pt;
-      user-select:none;
-    }
-
-    .tileName {
-      position:absolute;
-      top:5px;
-      right:5px;
-      font-size:12px;
-      color:#333;
-      font-weight:bold;
-      max-width: 70%;
-      text-align: right;
-      word-wrap: break-word;
-    }
-
-    .count {
-      pointer-events:none;
-    }
-
-    .timestamp {
-      position:absolute;
-      bottom:5px;
-      right:5px;
-      font-size:10px;
-      color:#555;
-    }
-
-    #popup {
-      position:fixed;
-      top:50%;
-      left:50%;
-      transform:translate(-50%,-50%);
-      background:white;
-      padding:20px;
-      border:2px solid black;
-      display:none;
-      width:320px;
-      z-index:1001;
-    }
-
-    #overlay {
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,0.3);
-      display:none;
-      z-index:1000;
-    }
-
-    label {
-      font-weight:bold;
-      display:block;
-      margin-top:8px;
-      margin-bottom:4px;
-    }
-
-    input[type="text"], textarea {
-      width:100%;
-      box-sizing:border-box;
-      margin-bottom:6px;
-    }
-
-    #historyBox {
-      max-height:120px;
-      overflow-y:auto;
-      border:1px solid #ccc;
-      padding:5px;
-      margin:8px 0;
-      font-size:12px;
-      background:#fafafa;
-    }
-
-    button {
-      margin-top:6px;
-      margin-right:6px;
-    }
-	
-	
-	/* HEADER */
-#topHeader {
+#popupContent {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #ffffff;
-  padding: 12px 20px;
-  border-bottom: 1px solid #ddd;
-  position: sticky;
-  top: 0;
-  z-index: 2000;
+  gap: 20px;
 }
 
-#topHeader .logo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
+#popupLeft {
+  flex: 1;
 }
 
-/* PROFILE ICON */
-#profileWrapper {
+#popupRight {
+  width: 45%;
+  max-height: 320px;
+  overflow-y: auto;
+  border-left: 1px solid #ddd;
+  padding-left: 15px;
+}
+
+/* Timeline styling */
+#historyBox {
+  margin-top: 10px;
+}
+
+.timelineItem {
   position: relative;
-}
-
-#profileIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* Dropdown menu */
-#profileMenu {
-  position: absolute;
-  top: 40px;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  display: none;
-  min-width: 160px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-#profileMenu button {
-  width: 100%;
-  margin: 4px 0;
-}
-
-#profileEmail {
-  font-size: 11px;
-  color: #666;
-  margin-bottom: 6px;
-}
-
-/* FOOTER */
-footer {
-  margin-top: 40px;
-  padding: 20px;
-  text-align: center;
-  color: #777;
+  padding-left: 20px;
+  margin-bottom: 15px;
   font-size: 12px;
-  border-top: 1px solid #ddd;
 }
 
+.timelineItem::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  background: #4a90e2;
+  border-radius: 50%;
+}
 
+.timelineItem::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 14px;
+  width: 2px;
+  height: calc(100% - 4px);
+  background: #ccc;
+}
+
+.timelineItem:last-child::after {
+  display: none;
+}
+
+.timelineText {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 3px;
+}
+
+.timelineDate {
+  font-size: 10px;
+  color: #777;
+}
+/* popup end */
+
+
+ #overlay {
+     position:fixed;
+     inset:0;
+     background:rgba(0,0,0,0.3);
+     display:none;
+     z-index:1000;
+}
+ label {
+     font-weight:bold;
+     display:block;
+     margin-top:8px;
+     margin-bottom:4px;
+}
+ input[type="text"], textarea {
+     width:100%;
+     box-sizing:border-box;
+     margin-bottom:6px;
+}
+ #historyBox {
+     max-height:120px;
+     overflow-y:auto;
+     border:1px solid #ccc;
+     padding:5px;
+     margin:8px 0;
+     font-size:12px;
+     background:#fafafa;
+}
+ button {
+     margin-top:6px;
+     margin-right:6px;
+}
+/* HEADER */
+ #topHeader {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     background: #ffffff;
+     padding: 12px 20px;
+     border-bottom: 1px solid #ddd;
+     position: sticky;
+     top: 0;
+     z-index: 2000;
+}
+ #topHeader .logo {
+     font-size: 20px;
+     font-weight: bold;
+     color: #333;
+}
+/* PROFILE ICON */
+ #profileWrapper {
+     position: relative;
+}
+ #profileIcon {
+     width: 32px;
+     height: 32px;
+     border-radius: 50%;
+     cursor: pointer;
+}
+/* Dropdown menu */
+ #profileMenu {
+     position: absolute;
+     top: 40px;
+     right: 0;
+     background: white;
+     border: 1px solid #ccc;
+     border-radius: 8px;
+     padding: 10px;
+     display: none;
+     min-width: 160px;
+     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+ #profileMenu button {
+     width: 100%;
+     margin: 4px 0;
+}
+ #profileEmail {
+     font-size: 11px;
+     color: #666;
+     margin-bottom: 6px;
+}
+/* FOOTER */
+ footer {
+     margin-top: 40px;
+     padding: 20px;
+     text-align: center;
+     color: #777;
+     font-size: 12px;
+     border-top: 1px solid #ddd;
+}
+ 
 	
   </style>
 
@@ -202,6 +251,7 @@ footer {
   <!-- Supabase JS -->
   <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
 </head>
+
 <body>
 
   <header id="topHeader">
@@ -231,20 +281,27 @@ footer {
   <div id="overlay"></div>
 
   <div id="popup">
-    <h3>Tile Details</h3>
+  <h3>Tile Details</h3>
 
-    <label>Tile Name</label>
-    <input type="text" id="tileNameInput">
+  <div id="popupContent">
+    <div id="popupLeft">
+      <label>Tile Name</label>
+      <input type="text" id="tileNameInput">
 
-    <label>Log Entry</label>
-    <textarea id="entryText" rows="4"></textarea>
+      <label>Log Entry</label>
+      <textarea id="entryText" rows="4"></textarea>
 
-    <label>History</label>
-    <div id="historyBox"></div>
+      <button id="saveBtn">Save</button>
+      <button id="cancelBtn">Cancel</button>
+    </div>
 
-    <button id="saveBtn">Save</button>
-    <button id="cancelBtn">Cancel</button>
+    <div id="popupRight">
+      <h4>History</h4>
+      <div id="historyBox"></div>
+    </div>
   </div>
+</div>
+
 
 <script>
   // ===== Supabase config (your project) =====
