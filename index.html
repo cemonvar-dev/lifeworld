@@ -37,7 +37,7 @@
     .tile {
        width:100%;
   aspect-ratio: 1 / 1;  /* keeps it square automatically */
-      background:#f5f5f5;
+      background:#F5F5F0;
       border:1px solid #ccc;
 	  border-radius:6px;     
       position:relative;
@@ -256,10 +256,10 @@
     let $tile = $(`.tile[data-index='${i}']`);
 
     if (count === 0) {
-	  $tile.css("background", "#f5f5f5");   // same pale gray as default
+	  $tile.css("background", "#F5F5F0");   // same pale gray as default
 	}
     else if (count >= 1 && count <= 3) {
-      $tile.css("background", "#fff6b3"); // pastel yellow
+      $tile.css("background", "#F1F0E8"); // pastel yellow
     }
     else if (count >= 4 && count <= 8) {
       $tile.css("background", "#c7f7c0"); // soft green
