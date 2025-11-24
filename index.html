@@ -45,6 +45,7 @@ body {
      font-size:24pt;
      user-select:none;
 }
+
  .tileName {
      position:absolute;
      top:5px;
@@ -180,6 +181,25 @@ body {
      margin-top:6px;
      margin-right:6px;
 }
+
+.editableTitle {
+  border: none;
+  outline: none;
+  padding: 6px 0;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.editableTitle:empty:before {
+  content: "Tile details";
+  color: #999;
+}
+
+
+
+
+
 /* HEADER */
  #topHeader {
      display: flex;
@@ -281,12 +301,12 @@ body {
   <div id="overlay"></div>
 
   <div id="popup">
-  <h3>Tile Details</h3>
+  <h3 id="tileTitle" contenteditable="true" class="editableTitle"></h3>
+
 
   <div id="popupContent">
     <div id="popupLeft">
-      <label>Tile Name</label>
-      <input type="text" id="tileNameInput">
+      
 
       <label>Log Entry</label>
       <textarea id="entryText" rows="4"></textarea>
@@ -498,7 +518,7 @@ body {
   $(document).on("click", ".tile", function() {
     activeIndex = $(this).data("index");
 
-    $("#tileNameInput").val(tiles[activeIndex].name);
+	$("#tileTitle").text(tiles[activeIndex].name || "Tile details");	
     $("#entryText").val("");
 
     // Show history
@@ -530,10 +550,11 @@ body {
   $("#saveBtn").on("click", function() {
     if (activeIndex === null) return;
 
-    let name = $("#tileNameInput").val().trim();
+    let name = $("#tileTitle").text().trim();
+	tiles[activeIndex].name = name;
+
     let txt  = $("#entryText").val().trim();
 
-    tiles[activeIndex].name = name;
 
     if (txt.length > 0) {
       tiles[activeIndex].logs.push(txt);
