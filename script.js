@@ -120,23 +120,44 @@ function saveWorldToLocal() {
   }
 
   function renderTiles() {
-    $("#grid").empty();
+  $("#grid").empty();
 
-    for (let i = 0; i < TILE_COUNT; i++) {
-      const t = tiles[i];
-      $("#grid").append(`
-        <div class="tile" data-index="${i}">
-          <div class="tileName">${t.name || ""}</div>
-          <div class="count">${t.logs.length > 0 ? t.logs.length : ""}</div>
-          <div class="timestamp">${t.lastUpdate || ""}</div>
-        </div>
-      `);
-      updateTileColor(i);
-    }
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const t = tiles[i];
 
-    initDragAndDrop();
-    applySearchFilter();
+    const freqText = formatFrequency(t.frequency);
+
+    $("#grid").append(`
+      <div class="tile" data-index="${i}">
+        <div class="tileName">${t.name || ""}</div>
+        <div class="count">${t.logs.length > 0 ? t.logs.length : ""}</div>
+        <div class="freqLine">${freqText}</div>
+        <div class="timestamp">${t.lastUpdate || ""}</div>
+      </div>
+    `);
+
+    updateTileColor(i);
   }
+
+  initDragAndDrop();
+  applySearchFilter();
+}
+
+
+function formatFrequency(freq) {
+  if (!freq) return "";
+
+  if (freq.mode === "daily") return "Daily";
+  if (freq.mode === "weekly") return "Weekly";
+
+  if (freq.mode === "custom") {
+    if (!freq.days || freq.days.length === 0) return "Custom";
+    return "Every " + freq.days.join(" & ");
+  }
+
+  return "";
+}
+
 
   function initDragAndDrop() {
     $(".tile").draggable({
