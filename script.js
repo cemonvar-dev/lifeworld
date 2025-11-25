@@ -47,7 +47,55 @@ function saveWorldToLocal() {
   localStorage.setItem("lifeworld", JSON.stringify(tiles));
 }
 
-// ... (cloud load/save unchanged except frequency safety) ...
+
+  async function loadWorldFromCloud() {
+    if (!currentUser) return;
+
+    const { data, error } = await supa
+      .from("worlds")
+      .select("data")
+      .eq("user_id", currentUser.id)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Cloud load error:", error);
+      // fallback
+      initEmptyTiles();
+    } else if (!data) {
+      // first time user
+      initEmptyTiles();
+      await saveWorldToCloud();
+    } else {
+      tiles = data.data;
+      // if something off, ensure structure
+      if (!tiles || typeof tiles !== "object") {
+        initEmptyTiles();
+      }
+    }
+    renderTiles();
+  }
+
+  async function saveWorldToCloud() {
+    if (!currentUser) return;
+    const { error } = await supa
+      .from("worlds")
+      .upsert(
+        { user_id: currentUser.id, data: tiles },
+        { onConflict: "user_id" }
+      );
+
+    if (error) {
+      console.error("Cloud save error:", error);
+    }
+  }
+
+  function saveWorld() {
+    if (currentUser) {
+      saveWorldToCloud();
+    } else {
+      saveWorldToLocal();
+    }
+  }
 
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
