@@ -140,17 +140,110 @@ $("#cancelBtn").on("click", function() {
   $("#overlay").hide();
 });
 
-// ESC & click-outside → close popup
-$(document).on("keydown", e => {
-  if (e.key === "Escape" && $("#popup").is(":visible"))
-    $("#cancelBtn").click();
+
+// ---- Auth ----
+  async function checkAuth() {
+    const { data } = await supa.auth.getUser();
+    if (data.user) {
+      currentUser = data.user;
+      $("#userInfo").text(`Logged in as ${currentUser.email}`);
+      $("#loginBtn").hide();
+      $("#logoutBtn").show();
+      await loadWorldFromCloud();
+    } else {
+      currentUser = null;
+      $("#userInfo").text("Not logged in (using local storage)");
+      $("#loginBtn").show();
+      $("#logoutBtn").hide();
+      loadWorldFromLocal();
+      renderTiles();
+    }
+  }
+
+  $("#loginBtn").on("click", async () => {
+    const { error } = await supa.auth.signInWithOAuth({
+      provider: "google"
+    });
+    if (error) {
+      console.error(error);
+      alert("Login failed");
+    }
+  });
+
+  $("#logoutBtn").on("click", async () => {
+    await supa.auth.signOut();
+    currentUser = null;
+    loadWorldFromLocal();
+    renderTiles();
+    checkAuth();
+  });
+
+  supa.auth.onAuthStateChange((_event, _session) => {
+    checkAuth();
+  });
+
+  // ---- Init ----
+  $(document).ready(function() {
+    checkAuth();
+  });
+  
+  
+  // PROFILE MENU TOGGLE
+$("#profileIcon").on("click", function () {
+  $("#profileMenu").toggle();
 });
 
-$(document).on("mousedown", e => {
-  if (!$("#popup").is(":visible")) return;
-  if ($(e.target).closest("#popup").length === 0)
-    $("#cancelBtn").click();
+// Close when clicking outside
+$(document).on("click", function (e) {
+  if (!$(e.target).closest("#profileWrapper").length) {
+    $("#profileMenu").hide();
+  }
 });
 
-// Auth / init unchanged…
+// Replace old login/logout buttons
+$("#menuLoginBtn").on("click", () => $("#loginBtn").click());
+$("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
+
+// Update profile UI on auth change
+function updateProfileUI() {
+  if (currentUser) {
+    $("#profileEmail").text(currentUser.email);
+    $("#menuLoginBtn").hide();
+    $("#menuLogoutBtn").show();
+  } else {
+    $("#profileEmail").text("Guest");
+    $("#menuLoginBtn").show();
+    $("#menuLogoutBtn").hide();
+  }
+}
+
+// Hook into your existing checkAuth()
+const originalCheck = checkAuth;
+checkAuth = async function() {
+  await originalCheck();
+  updateProfileUI();
+};
+
+// ESC closes popup
+$(document).on("keydown", function (e) {
+  if (e.key === "Escape") {
+    if ($("#popup").is(":visible")) {
+      $("#cancelBtn").click();
+    }
+  }
+});
+
+// Click outside popup closes it
+$(document).on("mousedown", function (e) {
+  const popup = $("#popup");
+
+  // if popup is not visible, do nothing
+  if (!popup.is(":visible")) return;
+
+  // if click is inside popup → ignore
+  if ($(e.target).closest("#popup").length > 0) return;
+
+  // otherwise → behave as cancel
+  $("#cancelBtn").click();
+});
 
