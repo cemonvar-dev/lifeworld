@@ -97,6 +97,91 @@ function saveWorldToLocal() {
     }
   }
 
+
+  function renderTiles() {
+    $("#grid").empty();
+
+    for (let i = 0; i < TILE_COUNT; i++) {
+      const t = tiles[i];
+      $("#grid").append(`
+        <div class="tile" data-index="${i}">
+          <div class="tileName">${t.name || ""}</div>
+          <div class="count">${t.logs.length > 0 ? t.logs.length : ""}</div>
+          <div class="timestamp">${t.lastUpdate || ""}</div>
+        </div>
+      `);
+      updateTileColor(i);
+    }
+
+    initDragAndDrop();
+    applySearchFilter();
+  }
+
+  function initDragAndDrop() {
+    $(".tile").draggable({
+      revert: "invalid",
+      start: function() {
+        $(this).css("z-index", 9999);
+      },
+      stop: function() {
+        $(this).css("z-index", "");
+      }
+    });
+
+    $(".tile").droppable({
+      drop: function(event, ui) {
+        let from = $(ui.draggable).data("index");
+        let to = $(this).data("index");
+        if (from === to) return;
+        swapTiles(from, to);
+        renderTiles();
+      }
+    });
+  }
+
+  function swapTiles(a, b) {
+    let temp = tiles[a];
+    tiles[a] = tiles[b];
+    tiles[b] = temp;
+    saveWorld();
+  }
+
+  // Update just one tile UI (for future use if needed)
+  function updateTileUI(i) {
+    let t = tiles[i];
+    let tile = $(`.tile[data-index='${i}']`);
+    tile.find(".tileName").text(t.name || "");
+    tile.find(".count").text(t.logs.length);
+    tile.find(".timestamp").text(t.lastUpdate || "");
+    updateTileColor(i);
+  }
+
+  // ---- Search ----
+  function applySearchFilter() {
+    let q = $("#searchBox").val().toLowerCase().trim();
+    if (q === "") {
+      $(".tile").show();
+      return;
+    }
+
+    for (let i = 0; i < TILE_COUNT; i++) {
+      let t = tiles[i];
+      let nameMatch = (t.name || "").toLowerCase().includes(q);
+      let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
+      if (nameMatch || logsMatch) {
+        $(`.tile[data-index='${i}']`).show();
+      } else {
+        $(`.tile[data-index='${i}']`).hide();
+      }
+    }
+  }
+
+  $("#searchBox").on("keyup", function() {
+    applySearchFilter();
+  });
+
+
+
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
   activeIndex = $(this).data("index");
