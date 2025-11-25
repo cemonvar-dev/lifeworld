@@ -97,6 +97,27 @@ function saveWorldToLocal() {
     }
   }
 
+  // ---- Tile rendering & coloring ----
+  function updateTileColor(i) {
+    let count = tiles[i].logs.length;
+    let $tile = $(`.tile[data-index='${i}']`);
+
+    if (count === 0) {
+	  $tile.css("background", "#F5F5F0");   // same pale gray as default
+	}
+    else if (count >= 1 && count <= 3) {
+      $tile.css("background", "#F5CBCB"); // pastel pink
+    }
+    else if (count >= 4 && count <= 8) {
+      $tile.css("background", "#c7f7c0"); // soft green
+    }
+    else if (count >= 9 && count <= 15) {
+      $tile.css("background", "#b6d9ff"); // soft blue
+    }
+    else if (count > 15) {
+      $tile.css("background", "linear-gradient(135deg, #ff9a9e, #fad0c4)");
+    }
+  }
 
   function renderTiles() {
     $("#grid").empty();
