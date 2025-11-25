@@ -4,23 +4,26 @@
   <meta charset="UTF-8">
   <title>LifeWorld Grid</title>
 
+
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="styling.css">
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+ 
 </head>
 
 <body>
 
-<header id="topHeader">
+  <header id="topHeader">
   <div class="left">
     <span class="logo">LifeWorld</span>
   </div>
 
   <div class="right">
     <div id="profileWrapper">
-      <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
+      <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+           id="profileIcon">
       <div id="profileMenu">
         <div id="profileEmail"></div>
         <button id="menuLoginBtn">Login</button>
@@ -30,40 +33,22 @@
   </div>
 </header>
 
-<input type="text" id="searchBox" placeholder="what's happening?"
-       style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
 
-<div id="grid"></div>
+  <input type="text" id="searchBox" placeholder="what's happening?"
+         style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
 
-<div id="overlay"></div>
+  <div id="grid"></div>
 
-<div id="popup">
+  <div id="overlay"></div>
+
+  <div id="popup">
   <h3 id="tileTitle" contenteditable="true" class="editableTitle"></h3>
 
-  <!-- NEW FREQUENCY CONTROL -->
-  <div id="frequencyControl">
-    <label>Frequency</label>
-
-    <div id="freqOptions">
-      <label><input type="radio" name="freqMode" value="daily"> Daily</label>
-      <label><input type="radio" name="freqMode" value="weekly"> Weekly</label>
-      <label><input type="radio" name="freqMode" value="custom"> Custom Days</label>
-    </div>
-
-    <div id="customDays" style="margin-top:6px; display:none;">
-      <button class="dayBtn" data-day="Mon">Mon</button>
-      <button class="dayBtn" data-day="Tue">Tue</button>
-      <button class="dayBtn" data-day="Wed">Wed</button>
-      <button class="dayBtn" data-day="Thu">Thu</button>
-      <button class="dayBtn" data-day="Fri">Fri</button>
-      <button class="dayBtn" data-day="Sat">Sat</button>
-      <button class="dayBtn" data-day="Sun">Sun</button>
-    </div>
-  </div>
 
   <div id="popupContent">
     <div id="popupLeft" height="75%">
       <textarea id="entryText" rows="4" style="height:70%"></textarea>
+
       <button id="saveBtn">Save</button>
       <button id="cancelBtn">Cancel</button>
     </div>
@@ -77,7 +62,6 @@
 <footer>
   Lifeworld v0.3 — built with ❤️
 </footer>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
