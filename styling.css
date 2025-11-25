@@ -38,7 +38,6 @@ body {
 .timestamp {
   position:absolute;
   bottom:5px;
-  right:5px;
   font-size:10px;
   color:#555;
 }
@@ -131,8 +130,6 @@ body {
 .freqLine {
   position: absolute;
   bottom: 24px;
-  left: 5px;
-  right: 5px;
   font-size: 10px;
   color: #444;
   text-align: left;
