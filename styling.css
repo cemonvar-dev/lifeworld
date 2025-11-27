@@ -242,3 +242,34 @@ footer {
   color: white;
   border-color: #333;
 }
+
+
+/* Modern Popup Buttons */
+.popupBtn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+#saveBtn {
+  background: #4CAF50;
+  color: white;
+}
+
+#saveBtn:hover {
+  background: #43a047;
+}
+
+#cancelBtn {
+  background: #e0e0e0;
+  color: #333;
+  margin-right: 10px;
+}
+
+#cancelBtn:hover {
+  background: #d5d5d5;
+}
