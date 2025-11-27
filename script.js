@@ -132,10 +132,11 @@ function saveWorldToLocal() {
       <div class="tile" data-index="${i}">
         
         <div class="tileTop">
-          <div class="tileCount">${t.logs.length > 0 ? t.logs.length : ""}</div>
+          
           <div class="tileName">${t.name || ""}</div>
         </div>
 
+		<div class="tileName">${t.logs.length > 0 ? t.logs.length : ""}</div>
         <div class="tileNext">${nextText}</div>
 
         <div class="tileFreq">${freqText}</div>
