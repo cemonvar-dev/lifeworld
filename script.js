@@ -154,7 +154,7 @@ function saveWorldToLocal() {
 
 
 function formatFrequency(freq) {
-  if (!freq) return "";
+  if (!freq) return {mode:"",days:[]};
 
   if (freq.mode === "daily") return "Daily";
   if (freq.mode === "weekly") return "Weekly";
@@ -445,6 +445,12 @@ function computeNextOccurrence(freq) {
     "Sat": 6,
     "Sun": 0
   };
+  
+  if(freq == null)
+  {
+	  
+  }	  
+  
 
   if (freq.mode === "daily") {
     return "today";
