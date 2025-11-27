@@ -220,3 +220,25 @@ footer {
   font-size:12px;
   border-top:1px solid #ddd;
 }
+
+
+#quickFilters {
+  margin: 10px 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.qfBtn {
+  padding: 5px 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.qfBtn.active {
+  background: #333;
+  color: white;
+  border-color: #333;
+}
