@@ -27,20 +27,11 @@ body {
   font-weight: 600;
 }
 
-.tileCount {
-  color: #333;
-}
 
 .tileName {
   color: #000;
 }
 
-.tileNext {
-  margin-top: 35px;
-  text-align: center;
-  font-size: 15px;
-  color: #333;
-}
 
 .tileFreq {
   margin-top: auto;
@@ -55,6 +46,25 @@ body {
   font-size: 11px;
   color: #999;
   padding-top: 4px;
+}
+
+.tileCenter {
+  margin-top: 22px;
+  text-align: center;
+}
+
+.tileCount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.1;
+}
+
+.tileNext {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 14px;
+  color: #444;
 }
 
 
