@@ -128,23 +128,23 @@ function saveWorldToLocal() {
     const freqText = formatFrequency(t.frequency);
     const nextText = computeNextOccurrence(t.frequency);
 
-    $("#grid").append(`
-      <div class="tile" data-index="${i}">
-        
-        <div class="tileTop">
-          <div class="tileName">${t.name || ""}</div>
-        </div>
+   $("#grid").append(`
+  <div class="tile" data-index="${i}">
+    
+    <div class="tileTop">
+      <div class="tileName">${t.name || ""}</div>
+    </div>
 
-		<div>
-			<div class="tileNext">${t.logs.length > 0 ? t.logs.length : ""}</div>
-			<div class="tileNext">${nextText}</div>
-		</div>
+    <div class="tileCenter">
+      <div class="tileCount">${t.logs.length > 0 ? t.logs.length : "0"}</div>
+      <div class="tileNext">${nextText}</div>
+    </div>
 
-        <div class="tileFreq">${freqText}</div>
-        <div class="tileLast">${t.lastUpdate || ""}</div>
+    <div class="tileFreq">${freqText}</div>
+    <div class="tileLast">${t.lastUpdate || ""}</div>
 
-      </div>
-    `);
+  </div>
+`);
 
     updateTileColor(i);
   }
@@ -152,6 +152,39 @@ function saveWorldToLocal() {
   initDragAndDrop();
   applySearchFilter();
 }
+
+
+$(document).on("click", ".qfBtn", function() {
+  $(".qfBtn").removeClass("active");
+  $(this).addClass("active");
+
+  const filter = $(this).data("filter");
+
+  $(".tile").each(function() {
+    let index = $(this).data("index");
+    let freq = tiles[index].frequency;
+    let days = nextOccurrenceDays(freq);
+
+    if (filter === "all") {
+      $(this).show();
+    }
+    else if (filter === "today" && days === 0) {
+      $(this).show();
+    }
+    else if (filter === "tomorrow" && days === 1) {
+      $(this).show();
+    }
+    else if (filter === "2" && days === 2) {
+      $(this).show();
+    }
+    else if (filter === "3plus" && days >= 3) {
+      $(this).show();
+    }
+    else {
+      $(this).hide();
+    }
+  });
+});
 
 
 
@@ -483,3 +516,38 @@ function computeNextOccurrence(freq) {
   return "";
 }
 
+function nextOccurrenceDays(freq) {
+  // same logic as computeNextOccurrence but returns the raw day count
+  const today = new Date();
+  const todayIndex = today.getDay();
+
+  const map = {
+    "Mon": 1,
+    "Tue": 2,
+    "Wed": 3,
+    "Thu": 4,
+    "Fri": 5,
+    "Sat": 6,
+    "Sun": 0
+  };
+
+  if (!freq) return 999;
+
+  if (freq.mode === "daily") return 0;
+  if (freq.mode === "weekly") return 7;
+
+  if (freq.mode === "custom" && freq.days.length > 0) {
+    let minDiff = 999;
+
+    freq.days.forEach(d => {
+      let target = map[d];
+      let diff = (target - todayIndex + 7) % 7;
+      if (diff === 0) diff = 7;
+      if (diff < minDiff) minDiff = diff;
+    });
+
+    return minDiff;
+  }
+
+  return 999;
+}
