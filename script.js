@@ -119,20 +119,28 @@ function saveWorldToLocal() {
     }
   }
 
-  function renderTiles() {
+ function renderTiles() {
   $("#grid").empty();
 
   for (let i = 0; i < TILE_COUNT; i++) {
     const t = tiles[i];
 
     const freqText = formatFrequency(t.frequency);
+    const nextText = computeNextOccurrence(t.frequency);
 
     $("#grid").append(`
       <div class="tile" data-index="${i}">
-        <div class="tileName">${t.name || ""}</div>
-        <div class="count">${t.logs.length > 0 ? t.logs.length : ""}</div>
-        <div class="freqLine">${freqText}</div>
-        <div class="timestamp">${t.lastUpdate || ""}</div>
+        
+        <div class="tileTop">
+          <div class="tileCount">${t.logs.length > 0 ? t.logs.length : ""}</div>
+          <div class="tileName">${t.name || ""}</div>
+        </div>
+
+        <div class="tileNext">${nextText}</div>
+
+        <div class="tileFreq">${freqText}</div>
+        <div class="tileLast">${t.lastUpdate || ""}</div>
+
       </div>
     `);
 
@@ -142,6 +150,7 @@ function saveWorldToLocal() {
   initDragAndDrop();
   applySearchFilter();
 }
+
 
 
 function formatFrequency(freq) {
@@ -421,4 +430,45 @@ $(document).on("mousedown", function (e) {
   // otherwise → behave as cancel
   $("#cancelBtn").click();
 });
+
+
+function computeNextOccurrence(freq) {
+  const today = new Date();
+  const todayIndex = today.getDay(); // Sun=0 ... Sat=6
+
+  const map = {
+    "Mon": 1,
+    "Tue": 2,
+    "Wed": 3,
+    "Thu": 4,
+    "Fri": 5,
+    "Sat": 6,
+    "Sun": 0
+  };
+
+  if (freq.mode === "daily") {
+    return "today";
+  }
+
+  if (freq.mode === "weekly") {
+    return "in 7 days";
+  }
+
+  if (freq.mode === "custom" && freq.days.length > 0) {
+    let minDiff = 999;
+
+    freq.days.forEach(d => {
+      let target = map[d];
+      let diff = (target - todayIndex + 7) % 7;
+      if (diff === 0) diff = 7;
+      if (diff < minDiff) minDiff = diff;
+    });
+
+    if (minDiff === 1) return "tomorrow";
+    if (minDiff === 0) return "today";
+    return `${minDiff} days later`;
+  }
+
+  return "";
+}
 
