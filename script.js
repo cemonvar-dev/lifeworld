@@ -449,10 +449,10 @@ function computeNextOccurrence(freq) {
     "Sun": 0
   };
   
-  if(freq == null)
+  if (!freq) 
   {
-	  
-  }	  
+	  freq= {mode:"",days:[]};
+  } 
   
 
   if (freq.mode === "daily") {
