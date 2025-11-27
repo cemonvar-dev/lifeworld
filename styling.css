@@ -10,30 +10,56 @@ body {
 }
 
 .tile {
-  width:100%;
-  aspect-ratio: 1 / 1;
-  background:#F5F5F0;
-  border:1px solid #ccc;
-  border-radius:6px;
-  position:relative;
-  cursor:pointer;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:24pt;
-  user-select:none;
+  position: relative;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f6f6f2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 160px;
+  font-size: 14px;
+}
+
+.tileTop {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.tileCount {
+  color: #333;
 }
 
 .tileName {
-  position:absolute;
-  top:5px;
-  right:5px;
-  font-size:12px;
-  color:#333;
-  font-weight:bold;
-  max-width: 70%;
-  word-wrap: break-word;
+  color: #000;
 }
+
+.tileNext {
+  margin-top: 35px;
+  text-align: center;
+  font-size: 15px;
+  color: #333;
+}
+
+.tileFreq {
+  margin-top: auto;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  padding-top: 10px;
+}
+
+.tileLast {
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  padding-top: 4px;
+}
+
+
+
+
 
 .timestamp {
   position:absolute;
