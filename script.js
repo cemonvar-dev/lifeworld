@@ -28,12 +28,18 @@ function loadWorldFromLocal() {
     try {
       tiles = JSON.parse(stored);
 
-      // Ensure frequency exists for old users
-      for (let i = 0; i < TILE_COUNT; i++) {
-        if (!tiles[i].frequency) {
-          tiles[i].frequency = { mode: "daily", days: [] };
-        }
-      }
+     // ensure older users get expanded tiles
+if (Object.keys(tiles).length < TILE_COUNT) {
+    for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
+        tiles[i] = {
+            name: "",
+            logs: [],
+            lastUpdate: null,
+            frequency: { mode: "daily", days: [] }
+        };
+    }
+}
+
 
     } catch {
       initEmptyTiles();
