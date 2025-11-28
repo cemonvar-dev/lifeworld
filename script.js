@@ -216,6 +216,11 @@ function formatFrequency(freq) {
 
 
   function initDragAndDrop() {
+	if ('ontouchstart' in window) {
+    // Disable drag on mobile
+    return;
+    }
+	
     $(".tile").draggable({
       revert: "invalid",
       start: function() {
