@@ -125,10 +125,19 @@ function saveWorldToLocal() {
   for (let i = 0; i < TILE_COUNT; i++) {
     const t = tiles[i];
 
+  if (!t.name && t.logs.length === 0) {
+    $("#grid").append(`
+        <div class="tile empty" data-index="${i}">
+            <div class="plusIcon">+</div>
+        </div>
+    `);
+    continue;
+}
+
     const freqText = formatFrequency(t.frequency);
     const nextText = computeNextOccurrence(t.frequency);
 
-   $("#grid").append(`
+   $("#grid").append(`    
   <div class="tile" data-index="${i}">
     
     <div class="tileTop">
@@ -136,7 +145,7 @@ function saveWorldToLocal() {
     </div>
 
     <div class="tileCenter">
-      <div class="tileCount">${t.logs.length > 0 ? t.logs.length : "0"}</div>
+      <div class="tileCount">${t.logs.length > 0 ? t.logs.length : ""}</div>
       <div class="tileNext">${nextText}</div>
     </div>
 

@@ -280,3 +280,20 @@ footer {
   display: flex;
   gap: 10px;
 }
+
+/* empty tile styling */
+.tile.empty {
+    background: white !important;
+    border: 2px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a7d7a2;      /* soft green */
+    font-size: 42px;
+    font-weight: 300;
+}
+.tile.empty:hover {
+    background: #fafafa;
+    border-color: #bbb;
+    cursor: pointer;
+}
