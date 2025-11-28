@@ -4,7 +4,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const TILE_COUNT = 64;
+const TILE_COUNT = 128;
 let currentUser = null;
 let tiles = {};
 let activeIndex = null;
