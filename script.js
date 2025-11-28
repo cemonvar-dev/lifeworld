@@ -538,7 +538,10 @@ function computeNextOccurrence(freq) {
     freq.days.forEach(d => {
       let target = map[d];
       let diff = (target - todayIndex + 7) % 7;
-      if (diff === 0) diff = 7;
+      if (diff === 0) 
+	  {
+		  //do nothing, 0 means today.
+	  }
       if (diff < minDiff) minDiff = diff;
     });
 
