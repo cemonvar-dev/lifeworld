@@ -73,6 +73,20 @@ function saveWorldToLocal() {
       await saveWorldToCloud();
     } else {
       tiles = data.data;
+	  
+	  if (Object.keys(tiles).length < TILE_COUNT) {
+    for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
+        tiles[i] = {
+            name: "",
+            logs: [],
+            lastUpdate: null,
+            frequency: { mode: "daily", days: [] }
+        };
+    }
+	
+    await saveWorldToCloud();
+}
+
       // if something off, ensure structure
       if (!tiles || typeof tiles !== "object") {
         initEmptyTiles();
