@@ -422,7 +422,9 @@ function refreshNextOccurrences() {
 		}
 		else if(t.nextOccurrence=="NaN-NaN-NaN")
 		{
+			debugger;
 			t.nextOccurrence=null;
+			t.lastUpdate= convertToShortDate(t.lastUpdate);
 			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
 			continue;
 		}
