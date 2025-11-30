@@ -178,7 +178,7 @@ function renderTiles() {
 			  <div class="tileName">${t.name || ""}</div>
 			</div>
 			<div class="tileCenter">
-			  <div class="tileCount">${t.logs.length > 0 ? "count: " + t.logs.length : "(no activity)"}</div>  
+			  <div class="tileCount">${t.logs.length > 0 ? t.logs.length : "-"}</div>  
 			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileLast">${freqText}</div>
