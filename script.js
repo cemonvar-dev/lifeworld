@@ -465,6 +465,9 @@ $("#cancelBtn").on("click", function() {
   // ---- Init ----
   $(document).ready(function() {
     checkAuth();
+	  refreshNextOccurrences();
+  saveWorld();
+  renderTiles();
   });
   
   
@@ -527,6 +530,8 @@ $(document).on("mousedown", function (e) {
   $("#cancelBtn").click();
 });
 
+
+
 //new
 function calculateNextOccurrence(freq, lastUpdateDate) {
   const baseDate = lastUpdateDate ? new Date(lastUpdateDate) : new Date();
@@ -583,6 +588,42 @@ function nextCustomWeekday(daysArray) {
   });
 
   return addDays(today, minDiff);
+}
+
+
+function refreshNextOccurrences() {
+  const today = new Date();
+
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const t = tiles[i];
+    if (!t || !t.frequency) continue;
+
+    const freq = t.frequency;
+
+    // DAILY always due today
+    if (freq.mode === "daily") {
+      t.nextOccurrence = today.toISOString().split("T")[0];
+      continue;
+    }
+
+    // If no nextOccurrence yet → compute initial one
+    if (!t.nextOccurrence) {
+      t.nextOccurrence = calculateNextOccurrence(freq, t.lastUpdate || today).toISOString().split("T")[0];
+      continue;
+    }
+
+    let next = new Date(t.nextOccurrence);
+
+    // If next >= today → okay
+    if (next >= today) continue;
+
+    // Otherwise roll forward until next >= today
+    while (next < today) {
+      next = calculateNextOccurrence(freq, next);
+    }
+
+    t.nextOccurrence = next.toISOString().split("T")[0];
+  }
 }
 
 
