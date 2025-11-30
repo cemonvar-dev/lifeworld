@@ -179,7 +179,7 @@ function renderTiles() {
 			</div>
 			<div class="tileCenter">
 			  
-			  <div class="tileLast">${nextText}</div>
+			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileLast">${freqText}</div>
 			<div class="tileLast">${t.logs.length > 0 ? "count: " + t.logs.length : "(no activity)"}</div>
