@@ -269,8 +269,8 @@ $("#saveBtn").on("click", function() {
 	let txt = $("#entryText").val().trim();
 	if (txt.length > 0) tiles[activeIndex].logs.push(txt);
 
-	let now = new Date().toISOString();
-	tiles[activeIndex].lastUpdate = now;
+	let now = new Date();
+	tiles[activeIndex].lastUpdate = formatDate(now);
 
 	// ==== SAVE FREQUENCY FIRST ====
 	let mode = $("input[name='freqMode']:checked").val();
@@ -288,10 +288,10 @@ $("#saveBtn").on("click", function() {
 	};
 
 	// ==== THEN CALCULATE NEXT OCCURRENCE ====
-	tiles[activeIndex].nextOccurrence = calculateNextOccurrence(
-		tiles[activeIndex].frequency,
-		now
-	).toISOString().split("T")[0];
+	tiles[activeIndex].nextOccurrence = formatDate(
+		calculateNextOccurrence(tiles[activeIndex].frequency, now)
+	);
+
 
 	saveWorld();
 	renderTiles();
@@ -410,13 +410,13 @@ function refreshNextOccurrences() {
 
 		// DAILY always due today
 		if (freq.mode === "daily") {
-			t.nextOccurrence = today.toISOString().split("T")[0];
+			t.nextOccurrence = formatDate(today);
 			continue;
 		}
 
 		// If no nextOccurrence yet → compute initial one
 		if (!t.nextOccurrence) {
-			t.nextOccurrence = calculateNextOccurrence(freq, t.lastUpdate || today).toISOString().split("T")[0];
+			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today);
 			continue;
 		}
 
@@ -430,7 +430,7 @@ function refreshNextOccurrences() {
 			next = calculateNextOccurrence(freq, next);
 		}
 
-		t.nextOccurrence = next.toISOString().split("T")[0];
+		t.nextOccurrence = formatDate(next);
 	}
 }
 
