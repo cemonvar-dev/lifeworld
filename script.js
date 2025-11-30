@@ -601,8 +601,13 @@ function computeNextOccurrenceDisplay(tile) {
   if (diff < 0) return `${Math.abs(diff)} days overdue`;
 }
 
-
 function nextOccurrenceDays(tile) {
+  const freq = tile.frequency;
+
+  // DAILY ALWAYS DUE TODAY
+  if (freq && freq.mode === "daily") return 0;
+
+  // If no date → do not show
   if (!tile.nextOccurrence) return 999;
 
   const today = new Date();
