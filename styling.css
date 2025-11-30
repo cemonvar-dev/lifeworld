@@ -270,7 +270,6 @@ footer {
 
 #popupRight {
     width: 55%;
-    border-left: 1px solid #e0e0e0;
     padding-left: 15px;
     max-height: 350px;
     overflow-y: auto;
