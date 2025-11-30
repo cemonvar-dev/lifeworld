@@ -307,6 +307,71 @@ footer {
   gap: 10px;
 }
 
+/* ----- POPUP CONTAINER ----- */
+#popup {
+    background: white;
+    width: 70%;
+    max-width: 900px;
+    padding: 20px;
+    border-radius: 16px;
+    position: fixed;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* ----- CONTENT LAYOUT (Desktop) ----- */
+#popupContent {
+    display: flex;
+    gap: 20px;
+}
+
+#popupLeft {
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+}
+
+#popupRight {
+    width: 55%;
+    border-left: 1px solid #e0e0e0;
+    padding-left: 15px;
+}
+
+/* Textarea fix */
+#entryText {
+    width: 100%;
+    height: 180px;
+    resize: vertical;
+    padding: 8px;
+    font-size: 14px;
+}
+
+/* Buttons */
+#popupButtons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.popupBtn {
+    padding: 10px 20px;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* History Box */
+#historyBox {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+
 /* --- Mobile popup optimization --- */
 @media (max-width: 768px) {
     #popup {
