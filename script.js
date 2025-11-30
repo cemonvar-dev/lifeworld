@@ -465,9 +465,11 @@ $("#cancelBtn").on("click", function() {
   // ---- Init ----
   $(document).ready(function() {
     checkAuth();
-	  refreshNextOccurrences();
-  saveWorld();
+  
   renderTiles();
+  
+	  refreshNextOccurrences();
+	  saveWorld();
   });
   
   
