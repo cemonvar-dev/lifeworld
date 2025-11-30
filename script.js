@@ -170,7 +170,7 @@ function renderTiles() {
 	
 		const freqText = formatFrequency(t.frequency);
 		const nextText = computeNextOccurrenceDisplay(t);
-		const lastUpdateText = formatDate(t.lastUpdate);
+		const lastUpdateText = convertToShortDate(t.lastUpdate);
 
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
