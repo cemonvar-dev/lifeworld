@@ -337,7 +337,7 @@ function formatFrequency(freq) {
 }
 
 function calculateNextOccurrence(freq, lastUpdateDate) {
-	const baseDate = lastUpdateDate ? new Date(formatDate(lastUpdateDate)) : new Date();
+	const baseDate = lastUpdateDate ? new Date(lastUpdateDate) : new Date();
 	let mode = freq.mode;
 
 	switch (mode) {
