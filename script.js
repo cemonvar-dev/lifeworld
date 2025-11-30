@@ -467,8 +467,8 @@ function nextOccurrenceDays(tile) {
 	// If no date → do not show
 	if (!tile.nextOccurrence) return 999;
 
-	const today = new formatDate(new Date())
-	const next = new Date(formatDate(tile.nextOccurrence));
+	const today =  toDateOnly(new Date());
+	const next = toDateOnly(new Date(tile.nextOccurrence));
 
 	return Math.round((next - today) / (1000 * 60 * 60 * 24));
 }
