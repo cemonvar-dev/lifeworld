@@ -282,6 +282,7 @@ footer {
     resize: vertical;
     padding: 8px;
     font-size: 14px;
+	border-color:lightgray;
 }
 
 /* Buttons */
@@ -344,6 +345,7 @@ footer {
 
     #entryText {
         height: 140px !important;
+		border-color:lightgray;
     }
 
     #popupButtons {
