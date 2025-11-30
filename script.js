@@ -438,8 +438,8 @@ function refreshNextOccurrences() {
 function computeNextOccurrenceDisplay(tile) {
 	if (!tile.nextOccurrence) return "";
 
-	const today = new Date();
-	const next = new Date(tile.nextOccurrence);
+	const today = toDateOnly(new Date());
+	const next = toDateOnly(new Date(tile.nextOccurrence));
 
 	const diff = Math.round((next - today) / (1000 * 60 * 60 * 24));
 

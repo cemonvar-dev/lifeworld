@@ -41,3 +41,7 @@ function convertToShortDate(str) {
 
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
+
+function toDateOnly(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
