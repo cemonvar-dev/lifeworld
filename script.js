@@ -170,7 +170,7 @@ function renderTiles() {
 	
 		const freqText = formatFrequency(t.frequency);
 		const nextText = computeNextOccurrenceDisplay(t);
-
+		const lastUpdateText = formatDate(t.lastUpdate);
 
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
@@ -182,7 +182,7 @@ function renderTiles() {
 			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileFreq">${freqText}</div>
-			<div class="tileLast">${t.lastUpdate || ""}</div>
+			<div class="tileLast">${t.lastUpdateText || ""}</div>
 		  </div>
 		`);
 
