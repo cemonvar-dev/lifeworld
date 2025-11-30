@@ -13,16 +13,20 @@ function formatDate(d) {
 }
 
 function convertToShortDate(str) {
-    // Expected format: "DD/MM/YYYY, HH:MM:SS"
     if (!str) return "";
 
-    // Split date and time
-    const parts = str.split(",");
-    if (parts.length < 1) return "";
+    // Normalize separators: replace dots with slashes
+    let s = str.replace(/\./g, "/");
 
-    const datePart = parts[0].trim(); // "29/11/2025"
+    // Remove time part (anything after space or comma)
+    s = s.split(",")[0].split(" ")[0].trim();
 
-    const [day, month, year] = datePart.split("/");
+    // Now expected: "DD/MM/YYYY"
+    const parts = s.split("/");
+
+    if (parts.length !== 3) return "";
+
+    const [day, month, year] = parts;
 
     if (!day || !month || !year) return "";
 
