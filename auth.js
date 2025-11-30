@@ -39,3 +39,24 @@
   supa.auth.onAuthStateChange((_event, _session) => {
     checkAuth();
   });
+  
+  
+// Update profile UI on auth change
+function updateProfileUI() {
+	if (currentUser) {
+		$("#profileEmail").text(currentUser.email);
+		$("#menuLoginBtn").hide();
+		$("#menuLogoutBtn").show();
+	} else {
+		$("#profileEmail").text("Guest");
+		$("#menuLoginBtn").show();
+		$("#menuLogoutBtn").hide();
+	}
+}
+
+// Hook into your existing checkAuth()
+const originalCheck = checkAuth;
+checkAuth = async function() {
+	await originalCheck();
+	updateProfileUI();
+};

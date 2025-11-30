@@ -103,6 +103,7 @@ async function loadWorldFromCloud() {
 			initEmptyTiles();
 		}
 	}
+	debugger;
 	renderTiles();
 }
 
@@ -159,10 +160,10 @@ function renderTiles() {
 
 		if (!t.name && t.logs.length === 0) {
 			$("#grid").append(`
-        <div class="tile empty" data-index="${i}">
-            <div class="plusIcon">+</div>
-        </div>
-    `);
+				<div class="tile empty" data-index="${i}">
+					<div class="plusIcon">+</div>
+				</div>
+			`);
 			continue;
 		}
 
@@ -171,22 +172,18 @@ function renderTiles() {
 
 
 		$("#grid").append(`    
-  <div class="tile" data-index="${i}">
-    
-    <div class="tileTop">
-      <div class="tileName">${t.name || ""}</div>
-    </div>
-
-    <div class="tileCenter">
-      <div class="tileCount">${t.logs.length > 0 ? t.logs.length : ""}</div>
-      <div class="tileNext">${nextText}</div>
-    </div>
-
-    <div class="tileFreq">${freqText}</div>
-    <div class="tileLast">${t.lastUpdate || ""}</div>
-
-  </div>
-`);
+		  <div class="tile" data-index="${i}">
+			<div class="tileTop">
+			  <div class="tileName">${t.name || ""}</div>
+			</div>
+			<div class="tileCenter">
+			  <div class="tileCount">${t.logs.length > 0 ? t.logs.length : ""}</div>
+			  <div class="tileNext">${nextText}</div>
+			</div>
+			<div class="tileFreq">${freqText}</div>
+			<div class="tileLast">${t.lastUpdate || ""}</div>
+		  </div>
+		`);
 
 		updateTileColor(i);
 	}
@@ -195,40 +192,6 @@ function renderTiles() {
 	applySearchFilter();
 }
 
-/* drag & drop */
-function initDragAndDrop() {
-	if ('ontouchstart' in window) {
-		// Disable drag on mobile
-		return;
-	}
-
-	$(".tile").draggable({
-		revert: "invalid",
-		start: function() {
-			$(this).css("z-index", 9999);
-		},
-		stop: function() {
-			$(this).css("z-index", "");
-		}
-	});
-
-	$(".tile").droppable({
-		drop: function(event, ui) {
-			let from = $(ui.draggable).data("index");
-			let to = $(this).data("index");
-			if (from === to) return;
-			swapTiles(from, to);
-			renderTiles();
-		}
-	});
-}
-
-function swapTiles(a, b) {
-	let temp = tiles[a];
-	tiles[a] = tiles[b];
-	tiles[b] = temp;
-	saveWorld();
-}
 
 // Update just one tile UI (for future use if needed)
 function updateTileUI(i) {
@@ -338,53 +301,6 @@ $("#saveBtn").on("click", function() {
 });
 
 
-// Update profile UI on auth change
-function updateProfileUI() {
-	if (currentUser) {
-		$("#profileEmail").text(currentUser.email);
-		$("#menuLoginBtn").hide();
-		$("#menuLogoutBtn").show();
-	} else {
-		$("#profileEmail").text("Guest");
-		$("#menuLoginBtn").show();
-		$("#menuLogoutBtn").hide();
-	}
-}
-
-// Hook into your existing checkAuth()
-const originalCheck = checkAuth;
-checkAuth = async function() {
-	await originalCheck();
-	updateProfileUI();
-};
-
-
-// ---- Search ----
-function applySearchFilter() {
-	let q = $("#searchBox").val().toLowerCase().trim();
-	if (q === "") {
-		$(".tile").show();
-		return;
-	}
-
-	for (let i = 0; i < TILE_COUNT; i++) {
-		let t = tiles[i];
-		let nameMatch = (t.name || "").toLowerCase().includes(q);
-		let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
-		if (nameMatch || logsMatch) {
-			$(`.tile[data-index='${i}']`).show();
-		} else {
-			$(`.tile[data-index='${i}']`).hide();
-		}
-	}
-}
-
-$("#searchBox").on("keyup", function() {
-	applySearchFilter();
-});
-
-
-
 
 /* frequency calculations */
 function formatFrequency(freq) {
@@ -482,7 +398,6 @@ function nextCustomWeekday(daysArray) {
 	return addDays(today, minDiff);
 }
 
-
 function refreshNextOccurrences() {
 	const today = new Date();
 
@@ -548,7 +463,7 @@ function nextOccurrenceDays(tile) {
 }
 
 
-/* controls */
+/* control handler scripts */
 
 // Click outside popup closes it
 $(document).on("mousedown", function(e) {
@@ -590,7 +505,6 @@ $(document).on("click", function(e) {
 // Replace old login/logout buttons
 $("#menuLoginBtn").on("click", () => $("#loginBtn").click());
 $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
-
 
 /* filtering */
 $(document).on("click", ".qfBtn", function() {
@@ -637,4 +551,64 @@ $(document).ready(function() {
 
 	refreshNextOccurrences();
 	saveWorld();
+});
+
+/*tile drag & drop */
+function initDragAndDrop() {
+	if ('ontouchstart' in window) {
+		// Disable drag on mobile
+		return;
+	}
+
+	$(".tile").draggable({
+		revert: "invalid",
+		start: function() {
+			$(this).css("z-index", 9999);
+		},
+		stop: function() {
+			$(this).css("z-index", "");
+		}
+	});
+
+	$(".tile").droppable({
+		drop: function(event, ui) {
+			let from = $(ui.draggable).data("index");
+			let to = $(this).data("index");
+			if (from === to) return;
+			swapTiles(from, to);
+			renderTiles();
+		}
+	});
+}
+
+function swapTiles(a, b) {
+	let temp = tiles[a];
+	tiles[a] = tiles[b];
+	tiles[b] = temp;
+	saveWorld();
+}
+
+
+// ---- Search ----
+function applySearchFilter() {
+	let q = $("#searchBox").val().toLowerCase().trim();
+	if (q === "") {
+		$(".tile").show();
+		return;
+	}
+
+	for (let i = 0; i < TILE_COUNT; i++) {
+		let t = tiles[i];
+		let nameMatch = (t.name || "").toLowerCase().includes(q);
+		let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
+		if (nameMatch || logsMatch) {
+			$(`.tile[data-index='${i}']`).show();
+		} else {
+			$(`.tile[data-index='${i}']`).hide();
+		}
+	}
+}
+
+$("#searchBox").on("keyup", function() {
+	applySearchFilter();
 });
