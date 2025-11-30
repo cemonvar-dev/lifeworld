@@ -15,8 +15,10 @@ function initEmptyTiles() {
 			frequency: {
 				mode: "daily",
 				days: []
-			}
+			},
+			done: false   
 		};
+
 
 	}
 }
@@ -91,8 +93,10 @@ async function loadWorldFromCloud() {
 					frequency: {
 						mode: "daily",
 						days: []
-					}
+					},
+					done: false    
 				};
+
 			}
 
 			await saveWorldToCloud();
@@ -182,7 +186,7 @@ function renderTiles() {
 			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileLast">${freqText}</div>
-			
+			<div class="tileLast">${t.done ? "✔️" : ""}</div>
 			<div class="tileLast">${lastUpdateText || ""}</div>
 		  </div>
 		`);
@@ -211,6 +215,7 @@ $(document).on("click", ".tile", function() {
 
 	$("#tileTitle").text(tiles[activeIndex].name || "Tile details");
 	$("#entryText").val("");
+	$("#doneCheckbox").prop("checked", tiles[activeIndex].done === true);
 
 	// HISTORY
 	let logs = tiles[activeIndex].logs;
@@ -292,6 +297,8 @@ $("#saveBtn").on("click", function() {
 	tiles[activeIndex].nextOccurrence = formatDate(
 		calculateNextOccurrence(tiles[activeIndex].frequency, now)
 	);
+
+	tiles[activeIndex].done = $("#doneCheckbox").is(":checked");
 
 
 	saveWorld();
@@ -432,8 +439,16 @@ function refreshNextOccurrences() {
 
 		let next = new Date(t.nextOccurrence);
 
+
+
 		// If next >= today → okay
 		if (next >= today) continue;
+		
+// --- If tile done but its cycle is over, reset the flag ---
+if (t.done === true) {
+    t.done = false;
+}
+
 
 		// Otherwise roll forward until next >= today
 		while (next < today) {
