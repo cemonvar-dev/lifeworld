@@ -536,7 +536,7 @@ $(document).on("click", ".qfBtn", function() {
 			$(this).show();
 		} else if (filter === "tomorrow" && days === 1) {
 			$(this).show();
-		} else if (filter === "2" && days === 2) {
+		} else if (filter === 2 && days === 2) {
 			$(this).show();
 		} else if (filter === "3plus" && days >= 3) {
 			$(this).show();
