@@ -93,44 +93,11 @@ body {
     line-height: 1;
 }
 
-
-
-
-
 .timestamp {
   position:absolute;
   bottom:5px;
   font-size:10px;
   color:#555;
-}
-
-/* POPUP */
-#popup {
-  position:fixed;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
-  background:white;
-  padding:20px;
-  border-radius:12px;
-  display:none;
-  width:540px;
-  height:520px;
-  z-index:1001;
-}
-
-#popupContent {
-  display:flex;
-  gap:20px;
-  height:100%;
-}
-
-#popupRight {
-  width:45%;
-  max-height:320px;
-  overflow-y:auto;
-  border-left:1px solid #ddd;
-  padding-left:15px;
 }
 
 /* FREQUENCY CONTROL */
@@ -247,7 +214,7 @@ footer {
   border-top:1px solid #ddd;
 }
 
-
+/* filters */
 #quickFilters {
   margin: 10px 20px;
   display: flex;
@@ -269,45 +236,10 @@ footer {
   border-color: #333;
 }
 
+/* ==========================
+   POPUP — CLEAN VERSION
+   ========================== */
 
-/* Modern Popup Buttons */
-.popupBtn {
-  padding: 8px 18px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: 0.2s ease;
-}
-
-#saveBtn {
-  background: #4CAF50;
-  color: white;
-}
-
-#saveBtn:hover {
-  background: #43a047;
-}
-
-#cancelBtn {
-  background: #e0e0e0;
-  color: #333;
-  margin-right: 10px;
-}
-
-#cancelBtn:hover {
-  background: #d5d5d5;
-}
-#popupButtons {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  display: flex;
-  gap: 10px;
-}
-
-/* ----- POPUP CONTAINER ----- */
 #popup {
     background: white;
     width: 70%;
@@ -321,9 +253,10 @@ footer {
     z-index: 1001;
     max-height: 90vh;
     overflow-y: auto;
+    display: none;
 }
 
-/* ----- CONTENT LAYOUT (Desktop) ----- */
+/* Desktop layout */
 #popupContent {
     display: flex;
     gap: 20px;
@@ -339,9 +272,11 @@ footer {
     width: 55%;
     border-left: 1px solid #e0e0e0;
     padding-left: 15px;
+    max-height: 350px;
+    overflow-y: auto;
 }
 
-/* Textarea fix */
+/* Textarea */
 #entryText {
     width: 100%;
     height: 180px;
@@ -352,9 +287,9 @@ footer {
 
 /* Buttons */
 #popupButtons {
+    margin-top: 10px;
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
 }
 
 .popupBtn {
@@ -364,26 +299,24 @@ footer {
     cursor: pointer;
 }
 
-/* History Box */
+/* History */
 #historyBox {
     max-height: 300px;
     overflow-y: auto;
     padding-right: 10px;
 }
 
-
-/* --- Mobile popup optimization --- */
+/* ==========================
+   MOBILE RESPONSIVE
+   ========================== */
 @media (max-width: 768px) {
+
     #popup {
-        width: 90% !important;
-        height: auto !important;
+        width: 92% !important;
         max-height: 85vh !important;
         padding: 15px !important;
-        left: 50% !important;
-        top: 5% !important;
-        transform: translateX(-50%) !important;
         border-radius: 16px;
-        overflow-y: auto;
+        overflow-y: auto !important;
         display: flex;
         flex-direction: column;
     }
@@ -397,12 +330,13 @@ footer {
     #popupLeft,
     #popupRight {
         width: 100% !important;
-        height: auto !important;
+        border: none !important;
+        padding: 0 !important;
+        max-height: unset !important;
     }
 
     #historyBox {
         max-height: 200px;
-        overflow-y: auto;
         border: 1px solid #ddd;
         padding: 8px;
         border-radius: 8px;
@@ -410,24 +344,18 @@ footer {
     }
 
     #entryText {
-        width: 100%;
-        height: 120px !important;
+        height: 140px !important;
     }
 
     #popupButtons {
-        display: flex !important;
-        justify-content: space-between;
-        width: 100%;
-        margin-top: 10px;
         position: sticky;
         bottom: 0;
         background: white;
-        padding: 10px 0;
+        padding: 10px 0 5px 0;
     }
 
     .popupBtn {
         width: 48% !important;
-        padding: 12px !important;
         font-size: 16px !important;
     }
 }
