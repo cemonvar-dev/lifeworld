@@ -416,7 +416,7 @@ function refreshNextOccurrences() {
 
 		// If no nextOccurrence yet → compute initial one
 		if (!t.nextOccurrence) {
-			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today);
+			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
 			continue;
 		}
 
