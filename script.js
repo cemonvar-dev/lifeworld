@@ -104,6 +104,7 @@ async function loadWorldFromCloud() {
 		}
 	}
 	debugger;
+	refreshNextOccurrences();
 	renderTiles();
 }
 
@@ -548,9 +549,6 @@ $(document).ready(function() {
 	
 	checkAuth();
 	
-	debugger;
-	refreshNextOccurrences();
-	renderTiles();
 
 	
 	saveWorld();
