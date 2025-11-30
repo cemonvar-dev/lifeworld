@@ -182,7 +182,7 @@ function renderTiles() {
 			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileFreq">${freqText}</div>
-			<div class="tileLast">${t.lastUpdateText || ""}</div>
+			<div class="tileLast">${lastUpdateText || ""}</div>
 		  </div>
 		`);
 
