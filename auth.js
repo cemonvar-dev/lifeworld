@@ -5,20 +5,20 @@
     if (data.user) {
       currentUser = data.user;
       $("#userInfo").text(`Logged in as ${currentUser.email}`);
-      $("#loginBtn").hide();
-      $("#logoutBtn").show();
+      $("#menuLoginBtn").hide();
+      $("#menuLogoutBtn").show();
       await loadWorldFromCloud();
     } else {
       currentUser = null;
       $("#userInfo").text("Not logged in (using local storage)");
-      $("#loginBtn").show();
-      $("#logoutBtn").hide();
+      $("#menuLoginBtn").show();
+      $("#menuLogoutBtn").hide();
       loadWorldFromLocal();
       renderTiles();
     }
   }
 
-  $("#loginBtn").on("click", async () => {
+  $("#menuLoginBtn").on("click", async () => {
     const { error } = await supa.auth.signInWithOAuth({
       provider: "google"
     });
@@ -28,7 +28,7 @@
     }
   });
 
-  $("#logoutBtn").on("click", async () => {
+  $("#menuLogoutBtn").on("click", async () => {
     await supa.auth.signOut();
     currentUser = null;
     loadWorldFromLocal();
