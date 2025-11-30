@@ -420,6 +420,13 @@ function refreshNextOccurrences() {
 			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
 			continue;
 		}
+		else if(t.nextOccurrence=="NaN-NaN-NaN")
+		{
+			t.nextOccurrence=null;
+			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
+			continue;
+		}
+		
 
 		let next = new Date(t.nextOccurrence);
 
