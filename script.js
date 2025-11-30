@@ -9,16 +9,27 @@ let currentUser = null;
 let tiles = {};
 let activeIndex = null;
 
+
+
 // ----- Utils -----
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+
 function initEmptyTiles() {
   tiles = {};
   for (let i = 0; i < TILE_COUNT; i++) {
     tiles[i] = {
-      name: "",
-      logs: [],
-      lastUpdate: null,
-      frequency: { mode: "daily", days: [] }   // NEW
-    };
+		name: "",
+		logs: [],
+		lastUpdate: null,
+		nextOccurrence: null,
+		frequency: { mode: "daily", days: [] }
+	};
+
   }
 }
 
@@ -35,6 +46,7 @@ if (Object.keys(tiles).length < TILE_COUNT) {
             name: "",
             logs: [],
             lastUpdate: null,
+			nextOccurrence:null,
             frequency: { mode: "daily", days: [] }
         };
     }
@@ -80,6 +92,7 @@ function saveWorldToLocal() {
             name: "",
             logs: [],
             lastUpdate: null,
+			nextOccurrence:null,
             frequency: { mode: "daily", days: [] }
         };
     }
@@ -155,7 +168,8 @@ function saveWorldToLocal() {
 }
 
     const freqText = formatFrequency(t.frequency);
-    const nextText = computeNextOccurrence(t.frequency);
+	const nextText = computeNextOccurrenceDisplay(t);
+
 
    $("#grid").append(`    
   <div class="tile" data-index="${i}">
@@ -192,7 +206,8 @@ $(document).on("click", ".qfBtn", function() {
   $(".tile").each(function() {
     let index = $(this).data("index");
     let freq = tiles[index].frequency;
-    let days = nextOccurrenceDays(freq);
+	let days = nextOccurrenceDays(tiles[index]);
+
 
     if (filter === "all") {
       $(this).show();
@@ -218,17 +233,20 @@ $(document).on("click", ".qfBtn", function() {
 
 
 function formatFrequency(freq) {
-  if (!freq) 
-  {
-	  freq= {mode:"",days:[]};
-  }
-  
-  if (freq.mode === "daily") return "Daily";
-  if (freq.mode === "weekly") return "Weekly";
+  if (!freq) freq = { mode:"", days:[] };
 
-  if (freq.mode === "custom") {
-    if (!freq.days || freq.days.length === 0) return "Custom";
-    return "Every " + freq.days.join(" & ");
+  switch (freq.mode) {
+    case "daily": return "Daily";
+    case "weekly": return "Weekly";
+    case "biweekly": return "Every 2 Weeks";
+    case "triweekly": return "Every 3 Weeks";
+    case "monthly": return "Monthly";
+    case "2months": return "Every 2 Months";
+    case "3months": return "Every 3 Months";
+    case "6months": return "Every 6 Months";
+    case "custom":
+      if (!freq.days || freq.days.length === 0) return "Custom";
+      return "Every " + freq.days.join(" & ");
   }
 
   return "";
@@ -366,21 +384,27 @@ $("#saveBtn").on("click", function() {
 
   let txt  = $("#entryText").val().trim();
   if (txt.length > 0) tiles[activeIndex].logs.push(txt);
+ 
+let now = new Date().toISOString();
+tiles[activeIndex].lastUpdate = now;
 
-  let now = new Date().toLocaleString();
-  tiles[activeIndex].lastUpdate = now;
+// ==== SAVE FREQUENCY FIRST ====
+let mode = $("input[name='freqMode']:checked").val();
+let days = [];
 
-  // ==== SAVE FREQUENCY ====
-  let mode = $("input[name='freqMode']:checked").val();
-  let days = [];
+if (mode === "custom") {
+  $(".dayBtn.active").each(function() {
+    days.push($(this).data("day"));
+  });
+}
 
-  if (mode === "custom") {
-    $(".dayBtn.active").each(function() {
-      days.push($(this).data("day"));
-    });
-  }
+tiles[activeIndex].frequency = { mode, days };
 
-  tiles[activeIndex].frequency = { mode, days };
+// ==== THEN CALCULATE NEXT OCCURRENCE ====
+tiles[activeIndex].nextOccurrence = calculateNextOccurrence(
+  tiles[activeIndex].frequency,
+  now
+).toISOString().split("T")[0];
 
   saveWorld();
   renderTiles();
@@ -503,91 +527,87 @@ $(document).on("mousedown", function (e) {
   $("#cancelBtn").click();
 });
 
+//new
+function calculateNextOccurrence(freq, lastUpdateDate) {
+  const baseDate = lastUpdateDate ? new Date(lastUpdateDate) : new Date();
+  let mode = freq.mode;
 
-function computeNextOccurrence(freq) {
-  const today = new Date();
-  const todayIndex = today.getDay(); // Sun=0 ... Sat=6
+  switch (mode) {
+    case "daily":
+      return addDays(baseDate, 1);
 
-  const map = {
-    "Mon": 1,
-    "Tue": 2,
-    "Wed": 3,
-    "Thu": 4,
-    "Fri": 5,
-    "Sat": 6,
-    "Sun": 0
-  };
-  
-  if (!freq) 
-  {
-	  freq= {mode:"",days:[]};
-  } 
-  
+    case "weekly":
+      return addDays(baseDate, 7);
 
-  if (freq.mode === "daily") {
-    return "today";
+    case "biweekly":
+      return addDays(baseDate, 14);
+
+    case "triweekly":
+      return addDays(baseDate, 21);
+
+    case "monthly":
+      return addDays(baseDate, 30);
+
+    case "2months":
+      return addDays(baseDate, 60);
+
+    case "3months":
+      return addDays(baseDate, 90);
+
+    case "6months":
+      return addDays(baseDate, 180);
+
+    case "custom":
+      return nextCustomWeekday(freq.days);
+
+    default:
+      return null;
   }
-
-  if (freq.mode === "weekly") {
-    return "in 7 days";
-  }
-
-  if (freq.mode === "custom" && freq.days.length > 0) {
-    let minDiff = 999;
-
-    freq.days.forEach(d => {
-      let target = map[d];
-      let diff = (target - todayIndex + 7) % 7;
-      if (diff === 0) 
-	  {
-		  //do nothing, 0 means today.
-	  }
-      if (diff < minDiff) minDiff = diff;
-    });
-
-    if (minDiff === 1) return "tomorrow";
-    if (minDiff === 0) return "today";
-    return `${minDiff} days later`;
-  }
-
-  return "";
 }
 
-function nextOccurrenceDays(freq) {
-  // same logic as computeNextOccurrence but returns the raw day count
+
+function nextCustomWeekday(daysArray) {
+  if (!daysArray || daysArray.length === 0) return null;
+
+  const map = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+
   const today = new Date();
   const todayIndex = today.getDay();
 
-  const map = {
-    "Mon": 1,
-    "Tue": 2,
-    "Wed": 3,
-    "Thu": 4,
-    "Fri": 5,
-    "Sat": 6,
-    "Sun": 0
-  };
+  let minDiff = 999;
 
-  if (!freq) return 999;
+  daysArray.forEach(d => {
+    const target = map[d];
+    const diff = (target - todayIndex + 7) % 7;
+    if (diff < minDiff) minDiff = diff;
+  });
 
-  if (freq.mode === "daily") return 0;
-  if (freq.mode === "weekly") return 7;
-
-  if (freq.mode === "custom" && freq.days.length > 0) {
-    let minDiff = 999;
-
-    freq.days.forEach(d => {
-      let target = map[d];
-      let diff = (target - todayIndex + 7) % 7;
-      if (diff === 0) 
-	  {
-		  //do nothing, 0 means today.
-	  }
-      if (diff < minDiff) minDiff = diff;
-    });
-
-    return minDiff;
-  }
-
-  return 999;
+  return addDays(today, minDiff);
 }
+
+
+//old
+function computeNextOccurrenceDisplay(tile) {
+  if (!tile.nextOccurrence) return "";
+
+  const today = new Date();
+  const next = new Date(tile.nextOccurrence);
+
+  const diff = Math.round((next - today) / (1000*60*60*24));
+
+  if (diff === 0) return "today";
+  if (diff === 1) return "tomorrow";
+  if (diff > 1) return `in ${diff} days`;
+  if (diff < 0) return `${Math.abs(diff)} days overdue`;
+}
+
+
+function nextOccurrenceDays(tile) {
+  if (!tile.nextOccurrence) return 999;
+
+  const today = new Date();
+  const next = new Date(tile.nextOccurrence);
+
+  return Math.round((next - today) / (1000*60*60*24));
+}
+
