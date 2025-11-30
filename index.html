@@ -1,106 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=10, user-scalable=yes">
-
-
-  <title>LifeWorld Grid</title>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
-  <link rel="stylesheet" href="styling.css">
-  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
-</head>
-
-<body>
-
-<header id="topHeader">
- <div class="left" style="display:flex; align-items:center; gap:10px;">
-    <img src="logo.png" alt="LifeWorld Logo" style="height:32px;">
-    <span class="logo">LifeWorld</span>
- </div>
-
-
-  <div class="right">
-    <div id="profileWrapper">
-      <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
-      <div id="profileMenu">
-        <div id="profileEmail"></div>
-        <button id="menuLoginBtn">Login</button>
-        <button id="menuLogoutBtn">Logout</button>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=10, user-scalable=yes">
+    <title>LifeWorld Grid</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="styling.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+  </head>
+  <body>
+    <header id="topHeader">
+      <div class="left" style="display:flex; align-items:center; gap:10px;">
+        <img src="logo.png" alt="LifeWorld Logo" style="height:32px;">
+        <span class="logo">LifeWorld</span>
+      </div>
+      <div class="right">
+        <div id="profileWrapper">
+          <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
+          <div id="profileMenu">
+            <div id="profileEmail"></div>
+            <button id="menuLoginBtn">Login</button>
+            <button id="menuLogoutBtn">Logout</button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <input type="text" id="searchBox" placeholder="what's happening?" style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
+    <div id="quickFilters">
+      <button class="qfBtn" data-filter="today">Today</button>
+      <button class="qfBtn" data-filter="tomorrow">Tomorrow</button>
+      <button class="qfBtn" data-filter="2">2 Days</button>
+      <button class="qfBtn" data-filter="3plus">3+ Days</button>
+      <button class="qfBtn" data-filter="all">All</button>
+    </div>
+    <div id="grid"></div>
+    <div id="overlay"></div>
+    <div id="popup">
+      <h3 id="tileTitle" contenteditable="true" class="editableTitle"></h3>
+      <!-- NEW FREQUENCY CONTROL -->
+      <div id="frequencyControl">
+        <label>Frequency</label>
+        <div id="freqOptions">
+          <label>
+            <input type="radio" name="freqMode" value="daily"> Daily </label>
+          <label>
+            <input type="radio" name="freqMode" value="weekly"> Weekly </label>
+          <label>
+            <input type="radio" name="freqMode" value="biweekly"> Every 2 Weeks </label>
+          <label>
+            <input type="radio" name="freqMode" value="triweekly"> Every 3 Weeks </label>
+          <label>
+            <input type="radio" name="freqMode" value="monthly"> Monthly </label>
+          <label>
+            <input type="radio" name="freqMode" value="2months"> Every 2 Months </label>
+          <label>
+            <input type="radio" name="freqMode" value="3months"> Every 3 Months </label>
+          <label>
+            <input type="radio" name="freqMode" value="6months"> Every 6 Months </label>
+          <label>
+            <input type="radio" name="freqMode" value="custom"> Custom Days </label>
+        </div>
+        <div id="customDays" style="margin-top:6px; display:none;">
+          <button class="dayBtn" data-day="Mon">Mon</button>
+          <button class="dayBtn" data-day="Tue">Tue</button>
+          <button class="dayBtn" data-day="Wed">Wed</button>
+          <button class="dayBtn" data-day="Thu">Thu</button>
+          <button class="dayBtn" data-day="Fri">Fri</button>
+          <button class="dayBtn" data-day="Sat">Sat</button>
+          <button class="dayBtn" data-day="Sun">Sun</button>
+        </div>
+      </div>
+      <div id="popupContent">
+        <div id="popupLeft" height="75%">
+          <textarea id="entryText" rows="4" style="height:70%"></textarea>
+          <div id="popupButtons">
+            <button id="cancelBtn" class="popupBtn">Cancel</button>
+            <button id="saveBtn" class="popupBtn">Save</button>
+          </div>
+        </div>
+        <div id="popupRight">
+          <div id="historyBox" style="height:90%"></div>
+        </div>
       </div>
     </div>
-  </div>
-</header>
-
-<input type="text" id="searchBox" placeholder="what's happening?"
-       style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
-<div id="quickFilters">
-  <button class="qfBtn" data-filter="today">Today</button>
-  <button class="qfBtn" data-filter="tomorrow">Tomorrow</button>
-  <button class="qfBtn" data-filter="2">2 Days</button>
-  <button class="qfBtn" data-filter="3plus">3+ Days</button>
-  <button class="qfBtn" data-filter="all">All</button>
-</div>
-
-<div id="grid"></div>
-
-<div id="overlay"></div>
-
-<div id="popup">
-  <h3 id="tileTitle" contenteditable="true" class="editableTitle"></h3>
-
-  <!-- NEW FREQUENCY CONTROL -->
-  <div id="frequencyControl">
-    <label>Frequency</label>
-
-    <div id="freqOptions">
-  <label><input type="radio" name="freqMode" value="daily"> Daily</label>
-  <label><input type="radio" name="freqMode" value="weekly"> Weekly</label>
-  <label><input type="radio" name="freqMode" value="biweekly"> Every 2 Weeks</label>
-  <label><input type="radio" name="freqMode" value="triweekly"> Every 3 Weeks</label>
-  <label><input type="radio" name="freqMode" value="monthly"> Monthly</label>
-  <label><input type="radio" name="freqMode" value="2months"> Every 2 Months</label>
-  <label><input type="radio" name="freqMode" value="3months"> Every 3 Months</label>
-  <label><input type="radio" name="freqMode" value="6months"> Every 6 Months</label>
-
-  <label><input type="radio" name="freqMode" value="custom"> Custom Days</label>
-</div>
-
-
-    <div id="customDays" style="margin-top:6px; display:none;">
-      <button class="dayBtn" data-day="Mon">Mon</button>
-      <button class="dayBtn" data-day="Tue">Tue</button>
-      <button class="dayBtn" data-day="Wed">Wed</button>
-      <button class="dayBtn" data-day="Thu">Thu</button>
-      <button class="dayBtn" data-day="Fri">Fri</button>
-      <button class="dayBtn" data-day="Sat">Sat</button>
-      <button class="dayBtn" data-day="Sun">Sun</button>
-    </div>
-  </div>
-
-  <div id="popupContent">
-    <div id="popupLeft" height="75%">
-      <textarea id="entryText" rows="4" style="height:70%"></textarea>
-   <div id="popupButtons">
-  <button id="cancelBtn" class="popupBtn">Cancel</button>
-  <button id="saveBtn" class="popupBtn">Save</button>
-</div>
-
-    </div>
-
-    <div id="popupRight">
-      <div id="historyBox" style="height:90%"></div>
-    </div>
-  </div>
-</div>
-
-<footer>
-  Lifeworld v0.3 — built with ❤️
-</footer>
-
-<script src="script.js"></script>
-</body>
+    <footer> Lifeworld v0.3 — built with ❤️ </footer>
+    <script src="supa.js"></script>
+    <script src="auth.js"></script>
+    <script src="util.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>

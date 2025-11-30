@@ -1,177 +1,176 @@
-// ===== Supabase config =====
-const SUPABASE_URL = "https://baswgycuhblyppvvdpay.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhc3dneWN1aGJseXBwdnZkcGF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MjEwMjEsImV4cCI6MjA3OTQ5NzAyMX0.ca23kyoMFHDcTvYRGEd8Dh32Y_3AoHj22-OFVxJZTMY";
-
-const supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 const TILE_COUNT = 128;
 let currentUser = null;
 let tiles = {};
 let activeIndex = null;
 
 
-
-// ----- Utils -----
-function addDays(date, days) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-
 function initEmptyTiles() {
-  tiles = {};
-  for (let i = 0; i < TILE_COUNT; i++) {
-    tiles[i] = {
-		name: "",
-		logs: [],
-		lastUpdate: null,
-		nextOccurrence: null,
-		frequency: { mode: "daily", days: [] }
-	};
+	tiles = {};
+	for (let i = 0; i < TILE_COUNT; i++) {
+		tiles[i] = {
+			name: "",
+			logs: [],
+			lastUpdate: null,
+			nextOccurrence: null,
+			frequency: {
+				mode: "daily",
+				days: []
+			}
+		};
 
-  }
+	}
 }
 
+/* local storage functions */
 function loadWorldFromLocal() {
-  const stored = localStorage.getItem("lifeworld");
-  if (stored) {
-    try {
-      tiles = JSON.parse(stored);
+	const stored = localStorage.getItem("lifeworld");
+	if (stored) {
+		try {
+			tiles = JSON.parse(stored);
 
-     // ensure older users get expanded tiles
-if (Object.keys(tiles).length < TILE_COUNT) {
-    for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
-        tiles[i] = {
-            name: "",
-            logs: [],
-            lastUpdate: null,
-			nextOccurrence:null,
-            frequency: { mode: "daily", days: [] }
-        };
-    }
-}
+			// ensure older users get expanded tiles
+			if (Object.keys(tiles).length < TILE_COUNT) {
+				for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
+					tiles[i] = {
+						name: "",
+						logs: [],
+						lastUpdate: null,
+						nextOccurrence: null,
+						frequency: {
+							mode: "daily",
+							days: []
+						}
+					};
+				}
+			}
 
 
-    } catch {
-      initEmptyTiles();
-    }
-  } else {
-    initEmptyTiles();
-  }
+		} catch {
+			initEmptyTiles();
+		}
+	} else {
+		initEmptyTiles();
+	}
 }
 
 function saveWorldToLocal() {
-  localStorage.setItem("lifeworld", JSON.stringify(tiles));
+	localStorage.setItem("lifeworld", JSON.stringify(tiles));
 }
 
+/* cloud functions */
+async function loadWorldFromCloud() {
+	if (!currentUser) return;
 
-  async function loadWorldFromCloud() {
-    if (!currentUser) return;
+	const {
+		data,
+		error
+	} = await supa
+		.from("worlds")
+		.select("data")
+		.eq("user_id", currentUser.id)
+		.single();
 
-    const { data, error } = await supa
-      .from("worlds")
-      .select("data")
-      .eq("user_id", currentUser.id)
-      .single();
+	if (error && error.code !== "PGRST116") {
+		console.error("Cloud load error:", error);
+		// fallback
+		initEmptyTiles();
+	} else if (!data) {
+		// first time user
+		initEmptyTiles();
+		await saveWorldToCloud();
+	} else {
+		tiles = data.data;
 
-    if (error && error.code !== "PGRST116") {
-      console.error("Cloud load error:", error);
-      // fallback
-      initEmptyTiles();
-    } else if (!data) {
-      // first time user
-      initEmptyTiles();
-      await saveWorldToCloud();
-    } else {
-      tiles = data.data;
-	  
-	  if (Object.keys(tiles).length < TILE_COUNT) {
-    for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
-        tiles[i] = {
-            name: "",
-            logs: [],
-            lastUpdate: null,
-			nextOccurrence:null,
-            frequency: { mode: "daily", days: [] }
-        };
-    }
-	
-    await saveWorldToCloud();
-}
+		if (Object.keys(tiles).length < TILE_COUNT) {
+			for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
+				tiles[i] = {
+					name: "",
+					logs: [],
+					lastUpdate: null,
+					nextOccurrence: null,
+					frequency: {
+						mode: "daily",
+						days: []
+					}
+				};
+			}
 
-      // if something off, ensure structure
-      if (!tiles || typeof tiles !== "object") {
-        initEmptyTiles();
-      }
-    }
-    renderTiles();
-  }
+			await saveWorldToCloud();
+		}
 
-  async function saveWorldToCloud() {
-    if (!currentUser) return;
-    const { error } = await supa
-      .from("worlds")
-      .upsert(
-        { user_id: currentUser.id, data: tiles },
-        { onConflict: "user_id" }
-      );
-
-    if (error) {
-      console.error("Cloud save error:", error);
-    }
-  }
-
-  function saveWorld() {
-    if (currentUser) {
-      saveWorldToCloud();
-    } else {
-      saveWorldToLocal();
-    }
-  }
-
-  // ---- Tile rendering & coloring ----
-  function updateTileColor(i) {
-    let count = tiles[i].logs.length;
-    let $tile = $(`.tile[data-index='${i}']`);
-
-    if (count === 0) {
-	  $tile.css("background", "#F5F5F0");   // same pale gray as default
+		// if something off, ensure structure
+		if (!tiles || typeof tiles !== "object") {
+			initEmptyTiles();
+		}
 	}
-    else if (count >= 1 && count <= 3) {
-      $tile.css("background", "#F5CBCB"); // pastel pink
-    }
-    else if (count >= 4 && count <= 8) {
-      $tile.css("background", "#c7f7c0"); // soft green
-    }
-    else if (count >= 9 && count <= 15) {
-      $tile.css("background", "#b6d9ff"); // soft blue
-    }
-    else if (count > 15) {
-      $tile.css("background", "linear-gradient(135deg, #ff9a9e, #fad0c4)");
-    }
-  }
+	renderTiles();
+}
 
- function renderTiles() {
-  $("#grid").empty();
+async function saveWorldToCloud() {
+	if (!currentUser) return;
+	const {
+		error
+	} = await supa
+		.from("worlds")
+		.upsert({
+			user_id: currentUser.id,
+			data: tiles
+		}, {
+			onConflict: "user_id"
+		});
 
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const t = tiles[i];
+	if (error) {
+		console.error("Cloud save error:", error);
+	}
+}
 
-  if (!t.name && t.logs.length === 0) {
-    $("#grid").append(`
+
+function saveWorld() {
+	if (currentUser) {
+		saveWorldToCloud();
+	} else {
+		saveWorldToLocal();
+	}
+}
+
+// ---- Tile rendering & coloring ----
+function updateTileColor(i) {
+	let count = tiles[i].logs.length;
+	let $tile = $(`.tile[data-index='${i}']`);
+
+	if (count === 0) {
+		$tile.css("background", "#F5F5F0"); // same pale gray as default
+	} else if (count >= 1 && count <= 3) {
+		$tile.css("background", "#F5CBCB"); // pastel pink
+	} else if (count >= 4 && count <= 8) {
+		$tile.css("background", "#c7f7c0"); // soft green
+	} else if (count >= 9 && count <= 15) {
+		$tile.css("background", "#b6d9ff"); // soft blue
+	} else if (count > 15) {
+		$tile.css("background", "linear-gradient(135deg, #ff9a9e, #fad0c4)");
+	}
+}
+
+function renderTiles() {
+	$("#grid").empty();
+
+	for (let i = 0; i < TILE_COUNT; i++) {
+		const t = tiles[i];
+
+		if (!t.name && t.logs.length === 0) {
+			$("#grid").append(`
         <div class="tile empty" data-index="${i}">
             <div class="plusIcon">+</div>
         </div>
     `);
-    continue;
-}
+			continue;
+		}
 
-    const freqText = formatFrequency(t.frequency);
-	const nextText = computeNextOccurrenceDisplay(t);
+		const freqText = formatFrequency(t.frequency);
+		const nextText = computeNextOccurrenceDisplay(t);
 
 
-   $("#grid").append(`    
+		$("#grid").append(`    
   <div class="tile" data-index="${i}">
     
     <div class="tileTop">
@@ -189,473 +188,453 @@ function saveWorldToLocal() {
   </div>
 `);
 
-    updateTileColor(i);
-  }
+		updateTileColor(i);
+	}
 
-  initDragAndDrop();
-  applySearchFilter();
+	initDragAndDrop();
+	applySearchFilter();
 }
 
-
-$(document).on("click", ".qfBtn", function() {
-  $(".qfBtn").removeClass("active");
-  $(this).addClass("active");
-
-  const filter = $(this).data("filter");
-
-  $(".tile").each(function() {
-    let index = $(this).data("index");
-    let freq = tiles[index].frequency;
-	let days = nextOccurrenceDays(tiles[index]);
-
-
-    if (filter === "all") {
-      $(this).show();
-    }
-    else if (filter === "today" && days === 0) {
-      $(this).show();
-    }
-    else if (filter === "tomorrow" && days === 1) {
-      $(this).show();
-    }
-    else if (filter === "2" && days === 2) {
-      $(this).show();
-    }
-    else if (filter === "3plus" && days >= 3) {
-      $(this).show();
-    }
-    else {
-      $(this).hide();
-    }
-  });
-});
-
-
-
-function formatFrequency(freq) {
-  if (!freq) freq = { mode:"", days:[] };
-
-  switch (freq.mode) {
-    case "daily": return "Daily";
-    case "weekly": return "Weekly";
-    case "biweekly": return "Every 2 Weeks";
-    case "triweekly": return "Every 3 Weeks";
-    case "monthly": return "Monthly";
-    case "2months": return "Every 2 Months";
-    case "3months": return "Every 3 Months";
-    case "6months": return "Every 6 Months";
-    case "custom":
-      if (!freq.days || freq.days.length === 0) return "Custom";
-      return "Every " + freq.days.join(" & ");
-  }
-
-  return "";
-}
-
-
-  function initDragAndDrop() {
+/* drag & drop */
+function initDragAndDrop() {
 	if ('ontouchstart' in window) {
-    // Disable drag on mobile
-    return;
-    }
-	
-    $(".tile").draggable({
-      revert: "invalid",
-      start: function() {
-        $(this).css("z-index", 9999);
-      },
-      stop: function() {
-        $(this).css("z-index", "");
-      }
-    });
+		// Disable drag on mobile
+		return;
+	}
 
-    $(".tile").droppable({
-      drop: function(event, ui) {
-        let from = $(ui.draggable).data("index");
-        let to = $(this).data("index");
-        if (from === to) return;
-        swapTiles(from, to);
-        renderTiles();
-      }
-    });
-  }
+	$(".tile").draggable({
+		revert: "invalid",
+		start: function() {
+			$(this).css("z-index", 9999);
+		},
+		stop: function() {
+			$(this).css("z-index", "");
+		}
+	});
 
-  function swapTiles(a, b) {
-    let temp = tiles[a];
-    tiles[a] = tiles[b];
-    tiles[b] = temp;
-    saveWorld();
-  }
+	$(".tile").droppable({
+		drop: function(event, ui) {
+			let from = $(ui.draggable).data("index");
+			let to = $(this).data("index");
+			if (from === to) return;
+			swapTiles(from, to);
+			renderTiles();
+		}
+	});
+}
 
-  // Update just one tile UI (for future use if needed)
-  function updateTileUI(i) {
-    let t = tiles[i];
-    let tile = $(`.tile[data-index='${i}']`);
-    tile.find(".tileName").text(t.name || "");
-    tile.find(".count").text(t.logs.length);
-    tile.find(".timestamp").text(t.lastUpdate || "");
-    updateTileColor(i);
-  }
+function swapTiles(a, b) {
+	let temp = tiles[a];
+	tiles[a] = tiles[b];
+	tiles[b] = temp;
+	saveWorld();
+}
 
-  // ---- Search ----
-  function applySearchFilter() {
-    let q = $("#searchBox").val().toLowerCase().trim();
-    if (q === "") {
-      $(".tile").show();
-      return;
-    }
-
-    for (let i = 0; i < TILE_COUNT; i++) {
-      let t = tiles[i];
-      let nameMatch = (t.name || "").toLowerCase().includes(q);
-      let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
-      if (nameMatch || logsMatch) {
-        $(`.tile[data-index='${i}']`).show();
-      } else {
-        $(`.tile[data-index='${i}']`).hide();
-      }
-    }
-  }
-
-  $("#searchBox").on("keyup", function() {
-    applySearchFilter();
-  });
-
-
+// Update just one tile UI (for future use if needed)
+function updateTileUI(i) {
+	let t = tiles[i];
+	let tile = $(`.tile[data-index='${i}']`);
+	tile.find(".tileName").text(t.name || "");
+	tile.find(".count").text(t.logs.length);
+	tile.find(".timestamp").text(t.lastUpdate || "");
+	updateTileColor(i);
+}
 
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
-  activeIndex = $(this).data("index");
+	activeIndex = $(this).data("index");
 
-  $("#tileTitle").text(tiles[activeIndex].name || "Tile details");
-  $("#entryText").val("");
+	$("#tileTitle").text(tiles[activeIndex].name || "Tile details");
+	$("#entryText").val("");
 
-  // HISTORY
-  let logs = tiles[activeIndex].logs;
-  if (logs.length > 0) {
-    $("#historyBox").html(
-      logs.map((item) => `
+	// HISTORY
+	let logs = tiles[activeIndex].logs;
+	if (logs.length > 0) {
+		$("#historyBox").html(
+			logs.map((item) => `
         <div class="timelineItem">
           <div class="timelineText">${item}</div>
           <div class="timelineDate">${tiles[activeIndex].lastUpdate || ""}</div>
         </div>
       `).join("")
-    );
-  } else {
-    $("#historyBox").html("<div style='color:#888;'>No history yet</div>");
-  }
+		);
+	} else {
+		$("#historyBox").html("<div style='color:#888;'>No history yet</div>");
+	}
 
-  // ==== LOAD FREQUENCY INTO POPUP ====
-  let freq = tiles[activeIndex].frequency || { mode:"daily", days:[] };
+	// ==== LOAD FREQUENCY INTO POPUP ====
+	let freq = tiles[activeIndex].frequency || {
+		mode: "daily",
+		days: []
+	};
 
-  $(`input[name='freqMode'][value='${freq.mode}']`).prop("checked", true);
+	$(`input[name='freqMode'][value='${freq.mode}']`).prop("checked", true);
 
-  if (freq.mode === "custom") $("#customDays").show();
-  else $("#customDays").hide();
+	if (freq.mode === "custom") $("#customDays").show();
+	else $("#customDays").hide();
 
-  $(".dayBtn").removeClass("active");
-  freq.days.forEach(d => {
-    $(`.dayBtn[data-day='${d}']`).addClass("active");
-  });
+	$(".dayBtn").removeClass("active");
+	freq.days.forEach(d => {
+		$(`.dayBtn[data-day='${d}']`).addClass("active");
+	});
 
-  $("#overlay").show();
-  $("#popup").show();
+	$("#overlay").show();
+	$("#popup").show();
 
-  if (!tiles[activeIndex].name) $("#tileNameInput").focus();
-  else $("#entryText").focus();
+	if (!tiles[activeIndex].name) $("#tileNameInput").focus();
+	else $("#entryText").focus();
 });
 
 // ---- Frequency UI Handlers ----
 $(document).on("change", "input[name='freqMode']", function() {
-  if (this.value === "custom") $("#customDays").show();
-  else $("#customDays").hide();
+	if (this.value === "custom") $("#customDays").show();
+	else $("#customDays").hide();
 });
 
 $(document).on("click", ".dayBtn", function() {
-  $(this).toggleClass("active");
+	$(this).toggleClass("active");
 });
 
 // ---- Save ----
 $("#saveBtn").on("click", function() {
-  if (activeIndex === null) return;
+	if (activeIndex === null) return;
 
-  let name = $("#tileTitle").text().trim();
-  tiles[activeIndex].name = name;
+	let name = $("#tileTitle").text().trim();
+	tiles[activeIndex].name = name;
 
-  let txt  = $("#entryText").val().trim();
-  if (txt.length > 0) tiles[activeIndex].logs.push(txt);
- 
-let now = new Date().toISOString();
-tiles[activeIndex].lastUpdate = now;
+	let txt = $("#entryText").val().trim();
+	if (txt.length > 0) tiles[activeIndex].logs.push(txt);
 
-// ==== SAVE FREQUENCY FIRST ====
-let mode = $("input[name='freqMode']:checked").val();
-let days = [];
+	let now = new Date().toISOString();
+	tiles[activeIndex].lastUpdate = now;
 
-if (mode === "custom") {
-  $(".dayBtn.active").each(function() {
-    days.push($(this).data("day"));
-  });
+	// ==== SAVE FREQUENCY FIRST ====
+	let mode = $("input[name='freqMode']:checked").val();
+	let days = [];
+
+	if (mode === "custom") {
+		$(".dayBtn.active").each(function() {
+			days.push($(this).data("day"));
+		});
+	}
+
+	tiles[activeIndex].frequency = {
+		mode,
+		days
+	};
+
+	// ==== THEN CALCULATE NEXT OCCURRENCE ====
+	tiles[activeIndex].nextOccurrence = calculateNextOccurrence(
+		tiles[activeIndex].frequency,
+		now
+	).toISOString().split("T")[0];
+
+	saveWorld();
+	renderTiles();
+
+	$("#popup").hide();
+	$("#overlay").hide();
+	$("#historyBox").empty();
+});
+
+
+// Update profile UI on auth change
+function updateProfileUI() {
+	if (currentUser) {
+		$("#profileEmail").text(currentUser.email);
+		$("#menuLoginBtn").hide();
+		$("#menuLogoutBtn").show();
+	} else {
+		$("#profileEmail").text("Guest");
+		$("#menuLoginBtn").show();
+		$("#menuLogoutBtn").hide();
+	}
 }
 
-tiles[activeIndex].frequency = { mode, days };
+// Hook into your existing checkAuth()
+const originalCheck = checkAuth;
+checkAuth = async function() {
+	await originalCheck();
+	updateProfileUI();
+};
 
-// ==== THEN CALCULATE NEXT OCCURRENCE ====
-tiles[activeIndex].nextOccurrence = calculateNextOccurrence(
-  tiles[activeIndex].frequency,
-  now
-).toISOString().split("T")[0];
 
-  saveWorld();
-  renderTiles();
+// ---- Search ----
+function applySearchFilter() {
+	let q = $("#searchBox").val().toLowerCase().trim();
+	if (q === "") {
+		$(".tile").show();
+		return;
+	}
 
-  $("#popup").hide();
-  $("#overlay").hide();
-  $("#historyBox").empty();
+	for (let i = 0; i < TILE_COUNT; i++) {
+		let t = tiles[i];
+		let nameMatch = (t.name || "").toLowerCase().includes(q);
+		let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
+		if (nameMatch || logsMatch) {
+			$(`.tile[data-index='${i}']`).show();
+		} else {
+			$(`.tile[data-index='${i}']`).hide();
+		}
+	}
+}
+
+$("#searchBox").on("keyup", function() {
+	applySearchFilter();
+});
+
+
+
+
+/* frequency calculations */
+function formatFrequency(freq) {
+	if (!freq) freq = {
+		mode: "",
+		days: []
+	};
+
+	switch (freq.mode) {
+		case "daily":
+			return "Daily";
+		case "weekly":
+			return "Weekly";
+		case "biweekly":
+			return "Every 2 Weeks";
+		case "triweekly":
+			return "Every 3 Weeks";
+		case "monthly":
+			return "Monthly";
+		case "2months":
+			return "Every 2 Months";
+		case "3months":
+			return "Every 3 Months";
+		case "6months":
+			return "Every 6 Months";
+		case "custom":
+			if (!freq.days || freq.days.length === 0) return "Custom";
+			return "Every " + freq.days.join(" & ");
+	}
+
+	return "";
+}
+
+function calculateNextOccurrence(freq, lastUpdateDate) {
+	const baseDate = lastUpdateDate ? new Date(lastUpdateDate) : new Date();
+	let mode = freq.mode;
+
+	switch (mode) {
+		case "daily":
+			return addDays(baseDate, 1);
+
+		case "weekly":
+			return addDays(baseDate, 7);
+
+		case "biweekly":
+			return addDays(baseDate, 14);
+
+		case "triweekly":
+			return addDays(baseDate, 21);
+
+		case "monthly":
+			return addDays(baseDate, 30);
+
+		case "2months":
+			return addDays(baseDate, 60);
+
+		case "3months":
+			return addDays(baseDate, 90);
+
+		case "6months":
+			return addDays(baseDate, 180);
+
+		case "custom":
+			return nextCustomWeekday(freq.days);
+
+		default:
+			return null;
+	}
+}
+
+function nextCustomWeekday(daysArray) {
+	if (!daysArray || daysArray.length === 0) return null;
+
+	const map = {
+		Sun: 0,
+		Mon: 1,
+		Tue: 2,
+		Wed: 3,
+		Thu: 4,
+		Fri: 5,
+		Sat: 6
+	};
+
+	const today = new Date();
+	const todayIndex = today.getDay();
+
+	let minDiff = 999;
+
+	daysArray.forEach(d => {
+		const target = map[d];
+		const diff = (target - todayIndex + 7) % 7;
+		if (diff < minDiff) minDiff = diff;
+	});
+
+	return addDays(today, minDiff);
+}
+
+
+function refreshNextOccurrences() {
+	const today = new Date();
+
+	for (let i = 0; i < TILE_COUNT; i++) {
+		const t = tiles[i];
+		if (!t || !t.frequency) continue;
+
+		const freq = t.frequency;
+
+		// DAILY always due today
+		if (freq.mode === "daily") {
+			t.nextOccurrence = today.toISOString().split("T")[0];
+			continue;
+		}
+
+		// If no nextOccurrence yet → compute initial one
+		if (!t.nextOccurrence) {
+			t.nextOccurrence = calculateNextOccurrence(freq, t.lastUpdate || today).toISOString().split("T")[0];
+			continue;
+		}
+
+		let next = new Date(t.nextOccurrence);
+
+		// If next >= today → okay
+		if (next >= today) continue;
+
+		// Otherwise roll forward until next >= today
+		while (next < today) {
+			next = calculateNextOccurrence(freq, next);
+		}
+
+		t.nextOccurrence = next.toISOString().split("T")[0];
+	}
+}
+
+function computeNextOccurrenceDisplay(tile) {
+	if (!tile.nextOccurrence) return "";
+
+	const today = new Date();
+	const next = new Date(tile.nextOccurrence);
+
+	const diff = Math.round((next - today) / (1000 * 60 * 60 * 24));
+
+	if (diff === 0) return "today";
+	if (diff === 1) return "tomorrow";
+	if (diff > 1) return `in ${diff} days`;
+	if (diff < 0) return `${Math.abs(diff)} days overdue`;
+}
+
+function nextOccurrenceDays(tile) {
+	const freq = tile.frequency;
+
+	// DAILY ALWAYS DUE TODAY
+	if (freq && freq.mode === "daily") return 0;
+
+	// If no date → do not show
+	if (!tile.nextOccurrence) return 999;
+
+	const today = new Date();
+	const next = new Date(tile.nextOccurrence);
+
+	return Math.round((next - today) / (1000 * 60 * 60 * 24));
+}
+
+
+/* controls */
+
+// Click outside popup closes it
+$(document).on("mousedown", function(e) {
+	const popup = $("#popup");
+
+	// if popup is not visible, do nothing
+	if (!popup.is(":visible")) return;
+
+	// if click is inside popup → ignore
+	if ($(e.target).closest("#popup").length > 0) return;
+
+	// otherwise → behave as cancel
+	$("#cancelBtn").click();
+});
+
+
+// ESC closes popup
+$(document).on("keydown", function(e) {
+	if (e.key === "Escape") {
+		if ($("#popup").is(":visible")) {
+			$("#cancelBtn").click();
+		}
+	}
 });
 
 // ---- Cancel ----
 $("#cancelBtn").on("click", function() {
-  $("#popup").hide();
-  $("#overlay").hide();
-});
-
-
-// ---- Auth ----
-  async function checkAuth() {
-    const { data } = await supa.auth.getUser();
-    if (data.user) {
-      currentUser = data.user;
-      $("#userInfo").text(`Logged in as ${currentUser.email}`);
-      $("#loginBtn").hide();
-      $("#logoutBtn").show();
-      await loadWorldFromCloud();
-    } else {
-      currentUser = null;
-      $("#userInfo").text("Not logged in (using local storage)");
-      $("#loginBtn").show();
-      $("#logoutBtn").hide();
-      loadWorldFromLocal();
-      renderTiles();
-    }
-  }
-
-  $("#loginBtn").on("click", async () => {
-    const { error } = await supa.auth.signInWithOAuth({
-      provider: "google"
-    });
-    if (error) {
-      console.error(error);
-      alert("Login failed");
-    }
-  });
-
-  $("#logoutBtn").on("click", async () => {
-    await supa.auth.signOut();
-    currentUser = null;
-    loadWorldFromLocal();
-    renderTiles();
-    checkAuth();
-  });
-
-  supa.auth.onAuthStateChange((_event, _session) => {
-    checkAuth();
-  });
-
-  // ---- Init ----
-  $(document).ready(function() {
-    checkAuth();
-  
-  renderTiles();
-  
-	  refreshNextOccurrences();
-	  saveWorld();
-  });
-  
-  
-  // PROFILE MENU TOGGLE
-$("#profileIcon").on("click", function () {
-  $("#profileMenu").toggle();
+	$("#popup").hide();
+	$("#overlay").hide();
 });
 
 // Close when clicking outside
-$(document).on("click", function (e) {
-  if (!$(e.target).closest("#profileWrapper").length) {
-    $("#profileMenu").hide();
-  }
+$(document).on("click", function(e) {
+	if (!$(e.target).closest("#profileWrapper").length) {
+		$("#profileMenu").hide();
+	}
 });
 
 // Replace old login/logout buttons
 $("#menuLoginBtn").on("click", () => $("#loginBtn").click());
 $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
-// Update profile UI on auth change
-function updateProfileUI() {
-  if (currentUser) {
-    $("#profileEmail").text(currentUser.email);
-    $("#menuLoginBtn").hide();
-    $("#menuLogoutBtn").show();
-  } else {
-    $("#profileEmail").text("Guest");
-    $("#menuLoginBtn").show();
-    $("#menuLogoutBtn").hide();
-  }
-}
 
-// Hook into your existing checkAuth()
-const originalCheck = checkAuth;
-checkAuth = async function() {
-  await originalCheck();
-  updateProfileUI();
-};
+/* filtering */
+$(document).on("click", ".qfBtn", function() {
+	$(".qfBtn").removeClass("active");
+	$(this).addClass("active");
 
-// ESC closes popup
-$(document).on("keydown", function (e) {
-  if (e.key === "Escape") {
-    if ($("#popup").is(":visible")) {
-      $("#cancelBtn").click();
-    }
-  }
+	const filter = $(this).data("filter");
+
+	$(".tile").each(function() {
+		let index = $(this).data("index");
+		let freq = tiles[index].frequency;
+		let days = nextOccurrenceDays(tiles[index]);
+
+
+		if (filter === "all") {
+			$(this).show();
+		} else if (filter === "today" && days === 0) {
+			$(this).show();
+		} else if (filter === "tomorrow" && days === 1) {
+			$(this).show();
+		} else if (filter === "2" && days === 2) {
+			$(this).show();
+		} else if (filter === "3plus" && days >= 3) {
+			$(this).show();
+		} else {
+			$(this).hide();
+		}
+	});
 });
 
-// Click outside popup closes it
-$(document).on("mousedown", function (e) {
-  const popup = $("#popup");
 
-  // if popup is not visible, do nothing
-  if (!popup.is(":visible")) return;
-
-  // if click is inside popup → ignore
-  if ($(e.target).closest("#popup").length > 0) return;
-
-  // otherwise → behave as cancel
-  $("#cancelBtn").click();
+/* profile menu toggle */
+$("#profileIcon").on("click", function() {
+	$("#profileMenu").toggle();
 });
 
 
 
-//new
-function calculateNextOccurrence(freq, lastUpdateDate) {
-  const baseDate = lastUpdateDate ? new Date(lastUpdateDate) : new Date();
-  let mode = freq.mode;
+/* document ready functions */
+$(document).ready(function() {
+	checkAuth();
 
-  switch (mode) {
-    case "daily":
-      return addDays(baseDate, 1);
+	renderTiles();
 
-    case "weekly":
-      return addDays(baseDate, 7);
-
-    case "biweekly":
-      return addDays(baseDate, 14);
-
-    case "triweekly":
-      return addDays(baseDate, 21);
-
-    case "monthly":
-      return addDays(baseDate, 30);
-
-    case "2months":
-      return addDays(baseDate, 60);
-
-    case "3months":
-      return addDays(baseDate, 90);
-
-    case "6months":
-      return addDays(baseDate, 180);
-
-    case "custom":
-      return nextCustomWeekday(freq.days);
-
-    default:
-      return null;
-  }
-}
-
-
-function nextCustomWeekday(daysArray) {
-  if (!daysArray || daysArray.length === 0) return null;
-
-  const map = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
-
-  const today = new Date();
-  const todayIndex = today.getDay();
-
-  let minDiff = 999;
-
-  daysArray.forEach(d => {
-    const target = map[d];
-    const diff = (target - todayIndex + 7) % 7;
-    if (diff < minDiff) minDiff = diff;
-  });
-
-  return addDays(today, minDiff);
-}
-
-
-function refreshNextOccurrences() {
-  const today = new Date();
-
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const t = tiles[i];
-    if (!t || !t.frequency) continue;
-
-    const freq = t.frequency;
-
-    // DAILY always due today
-    if (freq.mode === "daily") {
-      t.nextOccurrence = today.toISOString().split("T")[0];
-      continue;
-    }
-
-    // If no nextOccurrence yet → compute initial one
-    if (!t.nextOccurrence) {
-      t.nextOccurrence = calculateNextOccurrence(freq, t.lastUpdate || today).toISOString().split("T")[0];
-      continue;
-    }
-
-    let next = new Date(t.nextOccurrence);
-
-    // If next >= today → okay
-    if (next >= today) continue;
-
-    // Otherwise roll forward until next >= today
-    while (next < today) {
-      next = calculateNextOccurrence(freq, next);
-    }
-
-    t.nextOccurrence = next.toISOString().split("T")[0];
-  }
-}
-
-
-//old
-function computeNextOccurrenceDisplay(tile) {
-  if (!tile.nextOccurrence) return "";
-
-  const today = new Date();
-  const next = new Date(tile.nextOccurrence);
-
-  const diff = Math.round((next - today) / (1000*60*60*24));
-
-  if (diff === 0) return "today";
-  if (diff === 1) return "tomorrow";
-  if (diff > 1) return `in ${diff} days`;
-  if (diff < 0) return `${Math.abs(diff)} days overdue`;
-}
-
-function nextOccurrenceDays(tile) {
-  const freq = tile.frequency;
-
-  // DAILY ALWAYS DUE TODAY
-  if (freq && freq.mode === "daily") return 0;
-
-  // If no date → do not show
-  if (!tile.nextOccurrence) return 999;
-
-  const today = new Date();
-  const next = new Date(tile.nextOccurrence);
-
-  return Math.round((next - today) / (1000*60*60*24));
-}
-
+	refreshNextOccurrences();
+	saveWorld();
+});
