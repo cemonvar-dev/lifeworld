@@ -166,7 +166,7 @@ function renderTiles() {
 			`);
 			continue;
 		}
-
+	
 		const freqText = formatFrequency(t.frequency);
 		const nextText = computeNextOccurrenceDisplay(t);
 
@@ -545,11 +545,14 @@ $("#profileIcon").on("click", function() {
 
 /* document ready functions */
 $(document).ready(function() {
+	
 	checkAuth();
-
+	
+	debugger;
+	refreshNextOccurrences();
 	renderTiles();
 
-	refreshNextOccurrences();
+	
 	saveWorld();
 });
 
