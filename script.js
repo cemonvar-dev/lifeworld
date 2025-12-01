@@ -46,13 +46,7 @@ function loadWorldFromLocal() {
 				}
 			}
 			
-			for (let i = 0; i < TILE_COUNT; i++) {
-    tiles[i].logs = tiles[i].logs.map(l =>
-        typeof l === "string"
-            ? { text: l, date: tiles[i].lastUpdate || formatDate(new Date()) }
-            : l
-    );
-}
+for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
 
 
 
@@ -110,14 +104,8 @@ async function loadWorldFromCloud() {
 			}
 
 
+for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
 
-for (let i = 0; i < TILE_COUNT; i++) {
-    tiles[i].logs = tiles[i].logs.map(l =>
-        typeof l === "string"
-            ? { text: l, date: tiles[i].lastUpdate || formatDate(new Date()) }
-            : l
-    );
-}
 
 			await saveWorldToCloud();
 		}
@@ -182,6 +170,7 @@ function renderTiles() {
 
 	for (let i = 0; i < TILE_COUNT; i++) {
 		const t = tiles[i];
+		normalizeTile(i);
 
 		if (!t.name && t.logs.length === 0) {
 			$("#grid").append(`
@@ -238,7 +227,9 @@ $(document).on("click", ".tile", function() {
 	$("#doneCheckbox").prop("checked", tiles[activeIndex].done === true);
 
 	// HISTORY
+	normalizeTile(activeIndex);
 	let logs = tiles[activeIndex].logs;
+
 	if (logs.length > 0) {
 		$("#historyBox").html(
 		logs.map((log) => `
@@ -640,6 +631,27 @@ function swapTiles(a, b) {
 	tiles[b] = temp;
 	saveWorld();
 }
+
+function normalizeTile(i) {
+    if (!tiles[i].logs) tiles[i].logs = [];
+
+    tiles[i].logs = tiles[i].logs.map(l => {
+        if (typeof l === "string") {
+            return {
+                text: l,
+                date: tiles[i].lastUpdate || formatDate(new Date())
+            };
+        }
+        if (typeof l === "object" && (!l.text || !l.date)) {
+            return {
+                text: l.text || "",
+                date: l.date || formatDate(new Date())
+            };
+        }
+        return l;
+    });
+}
+
 
 
 // ---- Search ----
