@@ -262,7 +262,7 @@ $(document).on("click", ".tile", function() {
 
 	$("#overlay").show();
 	$("#popup").css({ display: "block", opacity: 1, "pointer-events": "auto" });
-	$("#popup").show();
+
 
 	if (!tiles[activeIndex].name) $("#tileNameInput").focus();
 	else $("#entryText").focus();
