@@ -45,6 +45,15 @@ function loadWorldFromLocal() {
 					};
 				}
 			}
+			
+			for (let i = 0; i < TILE_COUNT; i++) {
+    tiles[i].logs = tiles[i].logs.map(l =>
+        typeof l === "string"
+            ? { text: l, date: tiles[i].lastUpdate || formatDate(new Date()) }
+            : l
+    );
+}
+
 
 
 		} catch {
@@ -83,6 +92,7 @@ async function loadWorldFromCloud() {
 	} else {
 		tiles = data.data;
 
+
 		if (Object.keys(tiles).length < TILE_COUNT) {
 			for (let i = Object.keys(tiles).length; i < TILE_COUNT; i++) {
 				tiles[i] = {
@@ -98,6 +108,16 @@ async function loadWorldFromCloud() {
 				};
 
 			}
+
+
+
+for (let i = 0; i < TILE_COUNT; i++) {
+    tiles[i].logs = tiles[i].logs.map(l =>
+        typeof l === "string"
+            ? { text: l, date: tiles[i].lastUpdate || formatDate(new Date()) }
+            : l
+    );
+}
 
 			await saveWorldToCloud();
 		}
@@ -221,13 +241,14 @@ $(document).on("click", ".tile", function() {
 	let logs = tiles[activeIndex].logs;
 	if (logs.length > 0) {
 		$("#historyBox").html(
-			logs.map((item) => `
-        <div class="timelineItem">
-          <div class="timelineText">${item}</div>
-          <div class="timelineDate">${tiles[activeIndex].lastUpdate || ""}</div>
-        </div>
-      `).join("")
-		);
+		logs.map((log) => `
+			<div class="timelineItem">
+				<div class="timelineText">${log.text}</div>
+				<div class="timelineDate">${log.date}</div>
+			</div>
+		`).join("")
+	);
+
 	} else {
 		$("#historyBox").html("<div style='color:#888;'>No history yet</div>");
 	}
@@ -273,7 +294,13 @@ $("#saveBtn").on("click", function() {
 	tiles[activeIndex].name = name;
 
 	let txt = $("#entryText").val().trim();
-	if (txt.length > 0) tiles[activeIndex].logs.push(txt);
+	if (txt.length > 0) 
+	{
+		tiles[activeIndex].logs.push({
+		text: txt,
+		date: formatDate(new Date())
+		});
+	}
 
 	let now = new Date();
 	tiles[activeIndex].lastUpdate = formatDate(now);
@@ -626,7 +653,8 @@ function applySearchFilter() {
 	for (let i = 0; i < TILE_COUNT; i++) {
 		let t = tiles[i];
 		let nameMatch = (t.name || "").toLowerCase().includes(q);
-		let logsMatch = t.logs.some(log => log.toLowerCase().includes(q));
+		let logsMatch = t.logs.some(log => log.text.toLowerCase().includes(q));
+
 		if (nameMatch || logsMatch) {
 			$(`.tile[data-index='${i}']`).show();
 		} else {
