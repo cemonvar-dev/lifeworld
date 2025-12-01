@@ -312,16 +312,13 @@ footer {
 @media (max-width: 768px) {
 
    #popup {
-    display: none !important;
-    opacity: 0;
-    pointer-events: none;
-
+    
     width: 92% !important;
     max-height: 85vh !important;
     padding: 15px !important;
     border-radius: 16px;
     overflow-y: auto !important;
-
+	display:flex;
     flex-direction: column; /* sadece direction, display yok! */
 	}
 

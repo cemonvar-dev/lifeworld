@@ -261,8 +261,7 @@ $(document).on("click", ".tile", function() {
 	});
 
 	$("#overlay").show();
-	$("#popup").css({ display: "block", opacity: 1, "pointer-events": "auto" });
-
+	$("#popup").show();
 
 	if (!tiles[activeIndex].name) $("#tileNameInput").focus();
 	else $("#entryText").focus();
@@ -536,7 +535,7 @@ $(document).on("keydown", function(e) {
 
 // ---- Cancel ----
 $("#cancelBtn").on("click", function() {
-	$("#popup").css({ display: "none", opacity: 0, "pointer-events": "none" });
+	 
 	$("#popup").hide();
 	$("#overlay").hide();
 });
