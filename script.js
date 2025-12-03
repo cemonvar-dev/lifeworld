@@ -613,7 +613,7 @@ $(document).on("click", ".tItem", function () {
         else if (filter === "today" && days === 0) {
             $(this).show();
         }
-        else if (filter === "1" && days === 1) {
+        else if (filter === 1 && days === 1) {
             $(this).show();
         }
         else if (filter == 2 && days === 2) {
