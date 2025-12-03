@@ -302,7 +302,8 @@ $("#saveBtn").on("click", function () {
 	}
 
 	let now = new Date();
-	let formattedNow = formatDate(now);
+	let formattedNow = formatDateTime(now);
+
 
 	// Read toggles
 	let doneChecked = $("#doneToggle").is(":checked");

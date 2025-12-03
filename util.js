@@ -50,3 +50,13 @@ function convertToShortDate(str) {
 function toDateOnly(d) {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
+
+function formatDateTime(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hour = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day} ${hour}:${min}`;
+}

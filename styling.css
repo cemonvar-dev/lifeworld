@@ -426,6 +426,53 @@ footer {
     color: #000;
 }
 
+/* ==========================
+   TIMELINE — COLORED DOTS
+   ========================== */
+
+/* base dot (inactive) */
+.tItem .dot {
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 2px solid #aaa;
+    border-radius: 50%;
+    transition: 0.25s;
+}
+
+/* active styles by filter */
+.tItem[data-filter="today"].active .dot {
+    background: #ff4d4d;     /* red */
+    border-color: #ff4d4d;
+}
+
+.tItem[data-filter="1"].active .dot {
+    background: #ff9900;     /* orange */
+    border-color: #ff9900;
+}
+
+.tItem[data-filter="2"].active .dot {
+    background: #ffd633;     /* yellow */
+    border-color: #ffd633;
+}
+
+.tItem[data-filter="3plus"].active .dot {
+    background: #4caf50;     /* green */
+    border-color: #4caf50;
+}
+
+.tItem[data-filter="all"].active .dot {
+    background: #777;         /* gray */
+    border-color: #777;
+}
+
+/* label highlight */
+.tItem.active span {
+    font-weight: bold;
+    color: #000;
+}
+
+
 
 /* ==========================
    MOBILE RESPONSIVE
