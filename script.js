@@ -300,8 +300,8 @@ $("#saveBtn").on("click", function () {
 	let formattedNow = formatDate(now);
 
     // Read toggles
-    const doneChecked = $("#doneToggle").is(":checked");
-    const skipChecked = $("#skipToggle").is(":checked");
+    let doneChecked = $("#doneToggle").is(":checked");
+    let skipChecked = $("#skipToggle").is(":checked");
 
      if (skipChecked) doneChecked = false;
 
