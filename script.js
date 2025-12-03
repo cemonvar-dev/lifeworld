@@ -596,32 +596,35 @@ $("#menuLoginBtn").on("click", () => $("#loginBtn").click());
 $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
-$(document).on("click", ".qfBtn", function () {
-	$(".qfBtn").removeClass("active");
-	$(this).addClass("active");
+$(document).on("click", ".tItem", function () {
+    $(".tItem").removeClass("active");
+    $(this).addClass("active");
 
-	const filter = $(this).data("filter");
+    const filter = $(this).data("filter");
 
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let freq = tiles[index].frequency;
-		let days = nextOccurrenceDays(tiles[index]);
+    $(".tile").each(function () {
+        let index = $(this).data("index");
+        let days = nextOccurrenceDays(tiles[index]);
 
-
-		if (filter === "all") {
-			$(this).show();
-		} else if (filter === "today" && days === 0) {
-			$(this).show();
-		} else if (filter === "tomorrow" && days === 1) {
-			$(this).show();
-		} else if (filter === 2 && days === 2) {
-			$(this).show();
-		} else if (filter === "3plus" && days >= 3) {
-			$(this).show();
-		} else {
-			$(this).hide();
-		}
-	});
+        if (filter === "all") {
+            $(this).show();
+        }
+        else if (filter === "today" && days === 0) {
+            $(this).show();
+        }
+        else if (filter === "1" && days === 1) {
+            $(this).show();
+        }
+        else if (filter == 2 && days === 2) {
+            $(this).show();
+        }
+        else if (filter === "3plus" && days >= 3) {
+            $(this).show();
+        }
+        else {
+            $(this).hide();
+        }
+    });
 });
 
 

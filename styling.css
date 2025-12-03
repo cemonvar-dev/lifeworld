@@ -370,6 +370,61 @@ footer {
   border-radius: 50%;
 }
 
+#timelineFilter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 15px 25px;
+    padding: 10px 5px;
+    position: relative;
+}
+
+/* connecting line */
+#timelineFilter::before {
+    content: "";
+    position: absolute;
+    top: 24px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #ddd;
+    z-index: 0;
+    border-radius: 2px;
+}
+
+.tItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1; /* above line */
+}
+
+.tItem span {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #555;
+}
+
+.tItem .dot {
+    width: 14px;
+    height: 14px;
+    background: white;
+    border: 2px solid #aaa;
+    border-radius: 50%;
+    transition: 0.25s;
+}
+
+.tItem.active .dot {
+    background: #333;
+    border-color: #333;
+    transform: scale(1.25);
+}
+
+.tItem.active span {
+    font-weight: bold;
+    color: #000;
+}
 
 
 /* ==========================
