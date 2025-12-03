@@ -297,6 +297,41 @@ $("#saveBtn").on("click", function () {
 	}
 
 	let now = new Date();
+	let formattedNow = formatDate(now);
+
+    // Read toggles
+    const doneChecked = $("#doneToggle").is(":checked");
+    const skipChecked = $("#skipToggle").is(":checked");
+
+     if (skipChecked) doneChecked = false;
+
+    // Build list of log texts to add
+    const logsToAdd = [];
+
+    if (txt.length > 0) {
+        logsToAdd.push(txt);
+    }
+
+    if (doneChecked) {
+        logsToAdd.push("done");
+    }
+
+    if (skipChecked) {
+        logsToAdd.push("skipped");
+    }
+
+    // Push logs (if any)
+    logsToAdd.forEach(t => {
+        tiles[activeIndex].logs.push({
+            text: t,
+            date: formattedNow
+        });
+    });
+
+    // Update lastUpdate if we added anything
+    if (logsToAdd.length > 0) {
+        tiles[activeIndex].lastUpdate = formattedNow;
+    }
 	tiles[activeIndex].lastUpdate = formatDate(now);
 
 	// ==== SAVE FREQUENCY FIRST ====
