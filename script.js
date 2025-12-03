@@ -232,7 +232,9 @@ $(document).on("click", ".tile", function () {
 
 	// HISTORY
 	normalizeTile(activeIndex);
-	let logs = tiles[activeIndex].logs;
+	let logs = [...tiles[activeIndex].logs].sort((a, b) => {
+		return new Date(b.date) - new Date(a.date);  // NEW: newest first
+	});
 
 	if (logs.length > 0) {
 		$("#historyBox").html(
@@ -299,39 +301,39 @@ $("#saveBtn").on("click", function () {
 	let now = new Date();
 	let formattedNow = formatDate(now);
 
-    // Read toggles
-    let doneChecked = $("#doneToggle").is(":checked");
-    let skipChecked = $("#skipToggle").is(":checked");
+	// Read toggles
+	let doneChecked = $("#doneToggle").is(":checked");
+	let skipChecked = $("#skipToggle").is(":checked");
 
-     if (skipChecked) doneChecked = false;
+	if (skipChecked) doneChecked = false;
 
-    // Build list of log texts to add
-    const logsToAdd = [];
+	// Build list of log texts to add
+	const logsToAdd = [];
 
-    if (txt.length > 0) {
-        logsToAdd.push(txt);
-    }
+	if (txt.length > 0) {
+		logsToAdd.push(txt);
+	}
 
-    if (doneChecked) {
-        logsToAdd.push("done");
-    }
+	if (doneChecked) {
+		logsToAdd.push("done");
+	}
 
-    if (skipChecked) {
-        logsToAdd.push("skipped");
-    }
+	if (skipChecked) {
+		logsToAdd.push("skipped");
+	}
 
-    // Push logs (if any)
-    logsToAdd.forEach(t => {
-        tiles[activeIndex].logs.push({
-            text: t,
-            date: formattedNow
-        });
-    });
+	// Push logs (if any)
+	logsToAdd.forEach(t => {
+		tiles[activeIndex].logs.push({
+			text: t,
+			date: formattedNow
+		});
+	});
 
-    // Update lastUpdate if we added anything
-    if (logsToAdd.length > 0) {
-        tiles[activeIndex].lastUpdate = formattedNow;
-    }
+	// Update lastUpdate if we added anything
+	if (logsToAdd.length > 0) {
+		tiles[activeIndex].lastUpdate = formattedNow;
+	}
 	tiles[activeIndex].lastUpdate = formatDate(now);
 
 	// ==== SAVE FREQUENCY FIRST ====
