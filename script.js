@@ -198,7 +198,7 @@ function renderTiles() {
 			</div>
 			<div class="tileLast">${freqText}</div>
 			<div class="tileLast">
-   				 ${t.skip ? "😢 skipped" : freqText}
+   				 ${t.skip ? "😢 skipped" : "" }
 			</div>
 			<div class="tileLast">${t.done ? "✔️" : ""}</div>
 			<div class="tileLast">${lastUpdateText || ""}</div>
