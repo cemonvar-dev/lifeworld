@@ -200,7 +200,7 @@ function renderTiles() {
 			<div class="tileLast">
    				 ${t.skip ? "😢 skipped" : "" }
 			</div>
-			<div class="tileLast">${t.done ? "✔️" : ""}</div>
+			<div class="tileLast">${t.done ? "💪 done" : ""}</div>
 			<div class="tileLast">${lastUpdateText || ""}</div>
 		  </div>
 		`);
