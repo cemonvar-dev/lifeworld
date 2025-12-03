@@ -16,7 +16,8 @@ function initEmptyTiles() {
 				mode: "daily",
 				days: []
 			},
-			done: false   
+			done: false,
+			skip: false
 		};
 
 
@@ -45,8 +46,8 @@ function loadWorldFromLocal() {
 					};
 				}
 			}
-			
-for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
+
+			for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
 
 
 
@@ -98,13 +99,14 @@ async function loadWorldFromCloud() {
 						mode: "daily",
 						days: []
 					},
-					done: false    
+					done: false,
+					skip: false
 				};
 
 			}
 
 
-for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
+			for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
 
 
 			await saveWorldToCloud();
@@ -180,7 +182,7 @@ function renderTiles() {
 			`);
 			continue;
 		}
-	
+
 		const freqText = formatFrequency(t.frequency);
 		const nextText = computeNextOccurrenceDisplay(t);
 		const lastUpdateText = convertToShortDate(t.lastUpdate);
@@ -219,12 +221,14 @@ function updateTileUI(i) {
 }
 
 // ---- Popup / tile click ----
-$(document).on("click", ".tile", function() {
+$(document).on("click", ".tile", function () {
 	activeIndex = $(this).data("index");
 
 	$("#tileTitle").text(tiles[activeIndex].name || "Tile details");
 	$("#entryText").val("");
-	$("#doneCheckbox").prop("checked", tiles[activeIndex].done === true);
+	$("#doneToggle").prop("checked", tiles[activeIndex].done === true);
+	$("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
+
 
 	// HISTORY
 	normalizeTile(activeIndex);
@@ -232,13 +236,13 @@ $(document).on("click", ".tile", function() {
 
 	if (logs.length > 0) {
 		$("#historyBox").html(
-		logs.map((log) => `
+			logs.map((log) => `
 			<div class="timelineItem">
 				<div class="timelineText">${log.text}</div>
 				<div class="timelineDate">${log.date}</div>
 			</div>
 		`).join("")
-	);
+		);
 
 	} else {
 		$("#historyBox").html("<div style='color:#888;'>No history yet</div>");
@@ -268,28 +272,27 @@ $(document).on("click", ".tile", function() {
 });
 
 // ---- Frequency UI Handlers ----
-$(document).on("change", "input[name='freqMode']", function() {
+$(document).on("change", "input[name='freqMode']", function () {
 	if (this.value === "custom") $("#customDays").show();
 	else $("#customDays").hide();
 });
 
-$(document).on("click", ".dayBtn", function() {
+$(document).on("click", ".dayBtn", function () {
 	$(this).toggleClass("active");
 });
 
 // ---- Save ----
-$("#saveBtn").on("click", function() {
+$("#saveBtn").on("click", function () {
 	if (activeIndex === null) return;
 
 	let name = $("#tileTitle").text().trim();
 	tiles[activeIndex].name = name;
 
 	let txt = $("#entryText").val().trim();
-	if (txt.length > 0) 
-	{
+	if (txt.length > 0) {
 		tiles[activeIndex].logs.push({
-		text: txt,
-		date: formatDate(new Date())
+			text: txt,
+			date: formatDate(new Date())
 		});
 	}
 
@@ -301,7 +304,7 @@ $("#saveBtn").on("click", function() {
 	let days = [];
 
 	if (mode === "custom") {
-		$(".dayBtn.active").each(function() {
+		$(".dayBtn.active").each(function () {
 			days.push($(this).data("day"));
 		});
 	}
@@ -316,7 +319,9 @@ $("#saveBtn").on("click", function() {
 		calculateNextOccurrence(tiles[activeIndex].frequency, now)
 	);
 
-	tiles[activeIndex].done = $("#doneCheckbox").is(":checked");
+	tiles[activeIndex].done = $("#doneToggle").is(":checked");
+	tiles[activeIndex].skip = $("#skipToggle").is(":checked");
+
 
 
 	saveWorld();
@@ -445,15 +450,14 @@ function refreshNextOccurrences() {
 			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
 			continue;
 		}
-		else if(t.nextOccurrence=="NaN-NaN-NaN")
-		{
+		else if (t.nextOccurrence == "NaN-NaN-NaN") {
 			debugger;
-			t.nextOccurrence=null;
-			t.lastUpdate= convertToShortDate(t.lastUpdate);
+			t.nextOccurrence = null;
+			t.lastUpdate = convertToShortDate(t.lastUpdate);
 			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
 			continue;
 		}
-		
+
 
 		let next = new Date(t.nextOccurrence);
 
@@ -461,11 +465,11 @@ function refreshNextOccurrences() {
 
 		// If next >= today → okay
 		if (next >= today) continue;
-		
-// --- If tile done but its cycle is over, reset the flag ---
-if (t.done === true) {
-    t.done = false;
-}
+
+		// --- If tile done but its cycle is over, reset the flag ---
+		if (t.done === true) {
+			t.done = false;
+		}
 
 
 		// Otherwise roll forward until next >= today
@@ -500,7 +504,7 @@ function nextOccurrenceDays(tile) {
 	// If no date → do not show
 	if (!tile.nextOccurrence) return 999;
 
-	const today =  toDateOnly(new Date());
+	const today = toDateOnly(new Date());
 	const next = toDateOnly(new Date(tile.nextOccurrence));
 
 	return Math.round((next - today) / (1000 * 60 * 60 * 24));
@@ -510,7 +514,7 @@ function nextOccurrenceDays(tile) {
 /* control handler scripts */
 
 // Click outside popup closes it
-$(document).on("mousedown", function(e) {
+$(document).on("mousedown", function (e) {
 	const popup = $("#popup");
 
 	// if popup is not visible, do nothing
@@ -525,7 +529,7 @@ $(document).on("mousedown", function(e) {
 
 
 // ESC closes popup
-$(document).on("keydown", function(e) {
+$(document).on("keydown", function (e) {
 	if (e.key === "Escape") {
 		if ($("#popup").is(":visible")) {
 			$("#cancelBtn").click();
@@ -534,14 +538,14 @@ $(document).on("keydown", function(e) {
 });
 
 // ---- Cancel ----
-$("#cancelBtn").on("click", function() {
-	 
+$("#cancelBtn").on("click", function () {
+
 	$("#popup").hide();
 	$("#overlay").hide();
 });
 
 // Close when clicking outside
-$(document).on("click", function(e) {
+$(document).on("click", function (e) {
 	if (!$(e.target).closest("#profileWrapper").length) {
 		$("#profileMenu").hide();
 	}
@@ -552,13 +556,13 @@ $("#menuLoginBtn").on("click", () => $("#loginBtn").click());
 $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
-$(document).on("click", ".qfBtn", function() {
+$(document).on("click", ".qfBtn", function () {
 	$(".qfBtn").removeClass("active");
 	$(this).addClass("active");
 
 	const filter = $(this).data("filter");
 
-	$(".tile").each(function() {
+	$(".tile").each(function () {
 		let index = $(this).data("index");
 		let freq = tiles[index].frequency;
 		let days = nextOccurrenceDays(tiles[index]);
@@ -582,19 +586,15 @@ $(document).on("click", ".qfBtn", function() {
 
 
 /* profile menu toggle */
-$("#profileIcon").on("click", function() {
+$("#profileIcon").on("click", function () {
 	$("#profileMenu").toggle();
 });
 
 
 
 /* document ready functions */
-$(document).ready(function() {
-	
+$(document).ready(function () {
 	checkAuth();
-	
-
-	
 	saveWorld();
 });
 
@@ -607,16 +607,16 @@ function initDragAndDrop() {
 
 	$(".tile").draggable({
 		revert: "invalid",
-		start: function() {
+		start: function () {
 			$(this).css("z-index", 9999);
 		},
-		stop: function() {
+		stop: function () {
 			$(this).css("z-index", "");
 		}
 	});
 
 	$(".tile").droppable({
-		drop: function(event, ui) {
+		drop: function (event, ui) {
 			let from = $(ui.draggable).data("index");
 			let to = $(this).data("index");
 			if (from === to) return;
@@ -634,25 +634,27 @@ function swapTiles(a, b) {
 }
 
 function normalizeTile(i) {
-    if (!tiles[i].logs) tiles[i].logs = [];
+	if (!tiles[i].logs) tiles[i].logs = [];
 
-    tiles[i].logs = tiles[i].logs.map(l => {
-        if (typeof l === "string") {
-            return {
-                text: l,
-                date: tiles[i].lastUpdate || formatDate(new Date())
-            };
-        }
-        if (typeof l === "object" && (!l.text || !l.date)) {
-            return {
-                text: l.text || "",
-                date: l.date || formatDate(new Date())
-            };
-        }
-        return l;
-    });
+	tiles[i].logs = tiles[i].logs.map(l => {
+		if (typeof l === "string") {
+			return {
+				text: l,
+				date: tiles[i].lastUpdate || formatDate(new Date())
+			};
+		}
+		if (typeof l === "object" && (!l.text || !l.date)) {
+			return {
+				text: l.text || "",
+				date: l.date || formatDate(new Date())
+			};
+		}
+		return l;
+	});
+
+	if (typeof tiles[i].done === "undefined") tiles[i].done = false;
+	if (typeof tiles[i].skip === "undefined") tiles[i].skip = false;
 }
-
 
 
 // ---- Search ----
@@ -676,6 +678,6 @@ function applySearchFilter() {
 	}
 }
 
-$("#searchBox").on("keyup", function() {
+$("#searchBox").on("keyup", function () {
 	applySearchFilter();
 });
