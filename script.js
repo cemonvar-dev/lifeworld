@@ -634,6 +634,10 @@ $("#profileIcon").on("click", function () {
 	$("#profileMenu").toggle();
 });
 
+$(document).on("click", "#resetFlagsBtn", function () {
+    resetAllFlags();
+});
+
 
 
 /* document ready functions */
@@ -698,6 +702,16 @@ function normalizeTile(i) {
 
 	if (typeof tiles[i].done === "undefined") tiles[i].done = false;
 	if (typeof tiles[i].skip === "undefined") tiles[i].skip = false;
+}
+
+function resetAllFlags() {
+    for (let i = 0; i < TILE_COUNT; i++) {
+        tiles[i].done = false;
+        tiles[i].skip = false;
+    }
+
+    saveWorld();   // save to cloud or local depending on user
+    renderTiles(); // refresh UI
 }
 
 
