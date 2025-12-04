@@ -271,7 +271,12 @@ $(document).on("click", ".tile", function () {
 		$(`.dayBtn[data-day='${d}']`).addClass("active");
 	});
 
-	const allTags = ["health", "work", "learning", "habit", "home"];
+const allTags = [
+    "health", "work", "learning", "habit", "home",
+    "spirituality", "hobby", "games", "outdoor",
+    "family", "friends", "arts", "cooking"
+].sort();
+
 let selected = tiles[activeIndex].tags || [];
 
 $("#tagSelectorButtons").html(
