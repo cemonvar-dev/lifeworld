@@ -31,36 +31,43 @@
   </header>
   <input type="text" id="searchBox" placeholder="what are you working on?"
     style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
+    
   <div id="timelineFilter">
     <div class="tItem" data-filter="today">
-      <div class="dot"></div>
-      <span>Today</span>
+        <div class="dot"></div>
+        <span>Today</span>
     </div>
 
     <div class="tItem" data-filter="1">
-      <div class="dot"></div>
-      <span>1d</span>
+        <div class="dot"></div>
+        <span>1d</span>
     </div>
 
     <div class="tItem" data-filter="2">
-      <div class="dot"></div>
-      <span>2d</span>
+        <div class="dot"></div>
+        <span>2d</span>
     </div>
 
     <div class="tItem" data-filter="3plus">
-      <div class="dot"></div>
-      <span>3d+</span>
+        <div class="dot"></div>
+        <span>3d+</span>
     </div>
 
     <div class="tItem" data-filter="all">
-      <div class="dot"></div>
-      <span>All</span>
+        <div class="dot"></div>
+        <span>All</span>
     </div>
-  </div>
-  <button id="resetFlagsBtn" class="qfBtn" style="margin-left:20px;">
+</div>
+<button id="resetFlagsBtn" class="qfBtn" style="margin-left:20px;">
     Reset Done/Skipped
-  </button>
-
+</button>
+  <div id="tagBar" style="margin: 10px 20px; display:flex; gap:8px; flex-wrap:wrap;">
+        <div class="tagBtn" data-tag="health">💚 Health</div>
+        <div class="tagBtn" data-tag="work">💼 Work</div>
+        <div class="tagBtn" data-tag="learning">📚 Learning</div>
+        <div class="tagBtn" data-tag="habit">🔥 Habit</div>
+        <div class="tagBtn" data-tag="home">🏡 Home</div>
+      </div>
   <div id="grid"></div>
   <div id="overlay"></div>
   <div id="popup">
@@ -92,39 +99,33 @@
         </label>
       </div>
 
-      <div id="tagBar" style="margin: 10px 20px; display:flex; gap:8px; flex-wrap:wrap;">
-        <div class="tagBtn" data-tag="health">💚 Health</div>
-        <div class="tagBtn" data-tag="work">💼 Work</div>
-        <div class="tagBtn" data-tag="learning">📚 Learning</div>
-        <div class="tagBtn" data-tag="habit">🔥 Habit</div>
-        <div class="tagBtn" data-tag="home">🏡 Home</div>
+      <div id="tagSelector">
+    <h4>Tags</h4>
+    <div id="tagSelectorButtons"></div>
+</div>
+
+      <!-- Notes / log text -->
+      <textarea id="entryText" rows="4" style="height:70%"></textarea>
+
+      <!-- Skip toggle (ABOVE buttons) -->
+      <div class="toggleRow" id="skipRow" style="margin-top:10px;">
+        <span class="toggleLabel">Skip this turn</span>
+        <label class="switch">
+          <input type="checkbox" id="skipToggle">
+          <span class="slider round"></span>
+        </label>
+      </div>
+      <div id="popupRight">
+            <h4>History</h4>
+            <div id="historyBox"></div>
+        </div>
+      <!-- Buttons -->
+      <div id="popupButtons">
+        <button id="deleteTileBtn" class="popupBtn" style="background:#ff4d4d; color:white;">Delete Tile</button>
+        <button id="cancelBtn" class="popupBtn">Cancel</button>
+        <button id="saveBtn" class="popupBtn">Save</button>
       </div>
     </div>
-
-  </div>
-
-  <!-- Notes / log text -->
-  <textarea id="entryText" rows="4" style="height:70%"></textarea>
-
-  <!-- Skip toggle (ABOVE buttons) -->
-  <div class="toggleRow" id="skipRow" style="margin-top:10px;">
-    <span class="toggleLabel">Skip this turn</span>
-    <label class="switch">
-      <input type="checkbox" id="skipToggle">
-      <span class="slider round"></span>
-    </label>
-  </div>
-  <div id="popupRight">
-    <h4>History</h4>
-    <div id="historyBox"></div>
-  </div>
-  <!-- Buttons -->
-  <div id="popupButtons">
-    <button id="deleteTileBtn" class="popupBtn" style="background:#ff4d4d; color:white;">Delete Tile</button>
-    <button id="cancelBtn" class="popupBtn">Cancel</button>
-    <button id="saveBtn" class="popupBtn">Save</button>
-  </div>
-  </div>
   </div>
   <footer> Lifeworld v0.3 — built with ❤️ </footer>
   <script src="supa.js"></script>
