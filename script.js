@@ -17,7 +17,8 @@ function initEmptyTiles() {
 				days: []
 			},
 			done: false,
-			skip: false
+			skip: false,
+			   tags: []      
 		};
 
 
@@ -100,7 +101,8 @@ async function loadWorldFromCloud() {
 						days: []
 					},
 					done: false,
-					skip: false
+					skip: false,
+					   tags: []      
 				};
 
 			}
@@ -269,6 +271,18 @@ $(document).on("click", ".tile", function () {
 		$(`.dayBtn[data-day='${d}']`).addClass("active");
 	});
 
+	const allTags = ["health", "work", "learning", "habit", "home"];
+let selected = tiles[activeIndex].tags || [];
+
+$("#tagSelectorButtons").html(
+    allTags.map(t => `
+        <div class="tagOption ${selected.includes(t) ? "active" : ""}" data-tag="${t}">
+            ${t}
+        </div>
+    `).join("")
+);
+
+
 	$("#overlay").show();
 	$("#popup").show();
 
@@ -285,6 +299,11 @@ $(document).on("change", "input[name='freqMode']", function () {
 $(document).on("click", ".dayBtn", function () {
 	$(this).toggleClass("active");
 });
+
+$(document).on("click", ".tagOption", function () {
+    $(this).toggleClass("active");
+});
+
 
 // ---- Save ----
 $("#saveBtn").on("click", function () {
@@ -362,6 +381,12 @@ $("#saveBtn").on("click", function () {
 
 	tiles[activeIndex].done = $("#doneToggle").is(":checked");
 	tiles[activeIndex].skip = $("#skipToggle").is(":checked");
+// Save tags
+let newTags = [];
+$(".tagOption.active").each(function () {
+    newTags.push($(this).data("tag"));
+});
+tiles[activeIndex].tags = newTags;
 
 
 
@@ -373,6 +398,29 @@ $("#saveBtn").on("click", function () {
 	$("#historyBox").empty();
 });
 
+//filtering with a tag button
+$(document).on("click", ".tagBtn", function () {
+    $(".tagBtn").removeClass("active");
+    $(this).addClass("active");
+
+    let tag = $(this).data("tag");
+
+    $(".tile").each(function () {
+        let index = $(this).data("index");
+        let t = tiles[index];
+
+        if (!t.tags || t.tags.length === 0) {
+            $(this).hide();
+            return;
+        }
+
+        if (t.tags.includes(tag)) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+});
 
 
 /* frequency calculations */
@@ -638,6 +686,20 @@ $(document).on("click", "#resetFlagsBtn", function () {
     resetAllFlags();
 });
 
+$(document).on("click", "#deleteTileBtn", function () {
+    if (activeIndex === null) return;
+
+    const confirmed = confirm("Are you sure you want to delete this tile? All history will be removed.");
+    if (!confirmed) return;
+
+    resetTile(activeIndex);
+    saveWorld();
+    renderTiles();
+
+    $("#popup").hide();
+    $("#overlay").hide();
+});
+
 
 
 /* document ready functions */
@@ -702,7 +764,26 @@ function normalizeTile(i) {
 
 	if (typeof tiles[i].done === "undefined") tiles[i].done = false;
 	if (typeof tiles[i].skip === "undefined") tiles[i].skip = false;
+	if (!tiles[i].tags) tiles[i].tags = [];
+
 }
+
+function resetTile(i) {
+    tiles[i] = {
+        name: "",
+        logs: [],
+        lastUpdate: null,
+        nextOccurrence: null,
+        frequency: {
+            mode: "daily",
+            days: []
+        },
+        done: false,
+        skip: false,
+		   tags: []      
+    };
+}
+
 
 function resetAllFlags() {
     for (let i = 0; i < TILE_COUNT; i++) {
