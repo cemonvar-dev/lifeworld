@@ -314,9 +314,9 @@ footer {
 /* Toggle rows */
 .toggleRow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0;
+  align-items: center; 
+  margin: 12px;
+  gap: 6px;
 }
 
 .toggleLabel {
