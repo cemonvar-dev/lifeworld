@@ -711,6 +711,7 @@ $(document).on("click", "#deleteTileBtn", function () {
 $(document).ready(function () {
 	checkAuth();
 	saveWorld();
+	$("#popup").css("display","none");
 });
 
 /*tile drag & drop */

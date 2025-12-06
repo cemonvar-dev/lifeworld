@@ -103,8 +103,11 @@
         <button class="dayBtn" data-day="Sun">Sun</button>
       </div>
     </div>
-    <div id="popupLeft" height="50%">
-      <!-- Mark as Done toggle (top) -->
+    <div id="popupLeft" height="50%"> 
+      <div id="tagSelector">
+        <h4>Tags</h4>
+        <div id="tagSelectorButtons"></div>
+      </div>
       <div class="toggleRow">
         <span class="toggleLabel">Mark as done</span>
         <label class="switch">
@@ -112,12 +115,6 @@
           <span class="slider round"></span>
         </label>
       </div>
-
-      <div id="tagSelector">
-        <h4>Tags</h4>
-        <div id="tagSelectorButtons"></div>
-      </div>
-
       <!-- Notes / log text -->
       <textarea id="entryText" rows="4" style="height:70%"></textarea>
 
