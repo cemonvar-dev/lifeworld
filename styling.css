@@ -22,6 +22,13 @@ body {
   touch-action: pan-x pan-y;
 }
 
+#tileTitle[contenteditable="true"]:empty:before {
+    content: attr(data-placeholder);
+    color: #888;
+    pointer-events: none;
+}
+
+
 .tileTop {
   display: flex;
   justify-content: space-between;

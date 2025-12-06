@@ -18,7 +18,7 @@ function initEmptyTiles() {
 			},
 			done: false,
 			skip: false,
-			   tags: []      
+			tags: []
 		};
 
 
@@ -102,7 +102,7 @@ async function loadWorldFromCloud() {
 					},
 					done: false,
 					skip: false,
-					   tags: []      
+					tags: []
 				};
 
 			}
@@ -200,7 +200,7 @@ function renderTiles() {
 			</div>
 			<div class="tileLast">${freqText}</div>
 			<div class="tileLast">
-   				 ${t.skip ? "😢 skipped" : "" }
+   				 ${t.skip ? "😢 skipped" : ""}
 			</div>
 			<div class="tileLast">${t.done ? "💪 done" : ""}</div>
 			<div class="tileLast">${lastUpdateText || ""}</div>
@@ -262,6 +262,13 @@ $(document).on("click", ".tile", function () {
 	};
 
 	$(`input[name='freqMode'][value='${freq.mode}']`).prop("checked", true);
+	if (freq.mode === "pickdate") {
+		$("#pickDateContainer").show();
+		$("#pickDateInput").val(freq.date || "");
+	} else {
+		$("#pickDateContainer").hide();
+	}
+
 
 	if (freq.mode === "custom") $("#customDays").show();
 	else $("#customDays").hide();
@@ -271,21 +278,21 @@ $(document).on("click", ".tile", function () {
 		$(`.dayBtn[data-day='${d}']`).addClass("active");
 	});
 
-const allTags = [
-    "health", "work", "learning", "habit", "home",
-    "spirituality", "hobby", "games", "outdoor",
-    "family", "friends", "arts", "cooking"
-].sort();
+	const allTags = [
+		"health", "work", "learning", "habit", "home",
+		"spirituality", "hobby", "games", "outdoor",
+		"family", "friends", "arts", "cooking"
+	].sort();
 
-let selected = tiles[activeIndex].tags || [];
+	let selected = tiles[activeIndex].tags || [];
 
-$("#tagSelectorButtons").html(
-    allTags.map(t => `
+	$("#tagSelectorButtons").html(
+		allTags.map(t => `
         <div class="tagOption ${selected.includes(t) ? "active" : ""}" data-tag="${t}">
             ${t}
         </div>
     `).join("")
-);
+	);
 
 
 	$("#overlay").show();
@@ -297,16 +304,29 @@ $("#tagSelectorButtons").html(
 
 // ---- Frequency UI Handlers ----
 $(document).on("change", "input[name='freqMode']", function () {
-	if (this.value === "custom") $("#customDays").show();
-	else $("#customDays").hide();
+	const mode = this.value;
+
+	if (mode === "daily") {
+		$("#customDays").hide();
+		$("#pickDateContainer").hide();
+	}
+	else if (mode === "custom") {
+		$("#customDays").show();
+		$("#pickDateContainer").hide();
+	}
+	else if (mode === "pickdate") {
+		$("#customDays").hide();
+		$("#pickDateContainer").show();
+	}
 });
+
 
 $(document).on("click", ".dayBtn", function () {
 	$(this).toggleClass("active");
 });
 
 $(document).on("click", ".tagOption", function () {
-    $(this).toggleClass("active");
+	$(this).toggleClass("active");
 });
 
 
@@ -367,6 +387,20 @@ $("#saveBtn").on("click", function () {
 	// ==== SAVE FREQUENCY FIRST ====
 	let mode = $("input[name='freqMode']:checked").val();
 	let days = [];
+	let selectedDate = null;
+
+	if (mode === "custom") {
+		$(".dayBtn.active").each(function () {
+			days.push($(this).data("day"));
+		});
+	}
+
+	if (mode === "pickdate") {
+		selectedDate = $("#pickDateInput").val();
+	}
+
+
+
 
 	if (mode === "custom") {
 		$(".dayBtn.active").each(function () {
@@ -376,8 +410,10 @@ $("#saveBtn").on("click", function () {
 
 	tiles[activeIndex].frequency = {
 		mode,
-		days
+		days,
+		date: selectedDate
 	};
+
 
 	// ==== THEN CALCULATE NEXT OCCURRENCE ====
 	tiles[activeIndex].nextOccurrence = formatDate(
@@ -386,12 +422,12 @@ $("#saveBtn").on("click", function () {
 
 	tiles[activeIndex].done = $("#doneToggle").is(":checked");
 	tiles[activeIndex].skip = $("#skipToggle").is(":checked");
-// Save tags
-let newTags = [];
-$(".tagOption.active").each(function () {
-    newTags.push($(this).data("tag"));
-});
-tiles[activeIndex].tags = newTags;
+	// Save tags
+	let newTags = [];
+	$(".tagOption.active").each(function () {
+		newTags.push($(this).data("tag"));
+	});
+	tiles[activeIndex].tags = newTags;
 
 
 
@@ -405,26 +441,26 @@ tiles[activeIndex].tags = newTags;
 
 //filtering with a tag button
 $(document).on("click", ".tagBtn", function () {
-    $(".tagBtn").removeClass("active");
-    $(this).addClass("active");
+	$(".tagBtn").removeClass("active");
+	$(this).addClass("active");
 
-    let tag = $(this).data("tag");
+	let tag = $(this).data("tag");
 
-    $(".tile").each(function () {
-        let index = $(this).data("index");
-        let t = tiles[index];
+	$(".tile").each(function () {
+		let index = $(this).data("index");
+		let t = tiles[index];
 
-        if (!t.tags || t.tags.length === 0) {
-            $(this).hide();
-            return;
-        }
+		if (!t.tags || t.tags.length === 0) {
+			$(this).hide();
+			return;
+		}
 
-        if (t.tags.includes(tag)) {
-            $(this).show();
-        } else {
-            $(this).hide();
-        }
-    });
+		if (t.tags.includes(tag)) {
+			$(this).show();
+		} else {
+			$(this).hide();
+		}
+	});
 });
 
 
@@ -491,6 +527,10 @@ function calculateNextOccurrence(freq, lastUpdateDate) {
 
 		case "custom":
 			return nextCustomWeekday(freq.days);
+
+		case "pickdate":
+			if (freq.date) return new Date(freq.date);
+			return null;
 
 		default:
 			return null;
@@ -651,34 +691,34 @@ $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
 $(document).on("click", ".tItem", function () {
-    $(".tItem").removeClass("active");
-    $(this).addClass("active");
+	$(".tItem").removeClass("active");
+	$(this).addClass("active");
 
-    const filter = $(this).data("filter");
+	const filter = $(this).data("filter");
 
-    $(".tile").each(function () {
-        let index = $(this).data("index");
-        let days = nextOccurrenceDays(tiles[index]);
+	$(".tile").each(function () {
+		let index = $(this).data("index");
+		let days = nextOccurrenceDays(tiles[index]);
 
-        if (filter === "all") {
-            $(this).show();
-        }
-        else if (filter === "today" && days === 0) {
-            $(this).show();
-        }
-        else if (filter === 1 && days === 1) {
-            $(this).show();
-        }
-        else if (filter == 2 && days === 2) {
-            $(this).show();
-        }
-        else if (filter === "3plus" && days >= 3) {
-            $(this).show();
-        }
-        else {
-            $(this).hide();
-        }
-    });
+		if (filter === "all") {
+			$(this).show();
+		}
+		else if (filter === "today" && days === 0) {
+			$(this).show();
+		}
+		else if (filter === 1 && days === 1) {
+			$(this).show();
+		}
+		else if (filter == 2 && days === 2) {
+			$(this).show();
+		}
+		else if (filter === "3plus" && days >= 3) {
+			$(this).show();
+		}
+		else {
+			$(this).hide();
+		}
+	});
 });
 
 
@@ -688,21 +728,21 @@ $("#profileIcon").on("click", function () {
 });
 
 $(document).on("click", "#resetFlagsBtn", function () {
-    resetAllFlags();
+	resetAllFlags();
 });
 
 $(document).on("click", "#deleteTileBtn", function () {
-    if (activeIndex === null) return;
+	if (activeIndex === null) return;
 
-    const confirmed = confirm("Are you sure you want to delete this tile? All history will be removed.");
-    if (!confirmed) return;
+	const confirmed = confirm("Are you sure you want to delete this tile? All history will be removed.");
+	if (!confirmed) return;
 
-    resetTile(activeIndex);
-    saveWorld();
-    renderTiles();
+	resetTile(activeIndex);
+	saveWorld();
+	renderTiles();
 
-    $("#popup").hide();
-    $("#overlay").hide();
+	$("#popup").hide();
+	$("#overlay").hide();
 });
 
 
@@ -711,7 +751,7 @@ $(document).on("click", "#deleteTileBtn", function () {
 $(document).ready(function () {
 	checkAuth();
 	saveWorld();
-	$("#popup").css("display","none");
+	$("#popup").css("display", "none");
 });
 
 /*tile drag & drop */
@@ -775,30 +815,30 @@ function normalizeTile(i) {
 }
 
 function resetTile(i) {
-    tiles[i] = {
-        name: "",
-        logs: [],
-        lastUpdate: null,
-        nextOccurrence: null,
-        frequency: {
-            mode: "daily",
-            days: []
-        },
-        done: false,
-        skip: false,
-		   tags: []      
-    };
+	tiles[i] = {
+		name: "",
+		logs: [],
+		lastUpdate: null,
+		nextOccurrence: null,
+		frequency: {
+			mode: "daily",
+			days: []
+		},
+		done: false,
+		skip: false,
+		tags: []
+	};
 }
 
 
 function resetAllFlags() {
-    for (let i = 0; i < TILE_COUNT; i++) {
-        tiles[i].done = false;
-        tiles[i].skip = false;
-    }
+	for (let i = 0; i < TILE_COUNT; i++) {
+		tiles[i].done = false;
+		tiles[i].skip = false;
+	}
 
-    saveWorld();   // save to cloud or local depending on user
-    renderTiles(); // refresh UI
+	saveWorld();   // save to cloud or local depending on user
+	renderTiles(); // refresh UI
 }
 
 

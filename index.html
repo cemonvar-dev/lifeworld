@@ -85,14 +85,24 @@
   <div id="grid"></div>
   <div id="overlay"></div>
   <div id="popup">
-    <h3 id="tileTitle" contenteditable="true" class="editableTitle"></h3>
+    <h3 id="tileTitle" contenteditable="true" class="editableTitle" data-placeholder="Enter your tile name here">
+    </h3>
+
     <!-- NEW FREQUENCY CONTROL -->
     <div id="frequencyControl">
       <div id="freqOptions">
         <label>
-          <input type="radio" name="freqMode" value="daily">Daily</label>
-        <input type="radio" name="freqMode" value="custom">Custom Days</label>
+          <input type="radio" name="freqMode" value="daily"> Daily
+        </label>
+        <label>
+          <input type="radio" name="freqMode" value="custom"> Custom Days
+        </label>
+        <label>
+          <input type="radio" name="freqMode" value="pickdate"> Pick Date
+        </label>
       </div>
+
+      <!-- Custom Days container remains the same -->
       <div id="customDays" style="margin-top:6px; display:none;">
         <button class="dayBtn" data-day="Mon">Mon</button>
         <button class="dayBtn" data-day="Tue">Tue</button>
@@ -102,30 +112,39 @@
         <button class="dayBtn" data-day="Sat">Sat</button>
         <button class="dayBtn" data-day="Sun">Sun</button>
       </div>
+
+      <!-- NEW: Date picker container -->
+      <div id="pickDateContainer" style="margin-top:6px; display:none;">
+        <input type="date" id="pickDateInput" style="padding:5px; font-size:14px;">
+      </div>
     </div>
-    <div id="popupLeft" height="50%"> 
+    
+    <div id="popupLeft" height="50%">
       <div id="tagSelector">
         <h4>Tags</h4>
         <div id="tagSelectorButtons"></div>
       </div>
       <div class="toggleRow">
-        <span class="toggleLabel">Mark as done</span>
         <label class="switch">
           <input type="checkbox" id="doneToggle">
           <span class="slider round"></span>
         </label>
+        <span class="toggleLabel">Mark as done</span>
       </div>
+
       <!-- Notes / log text -->
       <textarea id="entryText" rows="4" style="height:70%"></textarea>
 
       <!-- Skip toggle (ABOVE buttons) -->
-      <div class="toggleRow" id="skipRow" style="margin-top:10px;">
-        <span class="toggleLabel">Skip this turn</span>
+
+      <div class="toggleRow" id="skipRow">
         <label class="switch">
           <input type="checkbox" id="skipToggle">
           <span class="slider round"></span>
         </label>
+        <span class="toggleLabel">Skip this turn</span>
       </div>
+
       <div id="popupRight">
         <h4>History</h4>
         <div id="historyBox"></div>
