@@ -15,7 +15,7 @@ function formatDate(d) {
 function convertToShortDate(str) {
     if (!str) return "";
 
-    // --- CASE 1: ISO full (with T) ---
+    // --- CASE 1: ISO with T ---
     if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
         const d = new Date(str);
         if (isNaN(d)) return "";
@@ -25,24 +25,19 @@ function convertToShortDate(str) {
         return `${y}-${m}-${day}`;
     }
 
-    // --- CASE 2: ISO short (YYYY-MM-DD) ---
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        return str; // already in correct format
+    // --- CASE 2: ISO short (YYYY-MM-DD or YYYY-MM-DD HH:mm[:ss]) ---
+    if (/^\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}(?::\d{2})?)?$/.test(str)) {
+        return str.split(" ")[0]; // always extract pure date
     }
 
-    // --- Otherwise normalize separators ---
-    // Convert "28.11.2025" → "28/11/2025"
+    // --- Otherwise normalize separators (e.g. DD.MM.YYYY) ---
     let s = str.replace(/\./g, "/");
-
-    // Remove time part (anything after space or comma)
     s = s.split(",")[0].split(" ")[0].trim();
 
-    // Expected: DD/MM/YYYY
     const parts = s.split("/");
     if (parts.length !== 3) return "";
 
     const [day, month, year] = parts;
-
     return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 }
 
