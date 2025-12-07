@@ -229,7 +229,7 @@ function updateTileUI(i) {
 $(document).on("click", ".tile", function () {
 	activeIndex = $(this).data("index");
 
-	$("#tileTitle").text(tiles[activeIndex].name || "Tile details");
+	$("#tileTitle").text(tiles[activeIndex].name || "");
 	$("#entryText").val("");
 	$("#doneToggle").prop("checked", tiles[activeIndex].done === true);
 	$("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
