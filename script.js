@@ -529,8 +529,16 @@ function calculateNextOccurrence(freq, lastUpdateDate) {
 			return nextCustomWeekday(freq.days);
 
 		case "pickdate":
-			if (freq.date) return new Date(freq.date);
+			if (freq.date) {
+				const d = new Date(freq.date);
+				if (d < new Date()) {
+					// always move to NEXT YEAR same date
+					d.setFullYear(d.getFullYear() + 1);
+				}
+				return d;
+			}
 			return null;
+
 
 		default:
 			return null;
