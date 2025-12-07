@@ -109,7 +109,9 @@ body {
 
 /* FREQUENCY CONTROL */
 #frequencyControl {
+  margin-top: 12px;
   margin-bottom: 12px;
+
 }
 
 #freqOptions label {

@@ -88,21 +88,11 @@
 
     <div id="popupButtons">
       <h3 id="tileTitle" contenteditable="true" class="editableTitle" data-placeholder="Enter your tile name here"
-        style="
-    width: 50%;
-">milk thistle</h3><button id="saveBtn" class="popupBtn" style="
-    position: absolute;
-    right: 145px;
-">Save</button><button id="deleteTileBtn" class="popupBtn"
-        style="/* background:#ff4d4d; *//* color:white; */position: absolute;right: 80px;">Delete</button>
-      <button id="cancelBtn" class="popupBtn" style="
-    position: absolute;
-    right: 12px;
-">Cancel</button>
-
+        style="width: 50%;margin-bottom: 12px;margin-top: 0px;"></h3>
+      <button id="saveBtn" class="tagOption" style="position: absolute;right: 145px;">Save</button>
+      <button id="deleteTileBtn" class="tagOption" style="position: absolute;right: 80px;">Delete</button>
+      <button id="cancelBtn" class="tagOption" style="position: absolute;right: 12px;">Cancel</button>
     </div>
-
-
 
     <!-- NEW FREQUENCY CONTROL -->
     <div id="frequencyControl">
@@ -134,10 +124,8 @@
         <input type="date" id="pickDateInput" style="padding:5px; font-size:14px;">
       </div>
     </div>
-
     <div id="popupLeft" height="50%">
       <div id="tagSelector" style="margin-top:20px">
-
         <div id="tagSelectorButtons"></div>
       </div>
       <div class="toggleRow">
@@ -147,10 +135,7 @@
         </label>
         <span class="toggleLabel">Mark as done</span>
       </div>
-
-
       <!-- Skip toggle (ABOVE buttons) -->
-
       <div class="toggleRow" id="skipRow">
         <label class="switch">
           <input type="checkbox" id="skipToggle">
@@ -159,10 +144,8 @@
         <span class="toggleLabel">Skip this turn</span>
       </div>
     </div>
-
+     <h4>History</h4>
     <div id="popupRight">
-
-      <h4>History</h4>
       <div id="historyBox"></div>
     </div>
 
