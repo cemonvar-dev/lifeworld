@@ -733,6 +733,65 @@ $(document).on("click", "#resetFlagsBtn", function () {
 	resetAllFlags();
 });
 
+// ---- Filter: DONE tiles ----
+$(document).on("click", "#filterDoneBtn", function () {
+    $(".qfBtn").removeClass("active");
+    $(this).addClass("active");
+
+    $(".tile").each(function () {
+        let index = $(this).data("index");
+        let t = tiles[index];
+
+        if (!t || !t.name) {
+            $(this).hide();
+            return;
+        }
+
+        if (t.done === true) $(this).show();
+        else $(this).hide();
+    });
+});
+
+// ---- Filter: SKIPPED tiles ----
+$(document).on("click", "#filterSkippedBtn", function () {
+    $(".qfBtn").removeClass("active");
+    $(this).addClass("active");
+
+    $(".tile").each(function () {
+        let index = $(this).data("index");
+        let t = tiles[index];
+
+        if (!t || !t.name) {
+            $(this).hide();
+            return;
+        }
+
+        if (t.skip === true) $(this).show();
+        else $(this).hide();
+    });
+});
+
+// ---- Filter: NO ACTION tiles ----
+$(document).on("click", "#filterNoActionBtn", function () {
+    $(".qfBtn").removeClass("active");
+    $(this).addClass("active");
+
+    $(".tile").each(function () {
+        let index = $(this).data("index");
+        let t = tiles[index];
+
+        if (!t || !t.name) {
+            $(this).hide();
+            return;
+        }
+
+        // No done + no skip
+        if (!t.done && !t.skip) $(this).show();
+        else $(this).hide();
+    });
+});
+
+
 $(document).on("click", "#deleteTileBtn", function () {
 	if (activeIndex === null) return;
 
