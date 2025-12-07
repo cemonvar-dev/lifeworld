@@ -14,7 +14,8 @@ function initEmptyTiles() {
 			nextOccurrence: null,
 			frequency: {
 				mode: "daily",
-				days: []
+				days: [],
+				date: null
 			},
 			done: false,
 			skip: false,
@@ -42,7 +43,8 @@ function loadWorldFromLocal() {
 						nextOccurrence: null,
 						frequency: {
 							mode: "daily",
-							days: []
+							days: [],
+							date: null
 						}
 					};
 				}
@@ -98,7 +100,8 @@ async function loadWorldFromCloud() {
 					nextOccurrence: null,
 					frequency: {
 						mode: "daily",
-						days: []
+						days: [],
+						date: null
 					},
 					done: false,
 					skip: false,
@@ -349,45 +352,54 @@ $("#saveBtn").on("click", function () {
 	let now = new Date();
 	let formattedNow = formatDateTime(now);
 
-	// Build list of log texts to add
 	const logsToAdd = [];
 
 	// Read toggles
 	let doneChecked = $("#doneToggle").is(":checked");
 	let skipChecked = $("#skipToggle").is(":checked");
 
-	// If skipping, cannot be done
+	// skip cancels done
 	if (skipChecked) doneChecked = false;
 
-	// ---- Detect DONE today in history ----
 	const todayStr = formatDate(new Date());
 
+	// detect done today
 	let alreadyDoneToday = tiles[activeIndex].logs.some(log =>
 		log.text === "done" &&
 		convertToShortDate(log.date) === todayStr
 	);
 
-	// ---- Prevent duplicate DONE logs ----
+	// detect skipped today
+	let alreadySkippedToday = tiles[activeIndex].logs.some(log =>
+		log.text === "skipped" &&
+		convertToShortDate(log.date) === todayStr
+	);
+
+	// prevent duplicate done
 	if (doneChecked && alreadyDoneToday) {
-		doneChecked = false; // do not add new log
+		doneChecked = false;
 	}
 
-	// ---- Set tile.done state (for showing 💪 icon) ----
-	if (alreadyDoneToday) {
-		tiles[activeIndex].done = true;  // we still show the done icon
-	} else {
-		tiles[activeIndex].done = doneChecked;
+	// prevent duplicate skipped
+	if (skipChecked && alreadySkippedToday) {
+		skipChecked = false;
 	}
 
-	if (doneChecked) {
-		logsToAdd.push("done");
+	// set done state
+	tiles[activeIndex].done = alreadyDoneToday || doneChecked;
+
+	// set skip state
+	tiles[activeIndex].skip = alreadySkippedToday || skipChecked;
+
+	// done overrides skip
+	if (tiles[activeIndex].done) {
+		tiles[activeIndex].skip = false;
 	}
 
-	if (skipChecked) {
-		logsToAdd.push("skipped");
-	}
+	// push logs
+	if (doneChecked) logsToAdd.push("done");
+	if (skipChecked) logsToAdd.push("skipped");
 
-	// Push logs (if any)
 	logsToAdd.forEach(t => {
 		tiles[activeIndex].logs.push({
 			text: t,
@@ -395,12 +407,13 @@ $("#saveBtn").on("click", function () {
 		});
 	});
 
-	// Update lastUpdate ONLY if we actually added logs
 	if (logsToAdd.length > 0) {
 		tiles[activeIndex].lastUpdate = formatDate(now);
 	}
 
+	//*******************************
 	// ==== SAVE FREQUENCY FIRST ====
+	//*******************************
 	let mode = $("input[name='freqMode']:checked").val();
 	let days = [];
 	let selectedDate = null;
@@ -415,15 +428,6 @@ $("#saveBtn").on("click", function () {
 		selectedDate = $("#pickDateInput").val();
 	}
 
-
-
-
-	if (mode === "custom") {
-		$(".dayBtn.active").each(function () {
-			days.push($(this).data("day"));
-		});
-	}
-
 	tiles[activeIndex].frequency = {
 		mode,
 		days,
@@ -436,8 +440,7 @@ $("#saveBtn").on("click", function () {
 		calculateNextOccurrence(tiles[activeIndex].frequency, now)
 	);
 
-	tiles[activeIndex].done = $("#doneToggle").is(":checked");
-	tiles[activeIndex].skip = $("#skipToggle").is(":checked");
+
 	// Save tags
 	let newTags = [];
 	$(".tagOption.active").each(function () {
@@ -484,7 +487,8 @@ $(document).on("click", ".tagBtn", function () {
 function formatFrequency(freq) {
 	if (!freq) freq = {
 		mode: "",
-		days: []
+		days: [],
+		date: null
 	};
 
 	switch (freq.mode) {
@@ -905,7 +909,8 @@ function resetTile(i) {
 		nextOccurrence: null,
 		frequency: {
 			mode: "daily",
-			days: []
+			days: [],
+			date: null
 		},
 		done: false,
 		skip: false,
