@@ -245,8 +245,9 @@ $(document).on("click", ".tile", function () {
 		$("#historyBox").html(
 			logs.map((log) => `
 			<div class="timelineItem">
-				<div class="timelineText">${log.text}</div>
 				<div class="timelineDate">${log.date}</div>
+				<div class="timelineText">${log.text}</div>
+			
 			</div>
 		`).join("")
 		);
