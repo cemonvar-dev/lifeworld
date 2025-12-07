@@ -276,30 +276,21 @@ footer {
 }
 
 #popupRight {
-    padding-left: 15px;
+    font-size:13px;
     max-height: 350px;
     overflow-y: auto;
 }
 
-/* Textarea */
-#entryText {
-    width: 99%;
-    height: 180px;
-    resize: vertical;
-    padding: 8px;
-    font-size: 14px;
-	border-color:lightgray;
-}
 
 /* Buttons */
 #popupButtons {
-    margin-top: 10px;
+
     display: flex;
-    justify-content: space-between;
+
 }
 
 .popupBtn {
-    padding: 10px 20px;
+
     font-size: 15px;
     border-radius: 8px;
     cursor: pointer;
