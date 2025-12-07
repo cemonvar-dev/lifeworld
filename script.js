@@ -346,22 +346,37 @@ $("#saveBtn").on("click", function () {
 	let name = $("#tileTitle").text().trim();
 	tiles[activeIndex].name = name;
 
-	let txt = "";
 	let now = new Date();
 	let formattedNow = formatDateTime(now);
 
+	// Build list of log texts to add
+	const logsToAdd = [];
 
 	// Read toggles
 	let doneChecked = $("#doneToggle").is(":checked");
 	let skipChecked = $("#skipToggle").is(":checked");
 
+	// If skipping, cannot be done
 	if (skipChecked) doneChecked = false;
 
-	// Build list of log texts to add
-	const logsToAdd = [];
+	// ---- Detect DONE today in history ----
+	const todayStr = formatDate(new Date());
 
-	if (txt.length > 0) {
-		logsToAdd.push(txt);
+	let alreadyDoneToday = tiles[activeIndex].logs.some(log =>
+		log.text === "done" &&
+		convertToShortDate(log.date) === todayStr
+	);
+
+	// ---- Prevent duplicate DONE logs ----
+	if (doneChecked && alreadyDoneToday) {
+		doneChecked = false; // do not add new log
+	}
+
+	// ---- Set tile.done state (for showing 💪 icon) ----
+	if (alreadyDoneToday) {
+		tiles[activeIndex].done = true;  // we still show the done icon
+	} else {
+		tiles[activeIndex].done = doneChecked;
 	}
 
 	if (doneChecked) {
@@ -380,11 +395,10 @@ $("#saveBtn").on("click", function () {
 		});
 	});
 
-	// Update lastUpdate if we added anything
+	// Update lastUpdate ONLY if we actually added logs
 	if (logsToAdd.length > 0) {
-		tiles[activeIndex].lastUpdate = formattedNow;
+		tiles[activeIndex].lastUpdate = formatDate(now);
 	}
-	tiles[activeIndex].lastUpdate = formatDate(now);
 
 	// ==== SAVE FREQUENCY FIRST ====
 	let mode = $("input[name='freqMode']:checked").val();
