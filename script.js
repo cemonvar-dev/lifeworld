@@ -187,7 +187,15 @@ function renderTiles() {
 
 		const freqText = formatFrequency(t.frequency);
 		const nextText = computeNextOccurrenceDisplay(t);
-		const lastUpdateText = convertToShortDate(t.lastUpdate);
+		let lastUpdateText = "";
+		if (t.logs && t.logs.length > 0) {
+			// newest = log with max date
+			let newest = t.logs.reduce((a, b) =>
+				new Date(a.date) > new Date(b.date) ? a : b
+			);
+			lastUpdateText = convertToShortDate(newest.date);
+		}
+
 
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
@@ -735,60 +743,60 @@ $(document).on("click", "#resetFlagsBtn", function () {
 
 // ---- Filter: DONE tiles ----
 $(document).on("click", "#filterDoneBtn", function () {
-    $(".qfBtn").removeClass("active");
-    $(this).addClass("active");
+	$(".qfBtn").removeClass("active");
+	$(this).addClass("active");
 
-    $(".tile").each(function () {
-        let index = $(this).data("index");
-        let t = tiles[index];
+	$(".tile").each(function () {
+		let index = $(this).data("index");
+		let t = tiles[index];
 
-        if (!t || !t.name) {
-            $(this).hide();
-            return;
-        }
+		if (!t || !t.name) {
+			$(this).hide();
+			return;
+		}
 
-        if (t.done === true) $(this).show();
-        else $(this).hide();
-    });
+		if (t.done === true) $(this).show();
+		else $(this).hide();
+	});
 });
 
 // ---- Filter: SKIPPED tiles ----
 $(document).on("click", "#filterSkippedBtn", function () {
-    $(".qfBtn").removeClass("active");
-    $(this).addClass("active");
+	$(".qfBtn").removeClass("active");
+	$(this).addClass("active");
 
-    $(".tile").each(function () {
-        let index = $(this).data("index");
-        let t = tiles[index];
+	$(".tile").each(function () {
+		let index = $(this).data("index");
+		let t = tiles[index];
 
-        if (!t || !t.name) {
-            $(this).hide();
-            return;
-        }
+		if (!t || !t.name) {
+			$(this).hide();
+			return;
+		}
 
-        if (t.skip === true) $(this).show();
-        else $(this).hide();
-    });
+		if (t.skip === true) $(this).show();
+		else $(this).hide();
+	});
 });
 
 // ---- Filter: NO ACTION tiles ----
 $(document).on("click", "#filterNoActionBtn", function () {
-    $(".qfBtn").removeClass("active");
-    $(this).addClass("active");
+	$(".qfBtn").removeClass("active");
+	$(this).addClass("active");
 
-    $(".tile").each(function () {
-        let index = $(this).data("index");
-        let t = tiles[index];
+	$(".tile").each(function () {
+		let index = $(this).data("index");
+		let t = tiles[index];
 
-        if (!t || !t.name) {
-            $(this).hide();
-            return;
-        }
+		if (!t || !t.name) {
+			$(this).hide();
+			return;
+		}
 
-        // No done + no skip
-        if (!t.done && !t.skip) $(this).show();
-        else $(this).hide();
-    });
+		// No done + no skip
+		if (!t.done && !t.skip) $(this).show();
+		else $(this).hide();
+	});
 });
 
 
