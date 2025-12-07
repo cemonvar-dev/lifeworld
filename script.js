@@ -100,8 +100,7 @@ async function loadWorldFromCloud() {
 					nextOccurrence: null,
 					frequency: {
 						mode: "daily",
-						days: [],
-						date: null
+						days: []
 					},
 					done: false,
 					skip: false,
