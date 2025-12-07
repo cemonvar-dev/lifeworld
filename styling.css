@@ -315,7 +315,8 @@ footer {
 .toggleRow {
   display: flex;
   align-items: center; 
-  margin: 12px;
+  margin-top:20px;
+  margin-bottom:6px;
   gap: 6px;
 }
 

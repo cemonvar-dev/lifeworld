@@ -230,7 +230,7 @@ $(document).on("click", ".tile", function () {
 	activeIndex = $(this).data("index");
 
 	$("#tileTitle").text(tiles[activeIndex].name || "");
-	$("#entryText").val("");
+	
 	$("#doneToggle").prop("checked", tiles[activeIndex].done === true);
 	$("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
 
@@ -299,7 +299,7 @@ $(document).on("click", ".tile", function () {
 	$("#popup").show();
 
 	if (!tiles[activeIndex].name) $("#tileNameInput").focus();
-	else $("#entryText").focus();
+ 
 });
 
 // ---- Frequency UI Handlers ----
@@ -336,14 +336,7 @@ $("#saveBtn").on("click", function () {
 
 	let name = $("#tileTitle").text().trim();
 	tiles[activeIndex].name = name;
-
-	let txt = $("#entryText").val().trim();
-	if (txt.length > 0) {
-		tiles[activeIndex].logs.push({
-			text: txt,
-			date: formatDate(new Date())
-		});
-	}
+ 
 
 	let now = new Date();
 	let formattedNow = formatDateTime(now);
