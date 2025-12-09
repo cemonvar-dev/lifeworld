@@ -14,40 +14,50 @@
 
 <body>
   <header id="topHeader">
-    <div class="left" style="display:flex; align-items:center; gap:10px;">
-      <img src="logo.png" alt="LifeWorld Logo" style="height:32px;">
-      <span class="logo">LifeWorld</span>
-    </div>
-    <div class="right">
-      <div id="profileWrapper">
-        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
+  <div class="left" style="display:flex; align-items:center; gap:10px;">
+    <img src="logo.png" alt="LifeWorld Logo" style="height:32px;">
+    <span class="logo">LifeWorld</span>
+  </div>
 
-        <!-- NEW SETTINGS ICON -->
-        <img src="https://cdn-icons-png.flaticon.com/512/3524/3524659.png" id="settingsIcon">
+  <div class="right">
+    <div id="profileWrapper">
 
-        <div id="profileMenu">
-          <div id="profileEmail"></div>
-          <button id="menuLoginBtn">Login</button>
-          <button id="menuLogoutBtn">Logout</button>
-          <div class="settingsItem" id="openThemeSelector">Change Theme</div>
-          <div class="settingsItem">Preferences</div>
-          <div class="settingsItem">About LifeWorld</div>
-       
-          <div id="themePopup">
-            <h3>Select Theme</h3>
+      <!-- Profile Icon -->
+      <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
 
-            <div class="themeOption" data-theme="light">🌞 Light</div>
-            <div class="themeOption" data-theme="dark">🌙 Dark</div>
-            <div class="themeOption" data-theme="forest">🌲 Forest</div>
-            <div class="themeOption" data-theme="ocean">🌊 Ocean</div>
-            <div class="themeOption" data-theme="galaxy">✨ Galaxy</div>
+      <!-- Settings Icon -->
+      <img src="https://cdn-icons-png.flaticon.com/512/3524/3524659.png" id="settingsIcon" style="display:inline-block;">
 
-            <button id="closeThemePopup">Close</button>
-          </div>
-        </div>
+      <!-- Profile Menu -->
+      <div id="profileMenu">
+        <div id="profileEmail"></div>
+        <button id="menuLoginBtn">Login</button>
+        <button id="menuLogoutBtn">Logout</button>
       </div>
-    </div>>
-  </header>
+
+      <!-- Settings Menu -->
+      <div id="settingsMenu">
+        <div class="settingsItem" id="openThemeSelector">Change Theme</div>
+        <div class="settingsItem">Preferences</div>
+        <div class="settingsItem">About LifeWorld</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Theme Popup OUTSIDE both menus -->
+<div id="themePopup">
+  <h3>Select Theme</h3>
+
+  <div class="themeOption" data-theme="light">🌞 Light</div>
+  <div class="themeOption" data-theme="dark">🌙 Dark</div>
+  <div class="themeOption" data-theme="forest">🌲 Forest</div>
+  <div class="themeOption" data-theme="ocean">🌊 Ocean</div>
+  <div class="themeOption" data-theme="galaxy">✨ Galaxy</div>
+
+  <button id="closeThemePopup">Close</button>
+</div>
+
   <input type="text" id="searchBox" placeholder="what are you working on?"
     style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;">
 
