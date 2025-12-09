@@ -21,12 +21,34 @@
     <div class="right">
       <div id="profileWrapper">
         <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" id="profileIcon">
+
+        <!-- NEW SETTINGS ICON -->
+        <img src="https://cdn-icons-png.flaticon.com/512/3524/3524659.png" id="settingsIcon">
+
         <div id="profileMenu">
           <div id="profileEmail"></div>
           <button id="menuLoginBtn">Login</button>
           <button id="menuLogoutBtn">Logout</button>
         </div>
+
+        <!-- NEW SETTINGS MENU -->
+        <div id="settingsMenu">
+          <div id="themePopup">
+            <h3>Select Theme</h3>
+
+            <div class="themeOption" data-theme="light">🌞 Light</div>
+            <div class="themeOption" data-theme="dark">🌙 Dark</div>
+            <div class="themeOption" data-theme="forest">🌲 Forest</div>
+            <div class="themeOption" data-theme="ocean">🌊 Ocean</div>
+            <div class="themeOption" data-theme="galaxy">✨ Galaxy</div>
+
+            <button id="closeThemePopup">Close</button>
+          </div>
+          <div class="settingsItem">Preferences</div>
+          <div class="settingsItem">About LifeWorld</div>
+        </div>
       </div>
+
     </div>
   </header>
   <input type="text" id="searchBox" placeholder="what are you working on?"

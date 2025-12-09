@@ -341,6 +341,51 @@ $(document).on("click", ".tagOption", function () {
 });
 
 
+// TOGGLE SETTINGS MENU
+$("#settingsIcon").on("click", function () {
+    $("#settingsMenu").toggle();
+    $("#profileMenu").hide(); // hide profile menu if open
+});
+
+// Close settings menu when clicking outside
+$(document).on("click", function (e) {
+    if (!$(e.target).closest("#profileWrapper").length) {
+        $("#settingsMenu").hide();
+    }
+});
+
+
+$("#openThemeSelector").on("click", function () {
+    $("#themePopup").show();
+    $("#settingsMenu").hide();
+});
+
+$("#closeThemePopup").on("click", function () {
+    $("#themePopup").hide();
+});
+
+
+// Apply theme immediately
+function applyTheme(theme) {
+    $("body").attr("data-theme", theme);
+}
+
+// Load theme from localStorage
+let savedTheme = localStorage.getItem("lwp_theme") || "light";
+applyTheme(savedTheme);
+
+// When selecting a theme
+$(document).on("click", ".themeOption", function () {
+    let selected = $(this).data("theme");
+
+    localStorage.setItem("lwp_theme", selected);
+    applyTheme(selected);
+
+    $("#themePopup").hide();
+});
+
+
+
 // ---- Save ----
 $("#saveBtn").on("click", function () {
 	if (activeIndex === null) return;

@@ -214,6 +214,78 @@ body {
   display:none;
 }
 
+#settingsIcon {
+    width: 22px;
+    height: 22px;
+    margin-top: 6px;
+    cursor: pointer;
+    display: block;
+}
+
+#settingsMenu {
+    position: absolute;
+    top: 80px; /* under settings icon */
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 160px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    display: none;
+    z-index: 2000;
+}
+
+.settingsItem {
+    padding: 8px 6px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.settingsItem:hover {
+    background: #f2f2f2;
+}
+
+
+#themePopup {
+    display: none;
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    width: 280px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 3000;
+}
+
+.themeOption {
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #f3f3f3;
+    text-align: center;
+    font-size: 15px;
+}
+
+.themeOption:hover {
+    background: #e5e5e5;
+}
+
+.settingsHeader {
+    font-weight: bold;
+    font-size: 14px;
+    padding: 4px 0 8px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 8px;
+}
+
+
+
 footer {
   margin-top:40px;
   padding:20px;
@@ -525,6 +597,9 @@ footer {
     border-color: #333;
 }
 
+
+
+
 /* ==========================
    MOBILE RESPONSIVE
    ========================== */
@@ -580,4 +655,57 @@ footer {
         width: 48% !important;
         font-size: 16px !important;
     }
+}
+
+/* THEME: LIGHT (default) */
+body[data-theme="light"] {
+    background: #ffffff;
+    color: #222;
+}
+
+body[data-theme="light"] .tile {
+    background: #f6f6f2;
+}
+
+/* THEME: DARK */
+body[data-theme="dark"] {
+    background: #1a1a1a;
+    color: #eee;
+}
+
+body[data-theme="dark"] .tile {
+    background: #2a2a2a !important;
+    color: #ddd;
+    border: 1px solid #444;
+}
+
+/* THEME: FOREST */
+body[data-theme="forest"] {
+    background: #e9f5e1;
+}
+
+body[data-theme="forest"] .tile {
+    background: #d4efc7 !important;
+}
+
+/* THEME: OCEAN */
+body[data-theme="ocean"] {
+    background: #e0f6ff;
+}
+
+body[data-theme="ocean"] .tile {
+    background: #c6eaff !important;
+}
+
+/* THEME: GALAXY */
+body[data-theme="galaxy"] {
+    background: linear-gradient(135deg, #0a0a1a, #1c0438);
+    color: #f5eaff;
+}
+
+body[data-theme="galaxy"] .tile {
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: blur(4px);
+    color: #eee;
+    border: 1px solid rgba(255,255,255,0.15);
 }
