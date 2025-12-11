@@ -212,6 +212,7 @@ body {
   min-width:160px;
   box-shadow:0 4px 10px rgba(0,0,0,0.1);
   display:none;
+  z-index:999;
 }
 
 #settingsIcon {
