@@ -252,14 +252,20 @@ $(document).on("click", ".tile", function () {
 
 	if (logs.length > 0) {
 		$("#historyBox").html(
-			logs.map((log) => `
-			<div class="timelineItem">
-				<div class="timelineDate">${log.date}</div>
-				<div class="timelineText">${log.text}</div>
-			
-			</div>
-		`).join("")
-		);
+    logs.map((log, index) => {
+        let emoji = log.text === "done" ? "💪" :
+                    log.text === "skipped" ? "😢" : "💬";
+
+        return `
+        <div class="historyCard" data-logindex="${index}">
+            <div class="logAction">${emoji} ${log.text}</div>
+            <div class="logDate">${log.date}</div>
+            ${log.note ? `<div class="logNote">${log.note}</div>` : ""}
+            <div class="editLogBtn">✏️</div>
+        </div>`;
+    }).join("")
+);
+
 
 	} else {
 		$("#historyBox").html("<div style='color:#888;'>No history yet</div>");
@@ -908,6 +914,28 @@ $(document).ready(function () {
     saveWorld();
     $("#popup").css("display", "none");
 });
+
+$(document).on("click", ".editLogBtn", function() {
+    let card = $(this).closest(".historyCard");
+    let logIndex = card.data("logindex");
+    let log = tiles[activeIndex].logs[logIndex];
+
+    let existingNote = log.note || "";
+    let newNote = prompt("Add extra info for this action:", existingNote);
+
+    // User cancelled
+    if (newNote === null) return;
+
+    // Save note (cannot modify done/skipped)
+    log.note = newNote.trim();
+
+    saveWorld();
+    renderTiles();
+
+    // Reload popup history instantly
+    $(document).trigger("click", `.tile[data-index='${activeIndex}']`);
+});
+
 
 
 /*tile drag & drop */

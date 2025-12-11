@@ -379,6 +379,20 @@ footer {
     padding-right: 10px;
 }
 
+.logNote {
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: #f5f5f5;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #444;
+}
+
+.historyCard .logNote {
+    border-left: 3px solid #bcbcbc;
+}
+
+
 /* Toggle rows */
 .toggleRow {
   display: flex;
