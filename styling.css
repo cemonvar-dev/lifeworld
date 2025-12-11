@@ -236,10 +236,13 @@ body {
 }
 
 .settingsItem {
-    padding: 8px 6px;
+    padding: 3px;
     font-size: 13px;
     cursor: pointer;
     border-radius: 6px;
+    margin-bottom: 6px;
+    width: 150px;
+    border-color: lightgray; 
 }
 
 .settingsItem:hover {
