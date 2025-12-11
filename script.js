@@ -204,7 +204,7 @@ function renderTiles() {
 			  <div class="tileName">${t.name || ""}</div>
 			</div>
 			<div class="tileCenter">
-			  <div class="tileCount">${t.logs.length > 0 ? t.logs.length : "-"}</div>  
+			  <div class="tileCount">${t.logs.filter(l => l.text === "done").length || "-"}</div>  
 			  <div class="tileNext">${nextText}</div>
 			</div>
 			<div class="tileLast">${freqText}</div>
@@ -450,9 +450,10 @@ $("#saveBtn").on("click", function () {
 		});
 	});
 
-	if (logsToAdd.length > 0) {
-		tiles[activeIndex].lastUpdate = formatDate(now);
-	}
+// Update lastUpdate ONLY when done is added
+if (doneChecked) {
+    tiles[activeIndex].lastUpdate = formatDate(now);
+}
 
 	//*******************************
 	// ==== SAVE FREQUENCY FIRST ====
@@ -875,14 +876,39 @@ $(document).on("click", "#deleteTileBtn", function () {
 	$("#overlay").hide();
 });
 
+function dailyResetFlags() {
+    const today = formatDate(new Date());
+    const lastReset = localStorage.getItem("lwp_last_reset");
+
+    // Already reset today → do nothing
+    if (lastReset === today) return;
+
+    // Reset all tiles for a new day
+    for (let i = 0; i < TILE_COUNT; i++) {
+        tiles[i].done = false;
+        tiles[i].skip = false;
+    }
+
+    // Save world after reset
+    saveWorld();
+
+    // Mark today's reset as completed
+    localStorage.setItem("lwp_last_reset", today);
+}
+
 
 
 /* document ready functions */
 $(document).ready(function () {
-	checkAuth();
-	saveWorld();
-	$("#popup").css("display", "none");
+    checkAuth();
+
+    // NEW: Daily reset
+    dailyResetFlags();
+
+    saveWorld();
+    $("#popup").css("display", "none");
 });
+
 
 /*tile drag & drop */
 function initDragAndDrop() {
