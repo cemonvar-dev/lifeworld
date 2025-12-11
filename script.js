@@ -86,7 +86,7 @@ async function loadWorldFromCloud() {
 	} else if (!data) {
 		// first time user
 		initEmptyTiles();
-		await saveWorldToCloud();
+		//await saveWorldToCloud();
 	} else {
 		tiles = data.data;
 
@@ -100,7 +100,8 @@ async function loadWorldFromCloud() {
 					nextOccurrence: null,
 					frequency: {
 						mode: "daily",
-						days: []
+						days: [],
+						date: null
 					},
 					done: false,
 					skip: false,
@@ -111,8 +112,6 @@ async function loadWorldFromCloud() {
 
 
 			for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
-
-
 			await saveWorldToCloud();
 		}
 
