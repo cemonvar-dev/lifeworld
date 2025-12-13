@@ -191,10 +191,14 @@ function renderTiles() {
 		let lastUpdateText = "";
 		if (t.logs && t.logs.length > 0) {
 			// newest = log with max date
-			let newest = t.logs.reduce((a, b) =>
-				new Date(a.date) > new Date(b.date) ? a : b
-			);
-			lastUpdateText = convertToShortDate(newest.date);
+			const lastDoneLog = t.logs
+				.filter(l => l.text === "done")
+				.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+			lastUpdateText = lastDoneLog
+				? convertToShortDate(lastDoneLog.date)
+				: "";
+
 		}
 
 
@@ -252,19 +256,19 @@ $(document).on("click", ".tile", function () {
 
 	if (logs.length > 0) {
 		$("#historyBox").html(
-    logs.map((log, index) => {
-        let emoji = log.text === "done" ? "💪" :
-                    log.text === "skipped" ? "😢" : "💬";
+			logs.map((log, index) => {
+				let emoji = log.text === "done" ? "💪" :
+					log.text === "skipped" ? "😢" : "💬";
 
-        return `
+				return `
         <div class="historyCard" data-logindex="${index}">
             <div class="logAction">${emoji} ${log.text}</div>
             <div class="logDate">${log.date}</div>
             ${log.note ? `<div class="logNote">${log.note}</div>` : ""}
             <div class="editLogBtn">✏️</div>
         </div>`;
-    }).join("")
-);
+			}).join("")
+		);
 
 
 	} else {
@@ -348,31 +352,31 @@ $(document).on("click", ".tagOption", function () {
 
 // TOGGLE SETTINGS MENU
 $("#settingsIcon").on("click", function () {
-    $("#settingsMenu").toggle();
-    $("#profileMenu").hide(); // hide profile menu if open
+	$("#settingsMenu").toggle();
+	$("#profileMenu").hide(); // hide profile menu if open
 });
 
 // Close settings menu when clicking outside
 $(document).on("click", function (e) {
-    if (!$(e.target).closest("#profileWrapper").length) {
-        $("#settingsMenu").hide();
-    }
+	if (!$(e.target).closest("#profileWrapper").length) {
+		$("#settingsMenu").hide();
+	}
 });
 
 
 $("#openThemeSelector").on("click", function () {
-    $("#themePopup").show();
-    $("#settingsMenu").hide();
+	$("#themePopup").show();
+	$("#settingsMenu").hide();
 });
 
 $("#closeThemePopup").on("click", function () {
-    $("#themePopup").hide();
+	$("#themePopup").hide();
 });
 
 
 // Apply theme immediately
 function applyTheme(theme) {
-    $("body").attr("data-theme", theme);
+	$("body").attr("data-theme", theme);
 }
 
 // Load theme from localStorage
@@ -381,12 +385,12 @@ applyTheme(savedTheme);
 
 // When selecting a theme
 $(document).on("click", ".themeOption", function () {
-    let selected = $(this).data("theme");
+	let selected = $(this).data("theme");
 
-    localStorage.setItem("lwp_theme", selected);
-    applyTheme(selected);
+	localStorage.setItem("lwp_theme", selected);
+	applyTheme(selected);
 
-    $("#themePopup").hide();
+	$("#themePopup").hide();
 });
 
 
@@ -456,10 +460,10 @@ $("#saveBtn").on("click", function () {
 		});
 	});
 
-// Update lastUpdate ONLY when done is added
-if (doneChecked) {
-    tiles[activeIndex].lastUpdate = formatDate(now);
-}
+	// Update lastUpdate ONLY when done is added
+	if (doneChecked) {
+		tiles[activeIndex].lastUpdate = formatDate(now);
+	}
 
 	//*******************************
 	// ==== SAVE FREQUENCY FIRST ====
@@ -883,57 +887,57 @@ $(document).on("click", "#deleteTileBtn", function () {
 });
 
 function dailyResetFlags() {
-    const today = formatDate(new Date());
-    const lastReset = localStorage.getItem("lwp_last_reset");
+	const today = formatDate(new Date());
+	const lastReset = localStorage.getItem("lwp_last_reset");
 
-    // Already reset today → do nothing
-    if (lastReset === today) return;
+	// Already reset today → do nothing
+	if (lastReset === today) return;
 
-    // Reset all tiles for a new day
-    for (let i = 0; i < TILE_COUNT; i++) {
-        tiles[i].done = false;
-        tiles[i].skip = false;
-    }
+	// Reset all tiles for a new day
+	for (let i = 0; i < TILE_COUNT; i++) {
+		tiles[i].done = false;
+		tiles[i].skip = false;
+	}
 
-    // Save world after reset
-    saveWorld();
+	// Save world after reset
+	saveWorld();
 
-    // Mark today's reset as completed
-    localStorage.setItem("lwp_last_reset", today);
+	// Mark today's reset as completed
+	localStorage.setItem("lwp_last_reset", today);
 }
 
 
 
 /* document ready functions */
 $(document).ready(function () {
-    checkAuth();
+	checkAuth();
 
-    // NEW: Daily reset
-    dailyResetFlags();
+	// NEW: Daily reset
+	dailyResetFlags();
 
-    saveWorld();
-    $("#popup").css("display", "none");
+	saveWorld();
+	$("#popup").css("display", "none");
 });
 
-$(document).on("click", ".editLogBtn", function() {
-    let card = $(this).closest(".historyCard");
-    let logIndex = card.data("logindex");
-    let log = tiles[activeIndex].logs[logIndex];
+$(document).on("click", ".editLogBtn", function () {
+	let card = $(this).closest(".historyCard");
+	let logIndex = card.data("logindex");
+	let log = tiles[activeIndex].logs[logIndex];
 
-    let existingNote = log.note || "";
-    let newNote = prompt("Add extra info for this action:", existingNote);
+	let existingNote = log.note || "";
+	let newNote = prompt("Add extra info for this action:", existingNote);
 
-    // User cancelled
-    if (newNote === null) return;
+	// User cancelled
+	if (newNote === null) return;
 
-    // Save note (cannot modify done/skipped)
-    log.note = newNote.trim();
+	// Save note (cannot modify done/skipped)
+	log.note = newNote.trim();
 
-    saveWorld();
-    renderTiles();
+	saveWorld();
+	renderTiles();
 
-    // Reload popup history instantly
-    $(document).trigger("click", `.tile[data-index='${activeIndex}']`);
+	// Reload popup history instantly
+	$(document).trigger("click", `.tile[data-index='${activeIndex}']`);
 });
 
 
