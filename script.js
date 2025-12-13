@@ -3,9 +3,9 @@ let currentUser = null;
 let tiles = {};
 let activeIndex = null;
 const filters = {
-  timeline: "all",      // "today" | 1 | 2 | "3plus" | "all"
-  status: null,         // "done" | "skip" | "noaction" | null
-  category: null        // "arts", "health", etc | null
+	timeline: "all",      // "today" | 1 | 2 | "3plus" | "all"
+	status: null,         // "done" | "skip" | "noaction" | null
+	category: null        // "arts", "health", etc | null
 };
 
 
@@ -519,58 +519,76 @@ $("#saveBtn").on("click", function () {
 
 //filtering with a tag button
 $(document).on("click", ".tagBtn", function () {
-  const tag = $(this).data("tag");
+	const tag = $(this).data("tag");
 
-  if (filters.category === tag) {
-    filters.category = null;
-    $(".tagBtn").removeClass("active");
-  } else {
-    filters.category = tag;
-    $(".tagBtn").removeClass("active");
-    $(this).addClass("active");
-  }
+	if (filters.category === tag) {
+		filters.category = null;
+		$(".tagBtn").removeClass("active");
+	} else {
+		filters.category = tag;
+		$(".tagBtn").removeClass("active");
+		$(this).addClass("active");
+	}
 
-  applyFilters();
+	applyFilters();
 });
 
 function applyFilters() {
-  $(".tile").each(function () {
-    const index = $(this).data("index");
-    const t = tiles[index];
+	$(".tile").each(function () {
+		const index = $(this).data("index");
+		const t = tiles[index];
 
-    if (!t || !t.name) {
-      $(this).hide();
-      return;
-    }
+		const isEmpty = !t || (!t.name && t.logs.length === 0);
 
-    // --- TIMELINE ---
-    let days = nextOccurrenceDays(t);
-    let timelineOk = true;
+		// Show empty tiles ONLY when everything is neutral
+		const allowEmpty =
+			filters.timeline === "all" &&
+			filters.status === null &&
+			filters.category === null;
 
-    if (filters.timeline === "today") timelineOk = (days === 0);
-    else if (filters.timeline === 1) timelineOk = (days === 1);
-    else if (filters.timeline === 2) timelineOk = (days === 2);
-    else if (filters.timeline === "3plus") timelineOk = (days >= 3);
+		if (isEmpty) {
+			if (allowEmpty) {
+				$(this).show();
+			} else {
+				$(this).hide();
+			}
+			return;
+		}
 
-    // --- STATUS ---
-    let statusOk = true;
-    if (filters.status === "done") statusOk = t.done === true;
-    else if (filters.status === "skip") statusOk = t.skip === true;
-    else if (filters.status === "noaction") statusOk = !t.done && !t.skip;
 
-    // --- CATEGORY ---
-    let categoryOk = true;
-    if (filters.category) {
-      categoryOk = t.tags && t.tags.includes(filters.category);
-    }
+		// if (!t || !t.name) {
+		//   $(this).hide();
+		//   return;
+		// }
 
-    // --- FINAL ---
-    if (timelineOk && statusOk && categoryOk) {
-      $(this).show();
-    } else {
-      $(this).hide();
-    }
-  });
+		// --- TIMELINE ---
+		let days = nextOccurrenceDays(t);
+		let timelineOk = true;
+
+		if (filters.timeline === "today") timelineOk = (days === 0);
+		else if (filters.timeline === 1) timelineOk = (days === 1);
+		else if (filters.timeline === 2) timelineOk = (days === 2);
+		else if (filters.timeline === "3plus") timelineOk = (days >= 3);
+
+		// --- STATUS ---
+		let statusOk = true;
+		if (filters.status === "done") statusOk = t.done === true;
+		else if (filters.status === "skip") statusOk = t.skip === true;
+		else if (filters.status === "noaction") statusOk = !t.done && !t.skip;
+
+		// --- CATEGORY ---
+		let categoryOk = true;
+		if (filters.category) {
+			categoryOk = t.tags && t.tags.includes(filters.category);
+		}
+
+		// --- FINAL ---
+		if (timelineOk && statusOk && categoryOk) {
+			$(this).show();
+		} else {
+			$(this).hide();
+		}
+	});
 }
 
 // $(document).on("click", ".tagBtn", function () {
@@ -833,20 +851,20 @@ $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
 $(document).on("click", ".tItem", function () {
-  const clicked = $(this).data("filter");
+	const clicked = $(this).data("filter");
 
-  if (filters.timeline === clicked) {
-    // deselect → fallback to all
-    filters.timeline = "all";
-  } else {
-    filters.timeline = clicked;
-  }
+	if (filters.timeline === clicked) {
+		// deselect → fallback to all
+		filters.timeline = "all";
+	} else {
+		filters.timeline = clicked;
+	}
 
-  // UI
-  $(".tItem").removeClass("active");
-  $(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
+	// UI
+	$(".tItem").removeClass("active");
+	$(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
 
-  applyFilters();
+	applyFilters();
 });
 
 
@@ -893,27 +911,27 @@ $(document).on("click", "#resetFlagsBtn", function () {
 
 // ---- Filter: DONE tiles ----
 function toggleStatusFilter(type, btn) {
-  if (filters.status === type) {
-    filters.status = null;
-    $(".qfBtn").removeClass("active");
-  } else {
-    filters.status = type;
-    $(".qfBtn").removeClass("active");
-    $(btn).addClass("active");
-  }
-  applyFilters();
+	if (filters.status === type) {
+		filters.status = null;
+		$(".qfBtn").removeClass("active");
+	} else {
+		filters.status = type;
+		$(".qfBtn").removeClass("active");
+		$(btn).addClass("active");
+	}
+	applyFilters();
 }
 
 $("#filterDoneBtn").on("click", function () {
-  toggleStatusFilter("done", this);
+	toggleStatusFilter("done", this);
 });
 
 $("#filterSkippedBtn").on("click", function () {
-  toggleStatusFilter("skip", this);
+	toggleStatusFilter("skip", this);
 });
 
 $("#filterNoActionBtn").on("click", function () {
-  toggleStatusFilter("noaction", this);
+	toggleStatusFilter("noaction", this);
 });
 
 // $(document).on("click", "#filterDoneBtn", function () {
