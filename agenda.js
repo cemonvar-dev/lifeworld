@@ -1,8 +1,8 @@
 function buildTodaysAgenda() {
   const agenda = {
-    must: [],
-    should: [],
-    optional: []
+    morning: [],
+    afternoon: [],
+    evening: []
   };
 
   for (let i = 0; i < TILE_COUNT; i++) {
@@ -15,32 +15,48 @@ function buildTodaysAgenda() {
     // only unactioned
     if (t.done || t.skip) continue;
 
-    // ---- simple priority rules (MVP) ----
-    if (t.tags.includes("health") || t.tags.includes("spirituality")) {
-      agenda.must.push(t);
+    // ---- TIME BLOCK RULES ----
+    if (
+      t.tags.includes("spirituality") ||
+      t.tags.includes("health") ||
+      t.tags.includes("habit") ||
+      t.tags.includes("home")
+    ) {
+      agenda.morning.push(t);
     }
     else if (
       t.tags.includes("learning") ||
-      t.tags.includes("family") ||
-      t.tags.includes("friends")
+      t.tags.includes("work") ||
+      t.tags.includes("outdoor")
     ) {
-      agenda.should.push(t);
+      agenda.afternoon.push(t);
+    }
+    else if (
+      t.tags.includes("hobby") ||
+      t.tags.includes("arts") ||
+      t.tags.includes("games") ||
+      t.tags.includes("friends") ||
+      t.tags.includes("family")
+    ) {
+      agenda.evening.push(t);
     }
     else {
-      agenda.optional.push(t);
+      agenda.afternoon.push(t); // safe fallback
     }
   }
 
   return agenda;
-}function renderAgenda() {
+}
+
+function renderAgenda() {
   const agenda = buildTodaysAgenda();
 
-  function section(title, items) {
+  function block(title, items) {
     if (items.length === 0) return "";
     return `
-      <div style="margin-bottom:12px;">
+      <div style="margin-bottom:16px;">
         <strong>${title}</strong>
-        <ul>
+        <ul style="margin-top:6px;">
           ${items.map(t => `<li>${t.name}</li>`).join("")}
         </ul>
       </div>
@@ -48,9 +64,9 @@ function buildTodaysAgenda() {
   }
 
   const html =
-    section("Must do", agenda.must) +
-    section("Should do", agenda.should) +
-    section("Optional", agenda.optional);
+    block("🌅 Morning", agenda.morning) +
+    block("☀️ Afternoon", agenda.afternoon) +
+    block("🌙 Evening", agenda.evening);
 
   if (!html) {
     $("#agendaBox").hide();
@@ -60,8 +76,3 @@ function buildTodaysAgenda() {
   $("#agendaContent").html(html);
   $("#agendaBox").show();
 }
-
-$("#showAgendaBtn").on("click", function () {
-  renderAgenda();
-});
-
