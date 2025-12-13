@@ -615,4 +615,53 @@ footer {
 }
 
 
+/* agenda popup */
+.lwPopup {
+  position: fixed;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  max-height: 80vh;
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  z-index: 3000;
+  display: none;
+  overflow-y: auto;
+}
 
+.lwPopupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lwPopupHeader button {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.planBlock {
+  margin-bottom: 16px;
+}
+
+.planItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+.planItem.done { opacity: 0.5; }
+.planItem.skipped { opacity: 0.5; }
+
+.planStatus {
+  width: 20px;
+  text-align: center;
+}

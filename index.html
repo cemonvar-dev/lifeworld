@@ -115,15 +115,7 @@
     <div class="tagBtn" data-tag="work">💼 Work</div>
   </div>
 
-<div id="agendaBox" style="display:none; margin:20px;">
-  <h3>Today’s Plan</h3>
-  <div id="agendaContent"></div>
-</div>
-<button id="showAgendaBtn" class="qfBtn">
-  Today’s Plan
-</button>
 
-  </div>
   <div id="grid"></div>
   <div id="overlay"></div>
   <div id="popup">
@@ -192,6 +184,17 @@
     </div>
 
   </div>
+
+  <div id="todayPlanPopup" class="lwPopup">
+  <div class="lwPopupHeader">
+    <h3>Today’s Plan</h3>
+    <button id="closeTodayPlan">✕</button>
+  </div>
+
+  <div id="todayPlanContent"></div>
+</div>
+
+
   <footer> Lifeworld v0.34 </footer>
   <script src="supa.js"></script>
   <script src="auth.js"></script>

@@ -1,5 +1,5 @@
-function buildTodaysAgenda() {
-  const agenda = {
+function buildTodaysPlan() {
+  const plan = {
     morning: [],
     afternoon: [],
     evening: []
@@ -12,71 +12,81 @@ function buildTodaysAgenda() {
     // only TODAY
     if (nextOccurrenceDays(t) !== 0) continue;
 
-    // only unactioned
-    if (t.done || t.skip) continue;
+    // determine status
+    let status = "pending";
+    if (t.done) status = "done";
+    else if (t.skip) status = "skipped";
 
-    // ---- TIME BLOCK RULES ----
+    const item = {
+      name: t.name,
+      status
+    };
+
+    // ---- time block rules ----
     if (
       t.tags.includes("spirituality") ||
       t.tags.includes("health") ||
       t.tags.includes("habit") ||
       t.tags.includes("home")
     ) {
-      agenda.morning.push(t);
+      plan.morning.push(item);
     }
     else if (
       t.tags.includes("learning") ||
       t.tags.includes("work") ||
       t.tags.includes("outdoor")
     ) {
-      agenda.afternoon.push(t);
-    }
-    else if (
-      t.tags.includes("hobby") ||
-      t.tags.includes("arts") ||
-      t.tags.includes("games") ||
-      t.tags.includes("friends") ||
-      t.tags.includes("family")
-    ) {
-      agenda.evening.push(t);
+      plan.afternoon.push(item);
     }
     else {
-      agenda.afternoon.push(t); // safe fallback
+      plan.evening.push(item);
     }
   }
 
-  return agenda;
+  return plan;
 }
 
-function renderAgenda() {
-  const agenda = buildTodaysAgenda();
+function renderTodayPlanPopup() {
+  const plan = buildTodaysPlan();
 
   function block(title, items) {
     if (items.length === 0) return "";
     return `
-      <div style="margin-bottom:16px;">
+      <div class="planBlock">
         <strong>${title}</strong>
-        <ul style="margin-top:6px;">
-          ${items.map(t => `<li>${t.name}</li>`).join("")}
-        </ul>
+        ${items.map(i => `
+          <div class="planItem ${i.status}">
+            <div class="planStatus">
+              ${i.status === "done" ? "💪" : i.status === "skipped" ? "😢" : "⏳"}
+            </div>
+            <div>${i.name}</div>
+          </div>
+        `).join("")}
       </div>
     `;
   }
 
   const html =
-    block("🌅 Morning", agenda.morning) +
-    block("☀️ Afternoon", agenda.afternoon) +
-    block("🌙 Evening", agenda.evening);
+    block("🌅 Morning", plan.morning) +
+    block("☀️ Afternoon", plan.afternoon) +
+    block("🌙 Evening", plan.evening);
 
-  if (!html) {
-    $("#agendaBox").hide();
-    return;
-  }
-
-  $("#agendaContent").html(html);
-  $("#agendaBox").show();
+  $("#todayPlanContent").html(html || "<div>No tasks for today 🎉</div>");
+  $("#todayPlanPopup").show();
 }
 
+
+ 
 $("#showAgendaBtn").on("click", function () {
-  renderAgenda();
+  renderTodayPlanPopup();
+});
+
+$("#closeTodayPlan").on("click", function () {
+  $("#todayPlanPopup").hide();
+});
+
+$(document).on("keydown", function (e) {
+  if (e.key === "Escape") {
+    $("#todayPlanPopup").hide();
+  }
 });
