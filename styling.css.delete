@@ -1,0 +1,404 @@
+/* ==========================
+   Global Styles
+   ========================== */
+body {
+  font-family: Arial, sans-serif;
+}
+
+/* ==========================
+   Grid Layout
+   ========================== */
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 20px;
+}
+
+/* ==========================
+   Tile Styles
+   ========================== */
+.tile {
+  position: relative;
+  padding: 14px;
+  border-radius: 8px;
+  background: #f6f6f2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 160px;
+  font-size: 14px;
+  touch-action: pan-x pan-y;
+}
+
+.tileTop {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.tileName {
+  color: #000;
+}
+
+.tileFreq,
+.tileLast {
+  text-align: center;
+}
+
+.tileFreq {
+  font-size: 12px;
+  color: #666;
+  padding-top: 10px;
+}
+
+.tileLast {
+  font-size: 11px;
+  color: #999;
+  padding-top: 4px;
+}
+
+.tileCenter {
+  margin-top: 22px;
+  text-align: center;
+}
+
+.tileCount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222;
+  line-height: 1.1;
+}
+
+.tileNext {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 14px;
+  color: #444;
+}
+
+.tile.empty {
+  background: white !important;
+  border: 2px dashed #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a7d7a2;
+  font-size: 42px;
+  font-weight: 300;
+  transition: 0.15s ease;
+}
+
+.tile.empty:hover {
+  background: #fafafa;
+  border-color: #bbb;
+  cursor: pointer;
+  transform: scale(1.03);
+}
+
+.tile.empty .plusIcon {
+  font-size: 38px;
+  color: #8bc58b;
+  line-height: 1;
+}
+
+.timestamp {
+  position: absolute;
+  bottom: 5px;
+  font-size: 10px;
+  color: #555;
+}
+
+/* ==========================
+   Frequency Control
+   ========================== */
+#frequencyControl {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+#freqOptions label {
+  margin-right: 10px;
+  font-size: 12px;
+}
+
+#customDays .dayBtn {
+  padding: 4px 8px;
+  margin: 2px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: #f5f5f5;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+#customDays .dayBtn.active {
+  background: #aee6a8;
+  border-color: #4caf50;
+  font-weight: bold;
+}
+
+/* ==========================
+   Timeline
+   ========================== */
+.timelineItem {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+
+.timelineItem::before,
+.timelineItem::after {
+  content: "";
+  position: absolute;
+}
+
+.timelineItem::before {
+  left: 6px;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  background: #4a90e2;
+  border-radius: 50%;
+}
+
+.timelineItem::after {
+  left: 9px;
+  top: 14px;
+  width: 2px;
+  height: calc(100% - 4px);
+  background: #ccc;
+}
+
+.timelineItem:last-child::after {
+  display: none;
+}
+
+.freqLine {
+  position: absolute;
+  bottom: 24px;
+  font-size: 10px;
+  color: #444;
+  text-align: left;
+  opacity: 0.9;
+}
+
+/* ==========================
+   Overlay Styles
+   ========================== */
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  z-index: 1000;
+}
+
+/* ==========================
+   Header + Profile
+   ========================== */
+#topHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 12px 20px;
+  border-bottom: 1px solid #ddd;
+}
+
+#profileWrapper {
+  position: relative;
+}
+
+#profileIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+#profileMenu,
+#settingsMenu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 160px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 999;
+}
+
+#settingsIcon {
+  width: 22px;
+  height: 22px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.settingsItem {
+  padding: 3px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  width: 150px;
+  border-color: lightgray;
+}
+
+.settingsItem:hover {
+  background: #f2f2f2;
+}
+
+/* ==========================
+   Theme Popup
+   ========================== */
+#themePopup {
+  display: none;
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  width: 280px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 3000;
+}
+
+.themeOption {
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #f3f3f3;
+  text-align: center;
+  font-size: 15px;
+}
+
+.themeOption:hover {
+  background: #e5e5e5;
+}
+
+.settingsHeader {
+  font-weight: bold;
+  font-size: 14px;
+  padding: 4px 0 8px 0;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 8px;
+}
+
+/* ==========================
+   Footer
+   ========================== */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  text-align: center;
+  color: #777;
+  font-size: 12px;
+  border-top: 1px solid #ddd;
+}
+
+/* ==========================
+   Quick Filters
+   ========================== */
+#quickFilters {
+  margin: 10px 20px;
+  display: flex;
+  gap: 8px;
+}
+
+.qfBtn {
+  padding: 5px 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.qfBtn.active {
+  background: #333;
+  color: white;
+  border-color: #333;
+}
+
+/* ==========================
+   Popup (Desktop)
+   ========================== */
+#popup {
+  background: white;
+  width: 70%;
+  max-width: 500px;
+  padding: 20px;
+  border-radius: 16px;
+  position: fixed;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: none;
+}
+
+#popupContent {
+  display: flex;
+  gap: 20px;
+}
+
+#popupLeft,
+#popupRight {
+  flex-direction: column;
+}
+
+#popupButtons {
+  display: flex;
+}
+
+.popupBtn {
+  font-size: 15px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ==========================
+   History Log
+   ========================== */
+#historyBox {
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.logNote {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #444;
+}
+
+.historyCard .logNote {
+  border-left: 3px solid #bcbcbc;
+}
+
+/* ==========================
+   Toggle Rows
+   ========================== */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 6px;
+  gap: 6px;
+}
+
+.toggleLabel {
+  font-size: 13px;
+}
