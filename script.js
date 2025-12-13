@@ -2,6 +2,11 @@ const TILE_COUNT = 128;
 let currentUser = null;
 let tiles = {};
 let activeIndex = null;
+const filters = {
+  timeline: "all",      // "today" | 1 | 2 | "3plus" | "all"
+  status: null,         // "done" | "skip" | "noaction" | null
+  category: null        // "arts", "health", etc | null
+};
 
 
 function initEmptyTiles() {
@@ -514,27 +519,82 @@ $("#saveBtn").on("click", function () {
 
 //filtering with a tag button
 $(document).on("click", ".tagBtn", function () {
-	$(".tagBtn").removeClass("active");
-	$(this).addClass("active");
+  const tag = $(this).data("tag");
 
-	let tag = $(this).data("tag");
+  if (filters.category === tag) {
+    filters.category = null;
+    $(".tagBtn").removeClass("active");
+  } else {
+    filters.category = tag;
+    $(".tagBtn").removeClass("active");
+    $(this).addClass("active");
+  }
 
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let t = tiles[index];
-
-		if (!t.tags || t.tags.length === 0) {
-			$(this).hide();
-			return;
-		}
-
-		if (t.tags.includes(tag)) {
-			$(this).show();
-		} else {
-			$(this).hide();
-		}
-	});
+  applyFilters();
 });
+
+function applyFilters() {
+  $(".tile").each(function () {
+    const index = $(this).data("index");
+    const t = tiles[index];
+
+    if (!t || !t.name) {
+      $(this).hide();
+      return;
+    }
+
+    // --- TIMELINE ---
+    let days = nextOccurrenceDays(t);
+    let timelineOk = true;
+
+    if (filters.timeline === "today") timelineOk = (days === 0);
+    else if (filters.timeline === 1) timelineOk = (days === 1);
+    else if (filters.timeline === 2) timelineOk = (days === 2);
+    else if (filters.timeline === "3plus") timelineOk = (days >= 3);
+
+    // --- STATUS ---
+    let statusOk = true;
+    if (filters.status === "done") statusOk = t.done === true;
+    else if (filters.status === "skip") statusOk = t.skip === true;
+    else if (filters.status === "noaction") statusOk = !t.done && !t.skip;
+
+    // --- CATEGORY ---
+    let categoryOk = true;
+    if (filters.category) {
+      categoryOk = t.tags && t.tags.includes(filters.category);
+    }
+
+    // --- FINAL ---
+    if (timelineOk && statusOk && categoryOk) {
+      $(this).show();
+    } else {
+      $(this).hide();
+    }
+  });
+}
+
+// $(document).on("click", ".tagBtn", function () {
+// 	$(".tagBtn").removeClass("active");
+// 	$(this).addClass("active");
+
+// 	let tag = $(this).data("tag");
+
+// 	$(".tile").each(function () {
+// 		let index = $(this).data("index");
+// 		let t = tiles[index];
+
+// 		if (!t.tags || t.tags.length === 0) {
+// 			$(this).hide();
+// 			return;
+// 		}
+
+// 		if (t.tags.includes(tag)) {
+// 			$(this).show();
+// 		} else {
+// 			$(this).hide();
+// 		}
+// 	});
+// });
 
 
 /* frequency calculations */
@@ -773,35 +833,53 @@ $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
 $(document).on("click", ".tItem", function () {
-	$(".tItem").removeClass("active");
-	$(this).addClass("active");
+  const clicked = $(this).data("filter");
 
-	const filter = $(this).data("filter");
+  if (filters.timeline === clicked) {
+    // deselect → fallback to all
+    filters.timeline = "all";
+  } else {
+    filters.timeline = clicked;
+  }
 
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let days = nextOccurrenceDays(tiles[index]);
+  // UI
+  $(".tItem").removeClass("active");
+  $(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
 
-		if (filter === "all") {
-			$(this).show();
-		}
-		else if (filter === "today" && days === 0) {
-			$(this).show();
-		}
-		else if (filter === 1 && days === 1) {
-			$(this).show();
-		}
-		else if (filter == 2 && days === 2) {
-			$(this).show();
-		}
-		else if (filter === "3plus" && days >= 3) {
-			$(this).show();
-		}
-		else {
-			$(this).hide();
-		}
-	});
+  applyFilters();
 });
+
+
+// $(document).on("click", ".tItem", function () {
+// 	$(".tItem").removeClass("active");
+// 	$(this).addClass("active");
+
+// 	const filter = $(this).data("filter");
+
+// 	$(".tile").each(function () {
+// 		let index = $(this).data("index");
+// 		let days = nextOccurrenceDays(tiles[index]);
+
+// 		if (filter === "all") {
+// 			$(this).show();
+// 		}
+// 		else if (filter === "today" && days === 0) {
+// 			$(this).show();
+// 		}
+// 		else if (filter === 1 && days === 1) {
+// 			$(this).show();
+// 		}
+// 		else if (filter == 2 && days === 2) {
+// 			$(this).show();
+// 		}
+// 		else if (filter === "3plus" && days >= 3) {
+// 			$(this).show();
+// 		}
+// 		else {
+// 			$(this).hide();
+// 		}
+// 	});
+// });
 
 
 /* profile menu toggle */
@@ -814,62 +892,86 @@ $(document).on("click", "#resetFlagsBtn", function () {
 });
 
 // ---- Filter: DONE tiles ----
-$(document).on("click", "#filterDoneBtn", function () {
-	$(".qfBtn").removeClass("active");
-	$(this).addClass("active");
+function toggleStatusFilter(type, btn) {
+  if (filters.status === type) {
+    filters.status = null;
+    $(".qfBtn").removeClass("active");
+  } else {
+    filters.status = type;
+    $(".qfBtn").removeClass("active");
+    $(btn).addClass("active");
+  }
+  applyFilters();
+}
 
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let t = tiles[index];
-
-		if (!t || !t.name) {
-			$(this).hide();
-			return;
-		}
-
-		if (t.done === true) $(this).show();
-		else $(this).hide();
-	});
+$("#filterDoneBtn").on("click", function () {
+  toggleStatusFilter("done", this);
 });
 
-// ---- Filter: SKIPPED tiles ----
-$(document).on("click", "#filterSkippedBtn", function () {
-	$(".qfBtn").removeClass("active");
-	$(this).addClass("active");
-
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let t = tiles[index];
-
-		if (!t || !t.name) {
-			$(this).hide();
-			return;
-		}
-
-		if (t.skip === true) $(this).show();
-		else $(this).hide();
-	});
+$("#filterSkippedBtn").on("click", function () {
+  toggleStatusFilter("skip", this);
 });
 
-// ---- Filter: NO ACTION tiles ----
-$(document).on("click", "#filterNoActionBtn", function () {
-	$(".qfBtn").removeClass("active");
-	$(this).addClass("active");
-
-	$(".tile").each(function () {
-		let index = $(this).data("index");
-		let t = tiles[index];
-
-		if (!t || !t.name) {
-			$(this).hide();
-			return;
-		}
-
-		// No done + no skip
-		if (!t.done && !t.skip) $(this).show();
-		else $(this).hide();
-	});
+$("#filterNoActionBtn").on("click", function () {
+  toggleStatusFilter("noaction", this);
 });
+
+// $(document).on("click", "#filterDoneBtn", function () {
+// 	$(".qfBtn").removeClass("active");
+// 	$(this).addClass("active");
+
+// 	$(".tile").each(function () {
+// 		let index = $(this).data("index");
+// 		let t = tiles[index];
+
+// 		if (!t || !t.name) {
+// 			$(this).hide();
+// 			return;
+// 		}
+
+// 		if (t.done === true) $(this).show();
+// 		else $(this).hide();
+// 	});
+// });
+
+// // ---- Filter: SKIPPED tiles ----
+// $(document).on("click", "#filterSkippedBtn", function () {
+// 	$(".qfBtn").removeClass("active");
+// 	$(this).addClass("active");
+
+// 	$(".tile").each(function () {
+// 		let index = $(this).data("index");
+// 		let t = tiles[index];
+
+// 		if (!t || !t.name) {
+// 			$(this).hide();
+// 			return;
+// 		}
+
+// 		if (t.skip === true) $(this).show();
+// 		else $(this).hide();
+// 	});
+// });
+
+// // ---- Filter: NO ACTION tiles ----
+// $(document).on("click", "#filterNoActionBtn", function () {
+// 	$(".qfBtn").removeClass("active");
+// 	$(this).addClass("active");
+
+// 	$(".tile").each(function () {
+// 		let index = $(this).data("index");
+// 		let t = tiles[index];
+
+// 		if (!t || !t.name) {
+// 			$(this).hide();
+// 			return;
+// 		}
+
+// 		// No done + no skip
+// 		if (!t.done && !t.skip) $(this).show();
+// 		else $(this).hide();
+// 	});
+// });
 
 
 $(document).on("click", "#deleteTileBtn", function () {
