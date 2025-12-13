@@ -76,3 +76,7 @@ function renderAgenda() {
   $("#agendaContent").html(html);
   $("#agendaBox").show();
 }
+
+$("#showAgendaBtn").on("click", function () {
+  renderAgenda();
+});
