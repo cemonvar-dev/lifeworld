@@ -1,0 +1,106 @@
+
+/* ========================
+    HEADER + PROFILE 
+  ========================*/
+#topHeader {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:white;
+  padding:12px 20px;
+  border-bottom:1px solid #ddd;
+}
+
+#profileWrapper { position:relative; }
+#profileIcon {
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  cursor:pointer;
+}
+
+#profileMenu {
+  position:absolute;
+  top:40px;
+  right:0;
+  background:white;
+  border:1px solid #ccc;
+  border-radius:8px;
+  padding:10px;
+  min-width:160px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  display:none;
+  z-index:999;
+}
+
+#settingsIcon {
+    width: 22px;
+    height: 22px;
+    margin-top: 6px;
+    cursor: pointer; 
+}
+
+#settingsMenu {
+    position: absolute;
+    top: 80px; /* under settings icon */
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 160px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    display: none;
+    z-index: 2000;
+}
+
+.settingsItem {
+    padding: 3px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    width: 150px;
+    border-color: lightgray; 
+}
+
+.settingsItem:hover {
+    background: #f2f2f2;
+}
+
+
+#themePopup {
+    display: none;
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    width: 280px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 3000;
+}
+
+.themeOption {
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #f3f3f3;
+    text-align: center;
+    font-size: 15px;
+}
+
+.themeOption:hover {
+    background: #e5e5e5;
+}
+
+.settingsHeader {
+    font-weight: bold;
+    font-size: 14px;
+    padding: 4px 0 8px 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 8px;
+}

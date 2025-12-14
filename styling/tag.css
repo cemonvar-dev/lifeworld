@@ -1,0 +1,55 @@
+
+
+/* ==========================
+   TAG BAR
+   ========================== */
+#tagBar {
+    display: flex;
+    gap: 8px;
+    margin-top:20px;
+    margin-left:20px;
+    flex-wrap: wrap;
+}
+
+.tagBtn {
+    padding: 6px 14px;
+    background: #f0f0f0;
+    border-radius: 18px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    transition: 0.25s;
+    user-select: none;
+}
+
+.tagBtn:hover {
+    background: #e4e4e4;
+}
+
+.tagBtn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
+
+#tagSelectorButtons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.tagOption {
+    padding: 6px 10px;
+    border-radius: 14px;
+    background: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.tagOption.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
