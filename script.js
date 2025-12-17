@@ -234,15 +234,15 @@ function renderTiles() {
 }
 
 function openFirstEmptyTile() {
-  for (let i = 0; i < TILE_COUNT; i++) {
-    const t = tiles[i];
-    if (!t.name && t.logs.length === 0) {
-      $(`.tile[data-index='${i}']`).trigger("click");
-      return;
-    }
-  }
+	for (let i = 0; i < TILE_COUNT; i++) {
+		const t = tiles[i];
+		if (!t.name && t.logs.length === 0) {
+			$(`.tile[data-index='${i}']`).trigger("click");
+			return;
+		}
+	}
 
-  alert("No empty tiles left 😅");
+	alert("No empty tiles left 😅");
 }
 
 
@@ -284,18 +284,34 @@ $(document).on("click", ".tile", function () {
 	if (logs.length > 0) {
 		$("#historyBox").html(
 			logs.map((log, index) => {
-				let emoji = log.text === "done" ? "💪" :
-					log.text === "skipped" ? "😢" : "💬";
+				const emoji =
+					log.text === "done" ? "💪" :
+						log.text === "skipped" ? "😢" : "💬";
 
 				return `
-        <div class="historyCard" data-logindex="${index}">
-            <div class="logAction">${emoji} ${log.text}</div>
-            <div class="logDate">${log.date}</div>
-            ${log.note ? `<div class="logNote">${log.note}</div>` : ""}
-            <div class="editLogBtn">✏️</div>
-        </div>`;
+      <div class="historyItem" data-logindex="${index}">
+        <div class="historyHeader">
+          <div class="historyAction">
+            ${emoji} ${log.text}
+          </div>
+
+          <div class="historyMeta">
+            <span class="historyDate">${log.date}</span>
+            <span class="historyActions">
+              <span class="editLogBtn">edit</span>
+              <span class="deleteLogBtn">delete</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="historyDetails">
+          ${log.note ? log.note : "<em>details goes here</em>"}
+        </div>
+      </div>
+    `;
 			}).join("")
 		);
+
 
 
 	} else {
@@ -1124,4 +1140,19 @@ function applySearchFilter() {
 
 $("#searchBox").on("keyup", function () {
 	applySearchFilter();
+});
+
+$(document).on("click", ".deleteLogBtn", function () {
+  const index = $(this).closest(".historyItem").data("logindex");
+
+  const ok = confirm("Delete this history entry?");
+  if (!ok) return;
+
+  tiles[activeIndex].logs.splice(index, 1);
+
+  saveWorld();
+  renderTiles();
+
+  // reopen popup to refresh history
+  $(document).trigger("click", `.tile[data-index='${activeIndex}']`);
 });

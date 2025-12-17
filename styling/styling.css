@@ -246,6 +246,7 @@ body {
     border: 2px solid #aaa;
     border-radius: 50%;
     transition: 0.25s;
+    margin-top:6px;
 }
 
 /* active styles by filter */

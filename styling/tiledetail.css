@@ -106,6 +106,54 @@
 }
 
 
+/* ==========================
+   HISTORY LIST
+   ========================== */
+
+.historyItem {
+  padding: 10px 4px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.historyAction {
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #666;
+}
+
+.historyActions span {
+  cursor: pointer;
+  color: #4a90e2;
+}
+
+.historyActions span:hover {
+  text-decoration: underline;
+}
+
+.historyDetails {
+  margin-top: 6px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #444;
+}
+
+.historyDetails em {
+  color: #999;
+}
 
 
 /* ===========================
