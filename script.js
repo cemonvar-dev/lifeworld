@@ -125,7 +125,7 @@ async function loadWorldFromCloud() {
 			initEmptyTiles();
 		}
 	}
-	
+
 	refreshNextOccurrences();
 	renderTiles();
 }
@@ -229,6 +229,7 @@ function renderTiles() {
 	}
 
 	initDragAndDrop();
+	applyFilters();
 	applySearchFilter();
 }
 
@@ -589,30 +590,33 @@ function applyFilters() {
 			$(this).hide();
 		}
 	});
+
+	// --- Virtual empty tile in filtered view ---
+	$(".virtual-empty").remove(); // safety
+
+	if (isFilteredView()) {
+		appendVirtualEmptyTile();
+	}
+
 }
 
-// $(document).on("click", ".tagBtn", function () {
-// 	$(".tagBtn").removeClass("active");
-// 	$(this).addClass("active");
+function isFilteredView() {
+	return (
+		filters.timeline !== "all" ||
+		filters.status !== null ||
+		filters.category !== null ||
+		$("#searchBox").val().trim() !== ""
+	);
+}
 
-// 	let tag = $(this).data("tag");
+function appendVirtualEmptyTile() {
+	$("#grid").append(`
+    <div class="tile empty virtual-empty">
+      <div class="plusIcon">+</div>
+    </div>
+  `);
+}
 
-// 	$(".tile").each(function () {
-// 		let index = $(this).data("index");
-// 		let t = tiles[index];
-
-// 		if (!t.tags || t.tags.length === 0) {
-// 			$(this).hide();
-// 			return;
-// 		}
-
-// 		if (t.tags.includes(tag)) {
-// 			$(this).show();
-// 		} else {
-// 			$(this).hide();
-// 		}
-// 	});
-// });
 
 
 /* frequency calculations */
@@ -745,7 +749,7 @@ function refreshNextOccurrences() {
 			continue;
 		}
 		else if (t.nextOccurrence == "NaN-NaN-NaN") {
-			
+
 			t.nextOccurrence = null;
 			t.lastUpdate = convertToShortDate(t.lastUpdate);
 			t.nextOccurrence = formatDate(calculateNextOccurrence(freq, t.lastUpdate || today));
@@ -806,6 +810,18 @@ function nextOccurrenceDays(tile) {
 
 
 /* control handler scripts */
+
+$(document).on("click", ".virtual-empty", function () {
+  // find first real empty slot
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const t = tiles[i];
+    if (!t.name && t.logs.length === 0) {
+      $(`.tile[data-index='${i}']`).trigger("click");
+      break;
+    }
+  }
+});
+
 
 // Click outside popup closes it
 $(document).on("mousedown", function (e) {
