@@ -233,6 +233,19 @@ function renderTiles() {
 	applySearchFilter();
 }
 
+function openFirstEmptyTile() {
+  for (let i = 0; i < TILE_COUNT; i++) {
+    const t = tiles[i];
+    if (!t.name && t.logs.length === 0) {
+      $(`.tile[data-index='${i}']`).trigger("click");
+      return;
+    }
+  }
+
+  alert("No empty tiles left 😅");
+}
+
+
 
 // Update just one tile UI (for future use if needed)
 function updateTileUI(i) {
