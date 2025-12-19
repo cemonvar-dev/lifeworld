@@ -410,10 +410,19 @@ $(document).on("change", "#pickDateInput", function () {
 $(document).on("change", "#doneToggle", function () {
 	// Auto-save when done toggle changes
 	autoSaveTileChanges(false);
+	// Refresh history to show the new log entry
+	refreshHistoryDisplay();
 });
 
 $(document).on("change", "#skipToggle", function () {
 	// Auto-save when skip toggle changes
+	autoSaveTileChanges(false);
+	// Refresh history to show the new log entry
+	refreshHistoryDisplay();
+});
+
+// Auto-save tile name on blur
+$("#tileTitle").on("blur", function () {
 	autoSaveTileChanges(false);
 });
 
