@@ -210,7 +210,7 @@ function renderTiles() {
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
 			<div class="tileTop" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; max-width: calc(100% - 100px);">${t.name || ""}</div>
+			  <div class="tileName" style="flex: 1">${t.name || ""}</div>
 			  <div style="flex-shrink: 0; display: flex; gap: 5px; align-items: center; font-size: 1em;">
 			    ${t.done ? "💪" : ""}
 			    ${t.skip ? "😢" : ""}
