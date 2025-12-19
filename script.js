@@ -166,13 +166,13 @@ function updateTileColor(i) {
 	if (count === 0) {
 		$tile.css("background", "#F5F5F0"); // keep pale gray for empty
 	} else if (count >= 1 && count <= 3) {
-		$tile.css("background", "linear-gradient(to bottom, rgba(245,203,203,0.95), rgba(245,245,240,0.6))"); // soft pink -> pale
+		$tile.css("background", "linear-gradient(to bottom, rgba(245,245,240,0.6), rgba(245,203,203,0.95))"); // pale -> soft pink
 	} else if (count >= 4 && count <= 8) {
-		$tile.css("background", "linear-gradient(to bottom, rgba(199,247,192,0.95), rgba(245,245,240,0.6))"); // soft green -> pale
+		$tile.css("background", "linear-gradient(to bottom, rgba(245,245,240,0.6), rgba(199,247,192,0.95))"); // pale -> soft green
 	} else if (count >= 9 && count <= 15) {
-		$tile.css("background", "linear-gradient(to bottom, rgba(182,217,255,0.95), rgba(245,245,240,0.6))"); // soft blue -> pale
+		$tile.css("background", "linear-gradient(to bottom, rgba(245,245,240,0.6), rgba(182,217,255,0.95))"); // pale -> soft blue
 	} else if (count > 15) {
-		$tile.css("background", "linear-gradient(to bottom, rgba(255,154,158,0.95), rgba(250,208,196,0.75))"); // warm gradient for high counts
+		$tile.css("background", "linear-gradient(to bottom, rgba(250,208,196,0.75), rgba(255,154,158,0.95))"); // pale -> warm gradient for high counts
 	}
 }
 
