@@ -144,7 +144,7 @@ body {
   ========================== */
   
 #quickFilters {
-  margin: 10px 20px;
+  margin: 0;
   display: flex;
   gap: 8px;
 }
@@ -310,4 +310,13 @@ footer {
   color:#777;
   font-size:12px;
   border-top:1px solid #ddd;
+}
+
+/* Top intent row layout (search + Today's Plan + quick filters) */
+#topIntentRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 20px;
+  flex-wrap: wrap;
 }
