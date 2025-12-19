@@ -210,17 +210,17 @@ function renderTiles() {
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
 			<div class="tileTop" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; max-width: calc(100% - 50px);">${t.name || ""}</div>
-			  <div class="tileCount" style="flex-shrink: 0; min-width: 40px; text-align: center; font-weight: bold;">${t.logs.filter(l => l.text === "done").length || "-"}</div>
+			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; max-width: calc(100% - 100px);">${t.name || ""}</div>
+			  <div style="flex-shrink: 0; display: flex; gap: 5px; align-items: center; font-size: 1em;">
+			    ${t.done ? "💪" : ""}
+			    ${t.skip ? "😢" : ""}
+			    <div class="tileCount" style="flex-shrink: 0; min-width: fit-content; font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
+			  </div>
 			</div>
 			<div class="tileCenter">
 			  <div class="tileNext" style="font-weight: bold; font-size: 1.1em;">${nextText}</div>  
 			</div>
 			<div class="tileLast">${freqText}</div>
-			<div class="tileLast">
-   				 ${t.skip ? "😢 skipped" : ""}
-			</div>
-			<div class="tileLast">${t.done ? "💪 done" : ""}</div>
 			<div class="tileLast">${lastUpdateText || ""}</div>
 		  </div>
 		`);
