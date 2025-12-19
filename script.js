@@ -162,16 +162,17 @@ function updateTileColor(i) {
 	let count = tiles[i].logs.length;
 	let $tile = $(`.tile[data-index='${i}']`);
 
+	// Apply soft vertical gradients instead of solid fills to keep visuals subtle
 	if (count === 0) {
-		$tile.css("background", "#F5F5F0"); // same pale gray as default
+		$tile.css("background", "#F5F5F0"); // keep pale gray for empty
 	} else if (count >= 1 && count <= 3) {
-		$tile.css("background", "#F5CBCB"); // pastel pink
+		$tile.css("background", "linear-gradient(to bottom, rgba(245,203,203,0.95), rgba(245,245,240,0.6))"); // soft pink -> pale
 	} else if (count >= 4 && count <= 8) {
-		$tile.css("background", "#c7f7c0"); // soft green
+		$tile.css("background", "linear-gradient(to bottom, rgba(199,247,192,0.95), rgba(245,245,240,0.6))"); // soft green -> pale
 	} else if (count >= 9 && count <= 15) {
-		$tile.css("background", "#b6d9ff"); // soft blue
+		$tile.css("background", "linear-gradient(to bottom, rgba(182,217,255,0.95), rgba(245,245,240,0.6))"); // soft blue -> pale
 	} else if (count > 15) {
-		$tile.css("background", "linear-gradient(135deg, #ff9a9e, #fad0c4)");
+		$tile.css("background", "linear-gradient(to bottom, rgba(255,154,158,0.95), rgba(250,208,196,0.75))"); // warm gradient for high counts
 	}
 }
 
