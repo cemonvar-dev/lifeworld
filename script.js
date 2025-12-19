@@ -1006,7 +1006,7 @@ $(document).ready(function () {
 });
 
 $(document).on("click", ".editLogBtn", function () {
-	let card = $(this).closest(".historyCard");
+	let card = $(this).closest(".historyItem");
 	let logIndex = card.data("logindex");
 	let log = tiles[activeIndex].logs[logIndex];
 
@@ -1121,7 +1121,8 @@ function resetAllFlags() {
 function applySearchFilter() {
 	let q = $("#searchBox").val().toLowerCase().trim();
 	if (q === "") {
-		$(".tile").show();
+		// Don't show all tiles - reapply filters instead
+		applyFilters();
 		return;
 	}
 
@@ -1143,12 +1144,12 @@ $("#searchBox").on("keyup", function () {
 });
 
 $(document).on("click", ".deleteLogBtn", function () {
-  const index = $(this).closest(".historyItem").data("logindex");
+  const logIndex = $(this).closest(".historyItem").data("logindex");
 
   const ok = confirm("Delete this history entry?");
   if (!ok) return;
 
-  tiles[activeIndex].logs.splice(index, 1);
+  tiles[activeIndex].logs.splice(logIndex, 1);
 
   saveWorld();
   renderTiles();
