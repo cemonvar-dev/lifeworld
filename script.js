@@ -289,7 +289,7 @@ $(document).on("click", ".tile", function () {
 						log.text === "skipped" ? "😢" : "💬";
 
 				return `
-      <div class="historyItem" data-logindex="${index}">
+      <div class="historyItem" data-logindex="${index}" data-logdate="${log.date}" data-logtext="${log.text}">
         <div class="historyHeader">
           <div class="historyAction">
             ${emoji} ${log.text}
@@ -1007,8 +1007,13 @@ $(document).ready(function () {
 
 $(document).on("click", ".editLogBtn", function () {
 	let card = $(this).closest(".historyItem");
-	let logIndex = card.data("logindex");
-	let log = tiles[activeIndex].logs[logIndex];
+	let logDate = card.data("logdate");
+	let logText = card.data("logtext");
+	
+	// Find the actual log in the unsorted array by matching date and text
+	let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
+	
+	if (!log) return;
 
 	let existingNote = log.note || "";
 	let newNote = prompt("Add extra info for this action:", existingNote);
@@ -1144,12 +1149,17 @@ $("#searchBox").on("keyup", function () {
 });
 
 $(document).on("click", ".deleteLogBtn", function () {
-  const logIndex = $(this).closest(".historyItem").data("logindex");
+  const logDate = $(this).closest(".historyItem").data("logdate");
+  const logText = $(this).closest(".historyItem").data("logtext");
 
   const ok = confirm("Delete this history entry?");
   if (!ok) return;
 
-  tiles[activeIndex].logs.splice(logIndex, 1);
+  // Find and remove the log by matching date and text
+  const indexToRemove = tiles[activeIndex].logs.findIndex(l => l.date === logDate && l.text === logText);
+  if (indexToRemove !== -1) {
+    tiles[activeIndex].logs.splice(indexToRemove, 1);
+  }
 
   saveWorld();
   renderTiles();
