@@ -78,6 +78,17 @@ function renderTodayPlanPopup() {
 
  
 $("#showAgendaBtn").on("click", function () {
+  // Set filter to "today"
+  filters.timeline = "today";
+  
+  // Update UI to show "today" as active
+  $(".tItem").removeClass("active");
+  $(`.tItem[data-filter='today']`).addClass("active");
+  
+  // Apply filters to main grid
+  applyFilters();
+  
+  // Render the today plan popup
   renderTodayPlanPopup();
 });
 

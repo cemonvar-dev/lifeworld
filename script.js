@@ -208,7 +208,7 @@ function renderTiles() {
 
 
 		$("#grid").append(`    
-		  <div class="tile" data-index="${i}">
+		  <div class="tile" data-index="${i}" style="display: flex; flex-direction: column;">
 			<div class="tileTop" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
 			  <div class="tileName" style="flex: 1">${t.name || ""}</div>
 			  <div style="flex-shrink: 0; display: flex; gap: 5px; align-items: center; font-size: 1em;">
@@ -221,7 +221,8 @@ function renderTiles() {
 			  <div class="tileNext" style="font-weight: bold; font-size: 1.1em;">${nextText}</div>  
 			</div>
 			<div class="tileLast">${freqText}</div>
-			<div class="tileLast">${lastUpdateText || ""}</div>
+			<div style="flex-grow: 1;"></div>
+			<div class="tileLast" style="margin-bottom: 6px;">${lastUpdateText || ""}</div>
 		  </div>
 		`);
 
