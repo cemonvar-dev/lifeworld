@@ -257,28 +257,11 @@ function updateTileUI(i) {
 	updateTileColor(i);
 }
 
-// ---- Popup / tile click ----
-$(document).on("click", ".tile", function () {
-	// --- VIRTUAL EMPTY TILE ---
-	if ($(this).hasClass("virtual-empty")) {
-		openFirstEmptyTile();
-		return;
-	}
-
-	// --- REAL TILE ---
-	activeIndex = $(this).data("index");
-	if (activeIndex === undefined) return;
-
-	$("#tileTitle").text(tiles[activeIndex].name || "");
-
-	$("#doneToggle").prop("checked", tiles[activeIndex].done === true);
-	$("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
-
-
-	// HISTORY
-	normalizeTile(activeIndex);
+function refreshHistoryDisplay() {
+	if (activeIndex === null) return;
+	
 	let logs = [...tiles[activeIndex].logs].sort((a, b) => {
-		return new Date(b.date) - new Date(a.date);  // NEW: newest first
+		return new Date(b.date) - new Date(a.date);  // newest first
 	});
 
 	if (logs.length > 0) {
@@ -311,12 +294,32 @@ $(document).on("click", ".tile", function () {
     `;
 			}).join("")
 		);
-
-
-
 	} else {
 		$("#historyBox").html("<div style='color:#888;'>No history yet</div>");
 	}
+}
+
+// ---- Popup / tile click ----
+$(document).on("click", ".tile", function () {
+	// --- VIRTUAL EMPTY TILE ---
+	if ($(this).hasClass("virtual-empty")) {
+		openFirstEmptyTile();
+		return;
+	}
+
+	// --- REAL TILE ---
+	activeIndex = $(this).data("index");
+	if (activeIndex === undefined) return;
+
+	$("#tileTitle").text(tiles[activeIndex].name || "");
+
+	$("#doneToggle").prop("checked", tiles[activeIndex].done === true);
+	$("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
+
+
+	// HISTORY
+	normalizeTile(activeIndex);
+	refreshHistoryDisplay();
 
 	// ==== LOAD FREQUENCY INTO POPUP ====
 	let freq = tiles[activeIndex].frequency || {
@@ -1025,10 +1028,9 @@ $(document).on("click", ".editLogBtn", function () {
 	log.note = newNote.trim();
 
 	saveWorld();
-	renderTiles();
-
-	// Reload popup history instantly
-	$(document).trigger("click", `.tile[data-index='${activeIndex}']`);
+	
+	// Refresh history display without closing popup
+	refreshHistoryDisplay();
 });
 
 
@@ -1162,8 +1164,7 @@ $(document).on("click", ".deleteLogBtn", function () {
   }
 
   saveWorld();
-  renderTiles();
-
-  // reopen popup to refresh history
-  $(document).trigger("click", `.tile[data-index='${activeIndex}']`);
+  
+  // Refresh history display without closing popup
+  refreshHistoryDisplay();
 });
