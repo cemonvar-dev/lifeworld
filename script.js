@@ -209,12 +209,12 @@ function renderTiles() {
 
 		$("#grid").append(`    
 		  <div class="tile" data-index="${i}">
-			<div class="tileTop">
-			  <div class="tileName">${t.name || ""}</div>
+			<div class="tileTop" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; max-width: calc(100% - 50px);">${t.name || ""}</div>
+			  <div class="tileCount" style="flex-shrink: 0; min-width: 40px; text-align: center; font-weight: bold;">${t.logs.filter(l => l.text === "done").length || "-"}</div>
 			</div>
 			<div class="tileCenter">
-			  <div class="tileCount">${t.logs.filter(l => l.text === "done").length || "-"}</div>  
-			  <div class="tileNext">${nextText}</div>
+			  <div class="tileNext" style="font-weight: bold; font-size: 1.1em;">${nextText}</div>  
 			</div>
 			<div class="tileLast">${freqText}</div>
 			<div class="tileLast">
