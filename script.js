@@ -384,15 +384,37 @@ $(document).on("change", "input[name='freqMode']", function () {
 		$("#customDays").hide();
 		$("#pickDateContainer").show();
 	}
+	
+	// Auto-save frequency change
+	autoSaveTileChanges(false);
 });
 
 
 $(document).on("click", ".dayBtn", function () {
 	$(this).toggleClass("active");
+	// Auto-save when day selection changes
+	autoSaveTileChanges(false);
 });
 
 $(document).on("click", ".tagOption", function () {
 	$(this).toggleClass("active");
+	// Auto-save when tags change
+	autoSaveTileChanges(false);
+});
+
+$(document).on("change", "#pickDateInput", function () {
+	// Auto-save when pick date changes
+	autoSaveTileChanges(false);
+});
+
+$(document).on("change", "#doneToggle", function () {
+	// Auto-save when done toggle changes
+	autoSaveTileChanges(false);
+});
+
+$(document).on("change", "#skipToggle", function () {
+	// Auto-save when skip toggle changes
+	autoSaveTileChanges(false);
 });
 
 
@@ -441,8 +463,8 @@ $(document).on("click", ".themeOption", function () {
 
 
 
-// ---- Save ----
-$("#saveBtn").on("click", function () {
+// ---- Auto-save helper function ----
+function autoSaveTileChanges(closePopup = false) {
 	if (activeIndex === null) return;
 
 	let name = $("#tileTitle").text().trim();
@@ -512,7 +534,7 @@ $("#saveBtn").on("click", function () {
 	}
 
 	//*******************************
-	// ==== SAVE FREQUENCY FIRST ====
+	// ==== SAVE FREQUENCY ====
 	//*******************************
 	let mode = $("input[name='freqMode']:checked").val();
 	let days = [];
@@ -534,12 +556,10 @@ $("#saveBtn").on("click", function () {
 		date: selectedDate
 	};
 
-
-	// ==== THEN CALCULATE NEXT OCCURRENCE ====
+	// ==== CALCULATE NEXT OCCURRENCE ====
 	tiles[activeIndex].nextOccurrence = formatDate(
 		calculateNextOccurrence(tiles[activeIndex].frequency, now)
 	);
-
 
 	// Save tags
 	let newTags = [];
@@ -548,14 +568,19 @@ $("#saveBtn").on("click", function () {
 	});
 	tiles[activeIndex].tags = newTags;
 
-
-
 	saveWorld();
 	renderTiles();
 
-	$("#popup").hide();
-	$("#overlay").hide();
-	$("#historyBox").empty();
+	if (closePopup) {
+		$("#popup").hide();
+		$("#overlay").hide();
+		$("#historyBox").empty();
+	}
+}
+
+// ---- Save ----
+$("#saveBtn").on("click", function () {
+	autoSaveTileChanges(true);
 });
 
 //filtering with a tag button
