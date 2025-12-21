@@ -229,7 +229,7 @@ function renderTiles() {
 			<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
 			  <div style="display: flex; gap: 5px;">
 				${t.done ? "💪" : ""}
-				${t.skip ? "😢" : ""}
+				${t.skip ? "�" : ""}
 			  </div>
 			  <div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
 			</div>
@@ -280,7 +280,7 @@ function refreshHistoryDisplay() {
             logs.map((log, index) => {
                 const emoji =
                     log.text === "done" ? "💪" :
-                    log.text === "skipped" ? "😢" : "💬";
+                    log.text === "skipped" ? "�" : "💬";
 
                 return `
       <div class="historyItem" data-logindex="${index}" data-logdate="${log.date}" data-logtext="${log.text}">

@@ -51,7 +51,7 @@ function renderTodayPlanPopup() {
         ${items.map(i => `
           <div class="planItem ${i.status}">
             <div class="planStatus">
-              ${i.status === "done" ? "💪" : i.status === "skipped" ? "😢" : "⏳"}
+              ${i.status === "done" ? "💪" : i.status === "skipped" ? "�" : "⏳"}
             </div>
             <div>${i.name}</div>
           </div>
