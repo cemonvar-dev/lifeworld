@@ -1,20 +1,16 @@
-
-
 /* ==========================
    TAG BAR
    ========================== */
 #tagBar {
     display: flex;
     gap: 8px;
-    margin-top:20px;
-    margin-left:20px;
     flex-wrap: wrap;
     position: sticky;
     top: 120px;
     z-index: 80;
     background: white;
-    padding: 10px 20px;
-    padding-top: 20px;
+    width: 100%;
+
 }
 
 .tagBtn {
