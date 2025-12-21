@@ -214,7 +214,14 @@ body {
     justify-content: space-between;
     margin: 15px 25px;
     padding: 10px 5px;
-    position: relative;
+    position: sticky;
+    top: 80px;
+    z-index: 85;
+    background: white;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 25px;
+    padding-right: 25px;
 }
 
 /* connecting line */
@@ -319,4 +326,9 @@ footer {
   gap: 12px;
   padding: 6px 20px;
   flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 90;
+  border-bottom: 1px solid #eee;
 }
