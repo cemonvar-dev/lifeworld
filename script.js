@@ -213,7 +213,7 @@ function renderTiles() {
         // Determine time of day icon
         const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
         const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-  const emoji = "";
+  let emoji = "";
         if (t.done) {
             emoji = "💪";
         } else if (t.skip) {
@@ -285,7 +285,7 @@ function refreshHistoryDisplay() {
     if (logs.length > 0) {
         $("#historyBox").html(
             logs.map((log, index) => {
-                   const emoji = "";
+                   let emoji = "";
                 if (log.text === "done") {
                     emoji = "💪";
                 } else if (log.text === "skipped") {
@@ -293,7 +293,7 @@ function refreshHistoryDisplay() {
                 } else {
                     emoji = "💬";
                 }
-                
+
                 return `
       <div class="historyItem" data-logindex="${index}" data-logdate="${log.date}" data-logtext="${log.text}">
         <div class="historyHeader">
