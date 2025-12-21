@@ -217,9 +217,9 @@ function renderTiles() {
         if (t.done) {
             emoji = "💪";
         } else if (t.skip) {
-            emoji = "�";
-        } else {
             emoji = "😢";
+        } else {
+            emoji = "💬";
         }
 
         $("#grid").append(`    
