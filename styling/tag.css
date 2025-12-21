@@ -4,12 +4,14 @@
 #tagBar {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
     position: sticky;
     top: 120px;
     z-index: 80;
     background: white;
     width: 100%;
+    overflow-x: auto;
+    white-space:nowrap;
+    padding: 8px 4px;
 
 }
 
@@ -22,7 +24,7 @@
     border: 1px solid #ddd;
     transition: 0.25s;
     user-select: none;
-    width: 5.5%;
+    width: 80px;
     text-align: center;
 }
 
