@@ -410,6 +410,11 @@ $(document).on("change", "#pickDateInput", function () {
 	autoSaveTileChanges(false);
 });
 
+$(document).on("input", "#pickDateInput", function () {
+	// Also listen to input event for better date picker compatibility
+	autoSaveTileChanges(false);
+});
+
 $(document).on("change", "#doneToggle", function () {
 	// Auto-save when done toggle changes
 	autoSaveTileChanges(false);
