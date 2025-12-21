@@ -89,17 +89,4 @@ $("#showAgendaBtn").on("click", function () {
 $("#closeTodayPlan").on("click", function () {
   $("#todayPlanPopup").css("display", "none");
 });
-
-// Close when clicking outside the popup
-$(document).on("click", function (e) {
-  if ($("#todayPlanPopup").css("display") !== "none" && 
-      !$(e.target).closest("#todayPlanPopup").length) {
-    $("#todayPlanPopup").css("display", "none");
-  }
-});
-
-$(document).on("keydown", function (e) {
-  if (e.key === "Escape") {
-    $("#todayPlanPopup").css("display", "none");
-  }
-});
+ 
