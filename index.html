@@ -64,16 +64,23 @@
     style="margin: 20px 20px 10px 20px; width: 300px; padding:5px;"
   />
 
-  <button id="showAgendaBtn" class="tagBtn">
-    Today’s Plan
-  </button>
   
-  <div id="quickFilters" style="display:flex; gap:8px; align-items:center; margin-left:12px;">
-    <button id="resetFlagsBtn" class="qfBtn">Reset</button>
-    <button id="filterDoneBtn" class="qfBtn">Done</button>
-    <button id="filterSkippedBtn" class="qfBtn">Skipped</button>
-    <button id="filterNoActionBtn" class="qfBtn">No Action</button>
+  <div id="tagBar">
+    <div class="tagBtn" data-tag="arts">🎨 Arts</div>
+    <div class="tagBtn" data-tag="cooking">🍳 Cooking</div>
+    <div class="tagBtn" data-tag="family">👨‍👩‍👧‍👦 Family</div>
+    <div class="tagBtn" data-tag="friends">🤝 Friends</div>
+    <div class="tagBtn" data-tag="games">🎮 Games</div>
+    <div class="tagBtn" data-tag="habit">🔥 Habit</div>
+    <div class="tagBtn" data-tag="health">💚 Health</div>
+    <div class="tagBtn" data-tag="hobby">🎯 Hobby</div>
+    <div class="tagBtn" data-tag="home">🏡 Home</div>
+    <div class="tagBtn" data-tag="learning">📚 Learning</div>
+    <div class="tagBtn" data-tag="outdoor">🌲 Outdoor</div>
+    <div class="tagBtn" data-tag="spirituality">✨ Spirituality</div>
+    <div class="tagBtn" data-tag="work">💼 Work</div>
   </div>
+  
 </div>
  
 
@@ -103,21 +110,14 @@
       <span>All</span>
     </div>
   </div>
-  <div id="tagBar">
-    <div class="tagBtn" data-tag="arts">🎨 Arts</div>
-    <div class="tagBtn" data-tag="cooking">🍳 Cooking</div>
-    <div class="tagBtn" data-tag="family">👨‍👩‍👧‍👦 Family</div>
-    <div class="tagBtn" data-tag="friends">🤝 Friends</div>
-    <div class="tagBtn" data-tag="games">🎮 Games</div>
-    <div class="tagBtn" data-tag="habit">🔥 Habit</div>
-    <div class="tagBtn" data-tag="health">💚 Health</div>
-    <div class="tagBtn" data-tag="hobby">🎯 Hobby</div>
-    <div class="tagBtn" data-tag="home">🏡 Home</div>
-    <div class="tagBtn" data-tag="learning">📚 Learning</div>
-    <div class="tagBtn" data-tag="outdoor">🌲 Outdoor</div>
-    <div class="tagBtn" data-tag="spirituality">✨ Spirituality</div>
-    <div class="tagBtn" data-tag="work">💼 Work</div>
+
+  <div id="quickFilters" style="display:flex; gap:8px; align-items:center; margin-left:12px;">
+    <button id="resetFlagsBtn" class="qfBtn">Reset</button>
+    <button id="filterDoneBtn" class="qfBtn">Done</button>
+    <button id="filterSkippedBtn" class="qfBtn">Skipped</button>
+    <button id="filterNoActionBtn" class="qfBtn">No Action</button>
   </div>
+  
 
 
   <div id="grid"></div>
@@ -192,15 +192,6 @@
     </div>
 
   </div>
-
-  <div id="todayPlanPopup" class="lwPopup">
-  <div class="lwPopupHeader">
-    <h3>Today’s Plan</h3>
-    <button id="closeTodayPlan">✕</button>
-  </div>
-
-  <div id="todayPlanContent"></div>
-</div>
 
 
   <footer> My world v0.34 </footer>

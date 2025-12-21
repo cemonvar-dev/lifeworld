@@ -26,6 +26,8 @@
     border: 1px solid #ddd;
     transition: 0.25s;
     user-select: none;
+    width: 5.5%;
+    text-align: center;
 }
 
 .tagBtn:hover {
