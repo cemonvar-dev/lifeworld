@@ -213,6 +213,14 @@ function renderTiles() {
         // Determine time of day icon
         const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
         const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+  const emoji = "";
+        if (t.done) {
+            emoji = "💪";
+        } else if (t.skip) {
+            emoji = "😢";
+        } else {
+            emoji = "💬";
+        }
 
         $("#grid").append(`    
 		  <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -228,8 +236,7 @@ function renderTiles() {
 			</div>
 			<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
 			  <div style="display: flex; gap: 5px;">
-				${t.done ? "💪" : ""}
-				${t.skip ? "�" : ""}
+					${emoji}
 			  </div>
 			  <div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
 			</div>
@@ -278,10 +285,15 @@ function refreshHistoryDisplay() {
     if (logs.length > 0) {
         $("#historyBox").html(
             logs.map((log, index) => {
-                const emoji =
-                    log.text === "done" ? "💪" :
-                    log.text === "skipped" ? "�" : "💬";
-
+                   const emoji = "";
+                if (log.text === "done") {
+                    emoji = "💪";
+                } else if (log.text === "skipped") {
+                    emoji = "😢";
+                } else {
+                    emoji = "💬";
+                }
+                
                 return `
       <div class="historyItem" data-logindex="${index}" data-logdate="${log.date}" data-logtext="${log.text}">
         <div class="historyHeader">
