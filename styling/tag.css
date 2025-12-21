@@ -9,7 +9,7 @@
     z-index: 80;
     background: white;
     width: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
     white-space:nowrap;
     padding: 8px 4px;
 
