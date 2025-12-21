@@ -7,7 +7,7 @@ function buildTodaysPlan() {
 
   for (let i = 0; i < TILE_COUNT; i++) {
     const t = tiles[i];
-    if (!t || !t.name) continue;
+    if (!t || !t.name || !t.logs) continue;
 
     // only TODAY
     if (nextOccurrenceDays(t) !== 0) continue;

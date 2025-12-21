@@ -217,9 +217,9 @@ function renderTiles() {
         if (t.done) {
             emoji = "💪";
         } else if (t.skip) {
-            emoji = "😢";
+            emoji = "�";
         } else {
-            emoji = "💬";
+            emoji = "😢";
         }
 
         $("#grid").append(`    
@@ -238,7 +238,7 @@ function renderTiles() {
 			  <div style="display: flex; gap: 5px;">
 					${emoji}
 			  </div>
-			  <div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
+			  <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
 			</div>
 		  </div>
 		`);
