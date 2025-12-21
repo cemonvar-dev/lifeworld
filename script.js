@@ -865,8 +865,13 @@ function refreshNextOccurrences() {
         if (next >= today) continue;
 
         // --- If tile done but its cycle is over, reset the flag ---
+        // Only reset if the task was done on a previous cycle (not today)
         if (t.done === true) {
-            t.done = false;
+            const lastDoneDate = t.lastUpdate ? toDateOnly(new Date(t.lastUpdate)) : null;
+            const todayDateOnly = toDateOnly(today);
+            if (!lastDoneDate || lastDoneDate.getTime() !== todayDateOnly.getTime()) {
+                t.done = false;
+            }
         }
 
 
