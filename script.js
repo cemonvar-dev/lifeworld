@@ -24,7 +24,8 @@ function initEmptyTiles() {
 			},
 			done: false,
 			skip: false,
-			tags: []
+			tags: [],
+			timeOfDay: []
 		};
 
 
@@ -50,19 +51,11 @@ function loadWorldFromLocal() {
 							mode: "daily",
 							days: [],
 							date: null
-						}
-					};
-				}
-			}
-
-			for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
-
-
-
-		} catch {
-			initEmptyTiles();
-		}
-	} else {
+					},
+					done: false,
+					skip: false,
+					tags: [],
+					timeOfDay: []
 		initEmptyTiles();
 	}
 }
@@ -110,7 +103,8 @@ async function loadWorldFromCloud() {
 					},
 					done: false,
 					skip: false,
-					tags: []
+					tags: [],
+					timeOfDay: []
 				};
 
 			}
@@ -363,6 +357,12 @@ $(document).on("click", ".tile", function () {
     `).join("")
 	);
 
+	// Load time of day preferences
+	let selectedTimeOfDay = tiles[activeIndex].timeOfDay || [];
+	$(".timeOfDayBtn").removeClass("active");
+	selectedTimeOfDay.forEach(time => {
+		$(`.timeOfDayBtn[data-time='${time}']`).addClass("active");
+	});
 
 	$("#overlay").show();
 	$("#popup").show();
@@ -402,6 +402,12 @@ $(document).on("click", ".dayBtn", function () {
 $(document).on("click", ".tagOption", function () {
 	$(this).toggleClass("active");
 	// Auto-save when tags change
+	autoSaveTileChanges(false);
+});
+
+$(document).on("click", ".timeOfDayBtn", function () {
+	$(this).toggleClass("active");
+	// Auto-save when time of day changes
 	autoSaveTileChanges(false);
 });
 
@@ -584,6 +590,13 @@ function autoSaveTileChanges(closePopup = false) {
 		newTags.push($(this).data("tag"));
 	});
 	tiles[activeIndex].tags = newTags;
+
+	// Save time of day
+	let newTimeOfDay = [];
+	$(".timeOfDayBtn.active").each(function () {
+		newTimeOfDay.push($(this).data("time"));
+	});
+	tiles[activeIndex].timeOfDay = newTimeOfDay;
 
 	saveWorld();
 	renderTiles();
@@ -1152,6 +1165,7 @@ function normalizeTile(i) {
 	if (typeof tiles[i].done === "undefined") tiles[i].done = false;
 	if (typeof tiles[i].skip === "undefined") tiles[i].skip = false;
 	if (!tiles[i].tags) tiles[i].tags = [];
+	if (!tiles[i].timeOfDay) tiles[i].timeOfDay = [];
 
 }
 
@@ -1168,7 +1182,8 @@ function resetTile(i) {
 		},
 		done: false,
 		skip: false,
-		tags: []
+		tags: [],
+		timeOfDay: []
 	};
 }
 

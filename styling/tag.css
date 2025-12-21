@@ -53,3 +53,24 @@
     color: white;
     border-color: #333;
 }
+
+.timeOfDayBtn {
+    padding: 6px 10px;
+    border-radius: 14px;
+    background: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    font-size: 11px;
+    transition: 0.25s;
+    user-select: none;
+}
+
+.timeOfDayBtn:hover {
+    background: #ddd;
+}
+
+.timeOfDayBtn.active {
+    background: #333;
+    color: white;
+    border-color: #333;
+}
