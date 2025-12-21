@@ -156,6 +156,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   font-size: 12px;
+  width: 80px;
 }
 
 .qfBtn.active {
