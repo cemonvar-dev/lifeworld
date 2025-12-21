@@ -3,7 +3,7 @@ let currentUser = null;
 let tiles = {};
 let activeIndex = null;
 const filters = {
-	timeline: "all",      // "today" | 1 | 2 | "3plus" | "all"
+	timeline: "today",      // "today" | 1 | 2 | "3plus" | "all"
 	status: null,         // "done" | "skip" | "noaction" | null
 	category: null        // "arts", "health", etc | null
 };

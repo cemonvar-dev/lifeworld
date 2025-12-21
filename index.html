@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=10, user-scalable=yes">
   <title>My World</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#ffffff">
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="/styling/styling.css">
@@ -126,8 +128,8 @@
       <h3 id="tileTitle" contenteditable="true" class="editableTitle" data-placeholder="Enter your tile name here"
         style="width: 50%;margin-bottom: 12px;margin-top: 0px;"></h3>
       <button id="saveBtn" style="position: absolute;right: 145px;display:none;">Save</button>
-      <button id="deleteTileBtn" style="position: absolute;right: 80px;">Delete</button>
-      <button id="cancelBtn" style="position: absolute;right: 12px;">Cancel</button>
+      <button id="deleteTileBtn" style="position: absolute;right: 80px;">🗑️</button>
+      <button id="cancelBtn" style="position: absolute;right: 12px;">✕</button>
     </div>
 
     <!-- NEW FREQUENCY CONTROL -->
@@ -203,6 +205,15 @@
   <script src="util.js"></script>
   <script src="script.js"></script>
   <script src="agenda.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        console.log('Service Worker registered');
+      }).catch(err => {
+        console.log('Service Worker registration failed:', err);
+      });
+    }
+  </script>
 
 </body>
 
