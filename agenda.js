@@ -22,23 +22,17 @@ function buildTodaysPlan() {
       status
     };
 
-    // ---- time block rules ----
-    if (
-      t.tags.includes("spirituality") ||
-      t.tags.includes("health") ||
-      t.tags.includes("habit") ||
-      t.tags.includes("home")
-    ) {
+    // ---- time of day preference ----
+    let timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+    
+    if (timeOfDay === "morning") {
       plan.morning.push(item);
     }
-    else if (
-      t.tags.includes("learning") ||
-      t.tags.includes("work") ||
-      t.tags.includes("outdoor")
-    ) {
-      plan.afternoon.push(item);
+    else if (timeOfDay === "evening") {
+      plan.evening.push(item);
     }
     else {
+      // default to evening if undefined
       plan.evening.push(item);
     }
   }
