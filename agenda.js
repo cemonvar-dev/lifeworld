@@ -66,7 +66,7 @@ function renderTodayPlanPopup() {
     block("🌙 Evening", plan.evening);
 
   $("#todayPlanContent").html(html || "<div>No tasks for today 🎉</div>");
-  $("#todayPlanPopup").show();
+  $("#todayPlanPopup").css("display", "block");
 }
 
 
@@ -87,19 +87,19 @@ $("#showAgendaBtn").on("click", function () {
 });
 
 $("#closeTodayPlan").on("click", function () {
-  $("#todayPlanPopup").hide();
+  $("#todayPlanPopup").css("display", "none");
 });
 
 // Close when clicking outside the popup
 $(document).on("click", function (e) {
-  if ($("#todayPlanPopup").is(":visible") && 
+  if ($("#todayPlanPopup").css("display") !== "none" && 
       !$(e.target).closest("#todayPlanPopup").length) {
-    $("#todayPlanPopup").hide();
+    $("#todayPlanPopup").css("display", "none");
   }
 });
 
 $(document).on("keydown", function (e) {
   if (e.key === "Escape") {
-    $("#todayPlanPopup").hide();
+    $("#todayPlanPopup").css("display", "none");
   }
 });

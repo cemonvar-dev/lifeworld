@@ -216,22 +216,23 @@ function renderTiles() {
 
         $("#grid").append(`    
 		  <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
+			<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
+			  <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+			</div>
 			<div>
-			  <div class="tileName" style="word-wrap: break-word; overflow-wrap: break-word; margin-bottom: 8px;">${t.name || ""}</div>
-			  <div class="tileBottom" style="display: flex; align-items: center; gap: 10px; font-size: 1em;">
-				<div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
-				<div style="font-size: 1.2em;">${timeIcon}</div>
-				<div style="display: flex; gap: 5px;">
-				  ${t.done ? "💪" : ""}
-				  ${t.skip ? "😢" : ""}
-				</div>
-			  </div>
 			  <div class="tileCenter">
-				<div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-top: 8px;">${nextText}</div>  
+				<div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
 			  </div>
 			  <div class="tileLast">${freqText}</div>
 			</div>
-			<div class="tileLast" style="margin-bottom: 6px;">${lastUpdateText || ""}</div>
+			<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+			  <div style="display: flex; gap: 5px;">
+				${t.done ? "💪" : ""}
+				${t.skip ? "😢" : ""}
+			  </div>
+			  <div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
+			</div>
 		  </div>
 		`);
 
