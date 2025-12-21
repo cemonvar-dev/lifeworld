@@ -210,19 +210,24 @@ function renderTiles() {
         }
 
 
+        // Determine time of day icon
+        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+
         $("#grid").append(`    
 		  <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
 			<div>
-			  <div class="tileTop" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; min-height: 40px;">
-				<div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word;">${t.name || ""}</div>
-				<div style="flex-shrink: 0; display: flex; gap: 5px; align-items: center; font-size: 1em;">
+			  <div class="tileName" style="word-wrap: break-word; overflow-wrap: break-word; margin-bottom: 8px;">${t.name || ""}</div>
+			  <div class="tileBottom" style="display: flex; align-items: center; gap: 10px; font-size: 1em;">
+				<div class="tileCount" style="font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
+				<div style="font-size: 1.2em;">${timeIcon}</div>
+				<div style="display: flex; gap: 5px;">
 				  ${t.done ? "💪" : ""}
 				  ${t.skip ? "😢" : ""}
-				  <div class="tileCount" style="flex-shrink: 0; min-width: fit-content; font-weight: bold;">(${t.logs.filter(l => l.text === "done").length || "0"})</div>
 				</div>
 			  </div>
 			  <div class="tileCenter">
-				<div class="tileNext" style="font-weight: bold; font-size: 1.1em;">${nextText}</div>  
+				<div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-top: 8px;">${nextText}</div>  
 			  </div>
 			  <div class="tileLast">${freqText}</div>
 			</div>

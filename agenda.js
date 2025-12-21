@@ -90,6 +90,14 @@ $("#closeTodayPlan").on("click", function () {
   $("#todayPlanPopup").hide();
 });
 
+// Close when clicking outside the popup
+$(document).on("click", function (e) {
+  if ($("#todayPlanPopup").is(":visible") && 
+      !$(e.target).closest("#todayPlanPopup").length) {
+    $("#todayPlanPopup").hide();
+  }
+});
+
 $(document).on("keydown", function (e) {
   if (e.key === "Escape") {
     $("#todayPlanPopup").hide();
