@@ -1019,10 +1019,25 @@ function dailyResetFlags() {
 	// Already reset today → do nothing
 	if (lastReset === today) return;
 
-	// Reset all tiles for a new day
+	// Reset all tiles for a new day ONLY if they have no "done" log from today
 	for (let i = 0; i < TILE_COUNT; i++) {
-		tiles[i].done = false;
-		tiles[i].skip = false;
+		const todayStr = formatDate(new Date());
+		
+		// Check if tile was actually done today
+		const donedToday = tiles[i].logs.some(log =>
+			log.text === "done" &&
+			convertToShortDate(log.date) === todayStr
+		);
+		
+		// Check if tile was skipped today
+		const skippedToday = tiles[i].logs.some(log =>
+			log.text === "skipped" &&
+			convertToShortDate(log.date) === todayStr
+		);
+		
+		// Only reset if NOT done/skipped today
+		if (!donedToday) tiles[i].done = false;
+		if (!skippedToday) tiles[i].skip = false;
 	}
 
 	// Save world after reset
@@ -1043,6 +1058,9 @@ $(document).ready(function () {
 
 	saveWorld();
 	$("#popup").css("display", "none");
+	
+	// Set "today" as active filter on page load
+	$(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
 });
 
 $(document).on("click", ".editLogBtn", function () {
