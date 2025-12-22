@@ -43,7 +43,23 @@
     gap: 6px;
     padding-bottom: 24px;
     margin-bottom: 8px;
+
     overflow-x: auto;
+    overflow-y: hidden;
+
+    /* Firefox */
+    scrollbar-width: none;
+
+    /* IE / old Edge */
+    -ms-overflow-style: none;
+
+    /* Smooth touch scrolling */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Chrome, Safari, Edge (Chromium) */
+#tagSelectorButtons::-webkit-scrollbar {
+    display: none;
 }
 
 .tagOption {
