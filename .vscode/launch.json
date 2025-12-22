@@ -2,22 +2,11 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Chrome",
-      "type": "chrome",
+      "name": "Launch index.html",
+      "type": "firefox",
       "request": "launch",
-      "url": "http://localhost:8000",
-      "webRoot": "${workspaceFolder}",
-      "sourceMaps": true,
-      "runtimeExecutable": "chrome"
-    },
-    {
-      "name": "Python Server + Chrome",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:8000",
-      "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Start Python Server",
-      "postDebugTask": "Stop Python Server"
+      "reAttach": true,
+      "file": "${workspaceFolder}/index.html"
     }
   ]
 }

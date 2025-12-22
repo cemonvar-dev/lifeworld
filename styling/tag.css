@@ -43,6 +43,7 @@
     gap: 6px;
     flex-wrap: wrap;
     margin-bottom: 8px;
+    overflow-x: auto;
 }
 
 .tagOption {
