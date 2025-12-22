@@ -9,11 +9,27 @@
     z-index: 80;
     background: white;
     width: 100%;
+
     overflow-x: auto;
-    white-space:nowrap;
+    overflow-y: hidden;
+    white-space: nowrap;
     padding: 8px 4px;
 
+    /* Firefox */
+    scrollbar-width: none;
+
+    /* IE / old Edge */
+    -ms-overflow-style: none;
+
+    /* Smooth touch scrolling */
+    -webkit-overflow-scrolling: touch;
 }
+
+/* Chrome, Safari, Edge (Chromium) */
+#tagBar::-webkit-scrollbar {
+    display: none;
+}
+
 
 .tagBtn {
     padding: 6px 14px;
