@@ -149,20 +149,20 @@ body {
   gap: 8px;
 }
 
-
-
 .qfBtn {
-  width: 42px;
-  height: 32px;
-  padding: 0;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 5px 12px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  width: 80px;
 }
 
 .qfBtn.active {
-  transform: scale(1.08);
+  background: #333;
+  color: white;
+  border-color: #333;
 }
 
 
