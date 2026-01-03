@@ -150,7 +150,7 @@ async function saveWorldToCloud() {
                 .insert([{
                     user_id: currentUser.id,
                     data: currentData.data,
-                    backup_time: new Date().toISOString()
+                    updated_at: new Date().toISOString()
                 }]);
         } catch (backupError) {
             console.error("Backup failed:", backupError);
