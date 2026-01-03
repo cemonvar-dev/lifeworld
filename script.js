@@ -156,10 +156,12 @@ async function saveWorldToCloud() {
         try {
             await supa
                 .from("worlds_backup")
-                .upsert([{
+                .upsert({
                     user_id: currentUser.id,
                     data: currentData.data
-                }]);
+                }, {
+                    onConflict: "user_id"
+                });
         } catch (backupError) {
             console.error("Backup failed:", backupError);
         }
