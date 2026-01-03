@@ -134,9 +134,31 @@ async function loadWorldFromCloud() {
 
 async function saveWorldToCloud() {
     if (!currentUser) return;
-    const {
-        error
-    } = await supa
+
+    // 1. Fetch current data from worlds
+    const { data: currentData, error: fetchError } = await supa
+        .from("worlds")
+        .select("data")
+        .eq("user_id", currentUser.id)
+        .single();
+
+    // 2. If data exists, backup to worlds-backup
+    if (currentData && currentData.data) {
+        try {
+            await supa
+                .from("worlds-backup")
+                .insert([{
+                    user_id: currentUser.id,
+                    data: currentData.data,
+                    backup_time: new Date().toISOString()
+                }]);
+        } catch (backupError) {
+            console.error("Backup failed:", backupError);
+        }
+    }
+
+    // 3. Save new data to main table
+    const { error } = await supa
         .from("worlds")
         .upsert({
             user_id: currentUser.id,
@@ -149,7 +171,6 @@ async function saveWorldToCloud() {
         console.error("Cloud save error:", error);
     }
 }
-
 
 function saveWorld() {
     if (currentUser) {
