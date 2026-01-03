@@ -158,8 +158,7 @@ async function saveWorldToCloud() {
                 .from("worlds_backup")
                 .upsert([{
                     user_id: currentUser.id,
-                    data: currentData.data,
-                    updated_at: new Date().toISOString()
+                    data: currentData.data
                 }]);
         } catch (backupError) {
             console.error("Backup failed:", backupError);
