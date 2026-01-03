@@ -146,7 +146,7 @@ async function saveWorldToCloud() {
     if (currentData && currentData.data) {
         try {
             await supa
-                .from("worlds-backup")
+                .from("worlds_backup")
                 .insert([{
                     user_id: currentUser.id,
                     data: currentData.data,
