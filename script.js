@@ -135,6 +135,15 @@ async function loadWorldFromCloud() {
 async function saveWorldToCloud() {
     if (!currentUser) return;
 
+    // Check if all tiles are empty (no name and no logs)
+    const allEmpty = Object.values(tiles).every(
+        t => (!t.name || t.name.trim() === "") && (!t.logs || t.logs.length === 0)
+    );
+    if (allEmpty) {
+        // Don't backup or overwrite cloud data if everything is empty
+        return;
+    }
+
     // 1. Fetch current data from worlds
     const { data: currentData, error: fetchError } = await supa
         .from("worlds")
@@ -142,7 +151,7 @@ async function saveWorldToCloud() {
         .eq("user_id", currentUser.id)
         .single();
 
-    // 2. If data exists, backup to worlds-backup
+    // 2. If data exists, backup to worlds_backup
     if (currentData && currentData.data) {
         try {
             await supa
@@ -171,6 +180,7 @@ async function saveWorldToCloud() {
         console.error("Cloud save error:", error);
     }
 }
+
 
 function saveWorld() {
     if (currentUser) {
