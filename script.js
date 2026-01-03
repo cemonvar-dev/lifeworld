@@ -132,6 +132,7 @@ async function loadWorldFromCloud() {
     renderTiles();
 }
 
+
 async function saveWorldToCloud() {
     if (!currentUser) return;
 
@@ -151,19 +152,43 @@ async function saveWorldToCloud() {
         .eq("user_id", currentUser.id)
         .single();
 
-    // 2. If data exists, backup to worlds_backup
+    // 2. Fetch last backup for this user
+    let shouldBackup = false;
     if (currentData && currentData.data) {
-        try {
-            await supa
-                .from("worlds_backup")
-                .upsert({
-                    user_id: currentUser.id,
-                    data: currentData.data
-                }, {
-                    onConflict: "user_id"
-                });
-        } catch (backupError) {
-            console.error("Backup failed:", backupError);
+        const { data: lastBackup, error: backupFetchError } = await supa
+            .from("worlds_backup")
+            .select("updated_at")
+            .eq("user_id", currentUser.id)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .single();
+
+        if (!lastBackup || !lastBackup.updated_at) {
+            shouldBackup = true; // No backup exists
+        } else {
+            const lastBackupTime = new Date(lastBackup.updated_at).getTime();
+            const now = Date.now();
+            const diffMinutes = (now - lastBackupTime) / (1000 * 60);
+            if (diffMinutes > 20) {
+                shouldBackup = true;
+            }
+        }
+
+        // Only backup if needed
+        if (shouldBackup) {
+            try {
+                await supa
+                    .from("worlds_backup")
+                    .insert({
+                        user_id: currentUser.id,
+                        data: currentData.data,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: "user_id"
+                    });
+            } catch (backupError) {
+                console.error("Backup failed:", backupError);
+            }
         }
     }
 
@@ -181,7 +206,6 @@ async function saveWorldToCloud() {
         console.error("Cloud save error:", error);
     }
 }
-
 
 function saveWorld() {
     if (currentUser) {
