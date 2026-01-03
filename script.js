@@ -156,7 +156,7 @@ async function saveWorldToCloud() {
         try {
             await supa
                 .from("worlds_backup")
-                .insert([{
+                .upsert([{
                     user_id: currentUser.id,
                     data: currentData.data,
                     updated_at: new Date().toISOString()
