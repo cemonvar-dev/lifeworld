@@ -182,7 +182,6 @@ async function saveWorldToCloud() {
                     .from("worlds_backup")
                     .upsert({
                         user_id: currentUser.id,
-        dailyResetFlags();
                         data: currentData.data,
                         updated_at: new Date().toISOString()
                     }, {
@@ -308,6 +307,7 @@ function renderTiles() {
     initDragAndDrop();
     applyFilters();
     applySearchFilter();
+    dailyResetFlags();
 }
 
 function openFirstEmptyTile() {
@@ -683,6 +683,7 @@ function autoSaveTileChanges(closePopup = false) {
 
     saveWorld();
     renderTiles();
+
 
     if (closePopup) {
         $("#popup").hide();
