@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>LifeWorld</title>
+  <!-- Supabase JS (for Google OAuth) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+  <script src="supa.js"></script>
   <style>
     :root{
       --bg:#0b1020;
@@ -639,8 +642,14 @@
           </label>
         </div>
 
+        <div style="margin:18px 0 0 0; text-align:center;">
+          <button class="btn primary" id="googleLoginBtn" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" style="width:20px;height:20px;vertical-align:middle;"> Sign in with Google
+          </button>
+        </div>
+
         <div class="hint">
-          This is a landing-page UI placeholder. Wire these buttons to your existing Supabase/Google OAuth flow when ready.
+          You can log in with Google. On success, you'll be redirected to your world.
         </div>
       </div>
       <div class="modalActions">
@@ -681,6 +690,28 @@
       alert("Landing UI only. Next step: connect to Supabase OAuth / email auth.");
       closeModal();
     });
+
+    // Google login integration
+    const googleBtn = document.getElementById("googleLoginBtn");
+    if (googleBtn) {
+      googleBtn.addEventListener("click", async () => {
+        googleBtn.disabled = true;
+        googleBtn.textContent = "Redirecting...";
+        try {
+          const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/index.html' } });
+          if (error) {
+            alert("Google login failed: " + error.message);
+            googleBtn.disabled = false;
+            googleBtn.textContent = "Sign in with Google";
+          }
+        } catch (e) {
+          alert("Google login error: " + (e.message || e));
+          googleBtn.disabled = false;
+          googleBtn.textContent = "Sign in with Google";
+        }
+      });
+    }
   </script>
 </body>
 </html>
+
