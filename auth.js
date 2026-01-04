@@ -9,12 +9,8 @@
       $("#menuLogoutBtn").show();
       await loadWorldFromCloud();
     } else {
-      currentUser = null;
-      $("#userInfo").text("Not logged in (using local storage)");
-      $("#menuLoginBtn").show();
-      $("#menuLogoutBtn").hide();
-      loadWorldFromLocal();
-      renderTiles();
+      // Not logged in: redirect to index.html
+      window.location.href = "index.html";
     }
   }
 
