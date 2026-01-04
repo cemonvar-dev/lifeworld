@@ -630,17 +630,17 @@
       </div>
       <div class="modalBody">
         <label>Email
-          <input type="email" placeholder="you@domain.com" />
+          <input type="email" id="modalEmail" placeholder="you@domain.com" autocomplete="email" />
         </label>
-
         <div class="row">
           <label>Password
-            <input type="password" placeholder="••••••••" />
+            <input type="password" id="modalPassword" placeholder="••••••••" autocomplete="new-password" />
           </label>
-          <label>Repeat (signup)
-            <input type="password" placeholder="••••••••" />
+          <label id="repeatLabel">Repeat (signup)
+            <input type="password" id="modalRepeat" placeholder="••••••••" autocomplete="new-password" />
           </label>
         </div>
+        <div id="modalError" style="color:#ff6b6b;min-height:18px;margin:8px 0 0 0;font-size:13px;"></div>
 
         <div style="margin:18px 0 0 0; text-align:center;">
           <button class="btn primary" id="googleLoginBtn" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;">
@@ -664,8 +664,15 @@
     const overlay = document.getElementById("modalOverlay");
     const title = document.getElementById("modalTitle");
 
+    let modalMode = "login";
     function openModal(mode){
+      modalMode = mode;
       title.textContent = mode === "signup" ? "Sign up" : "Login";
+      document.getElementById("modalError").textContent = "";
+      document.getElementById("modalEmail").value = "";
+      document.getElementById("modalPassword").value = "";
+      document.getElementById("modalRepeat").value = "";
+      document.getElementById("repeatLabel").style.display = mode === "signup" ? "block" : "none";
       overlay.style.display = "flex";
     }
     function closeModal(){
@@ -686,9 +693,40 @@
     overlay.addEventListener("click", (e)=>{ if(e.target === overlay) closeModal(); });
     document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
 
-    document.getElementById("modalSubmit").addEventListener("click", ()=>{
-      alert("Landing UI only. Next step: connect to Supabase OAuth / email auth.");
-      closeModal();
+    document.getElementById("modalSubmit").addEventListener("click", async ()=>{
+      const email = document.getElementById("modalEmail").value.trim();
+      const password = document.getElementById("modalPassword").value;
+      const repeat = document.getElementById("modalRepeat").value;
+      const errorDiv = document.getElementById("modalError");
+      errorDiv.textContent = "";
+      if (!email || !password || (modalMode === "signup" && !repeat)) {
+        errorDiv.textContent = "Please fill in all fields.";
+        return;
+      }
+      if (modalMode === "signup" && password !== repeat) {
+        errorDiv.textContent = "Passwords do not match.";
+        return;
+      }
+      try {
+        if (modalMode === "signup") {
+          const { error } = await supa.auth.signUp({ email, password });
+          if (error) {
+            errorDiv.textContent = error.message;
+            return;
+          }
+          // Optionally, show a message to check email for confirmation
+          window.location.href = "tracker.html";
+        } else {
+          const { error } = await supa.auth.signInWithPassword({ email, password });
+          if (error) {
+            errorDiv.textContent = error.message;
+            return;
+          }
+          window.location.href = "tracker.html";
+        }
+      } catch (e) {
+        errorDiv.textContent = e.message || e;
+      }
     });
 
     // Google login integration
