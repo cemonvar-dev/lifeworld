@@ -60,6 +60,7 @@ function loadWorldFromLocal() {
                 }
             }
             for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
+                dailyResetFlags();
         } catch(e) {
             initEmptyTiles();
         }
@@ -181,6 +182,7 @@ async function saveWorldToCloud() {
                     .from("worlds_backup")
                     .upsert({
                         user_id: currentUser.id,
+        dailyResetFlags();
                         data: currentData.data,
                         updated_at: new Date().toISOString()
                     }, {
