@@ -669,9 +669,15 @@
       modalMode = mode;
       title.textContent = mode === "signup" ? "Sign up" : "Login";
       document.getElementById("modalError").textContent = "";
-      document.getElementById("modalEmail").value = "";
-      document.getElementById("modalPassword").value = "";
-      document.getElementById("modalRepeat").value = "";
+      const emailInput = document.getElementById("modalEmail");
+      const passInput = document.getElementById("modalPassword");
+      const repeatInput = document.getElementById("modalRepeat");
+      emailInput.value = "";
+      passInput.value = "";
+      repeatInput.value = "";
+      emailInput.readOnly = false;
+      passInput.readOnly = false;
+      repeatInput.readOnly = false;
       document.getElementById("repeatLabel").style.display = mode === "signup" ? "block" : "none";
       overlay.style.display = "flex";
     }
