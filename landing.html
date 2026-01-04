@@ -698,7 +698,7 @@
         googleBtn.disabled = true;
         googleBtn.textContent = "Redirecting...";
         try {
-          const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/index.html' } });
+          const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/tracker.html' } });
           if (error) {
             alert("Google login failed: " + error.message);
             googleBtn.disabled = false;
