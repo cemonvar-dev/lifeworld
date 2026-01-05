@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/styling/tag.css">
   <link rel="stylesheet" href="/styling/tiledetail.css">
   <link rel="stylesheet" href="/styling/mobile.css">
+  <link rel="stylesheet" href="/styling/grayed.css">
 
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
@@ -118,9 +119,10 @@
   
   <div id="quickFilters" style="display:flex; gap:8px; align-items:center; margin-left:12px;">
    
-    <button id="filterDoneBtn" class="qfBtn">Done</button>
-    <button id="filterSkippedBtn" class="qfBtn">Skipped</button>
-    <button id="filterNoActionBtn" class="qfBtn">No Action</button>
+<button id="filterDoneBtn" class="qfBtn" title="Done">💪</button>
+<button id="filterSkippedBtn" class="qfBtn" title="Skipped">😢</button>
+<button id="filterNoActionBtn" class="qfBtn" title="No Action">💬</button>
+
   </div>
 </div>  
 
