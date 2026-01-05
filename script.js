@@ -223,7 +223,7 @@ function updateTileColor(i) {
 
     // Apply soft vertical gradients instead of solid fills to keep visuals subtle
     if (count === 0) {
-        $tile.css("background", "#F5F5F0"); // keep pale gray for empty
+        $tile.css("background", "#F2EFC3"); // keep pale gray for empty
     } else if (count >= 1 && count <= 3) {
         $tile.css("background", "linear-gradient(to bottom, rgba(245,245,240,0.6), rgba(245,203,203,0.95))"); // pale -> soft pink
     } else if (count >= 4 && count <= 8) {
