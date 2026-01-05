@@ -728,18 +728,12 @@ function applyFilters() {
 
         if (isEmpty) {
             if (allowEmpty) {
-                $(this).show();
+                $(this).removeClass("grayed-out").show();
             } else {
-                $(this).hide();
+                $(this).addClass("grayed-out").show();
             }
             return;
         }
-
-
-        // if (!t || !t.name) {
-        //   $(this).hide();
-        //   return;
-        // }
 
         // --- TIMELINE ---
         let days = nextOccurrenceDays(t);
@@ -764,9 +758,9 @@ function applyFilters() {
 
         // --- FINAL ---
         if (timelineOk && statusOk && categoryOk) {
-            $(this).show();
+            $(this).removeClass("grayed-out").show();
         } else {
-            $(this).hide();
+            $(this).addClass("grayed-out").show();
         }
     });
 
