@@ -1166,6 +1166,14 @@ $(document).ready(function() {
 
 // Custom modal for editing log note with textarea
 function showEditNoteModal(existingNote, onSave) {
+                // Add ESC key handler to close modal
+                function escHandler(e) {
+                    if (e.key === "Escape") {
+                        $("#editNoteModalOverlay").remove();
+                        $(document).off("keydown", escHandler);
+                    }
+                }
+                $(document).on("keydown", escHandler);
         // Remove any existing modal
         $("#editNoteModalOverlay").remove();
 
