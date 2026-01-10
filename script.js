@@ -1171,11 +1171,11 @@ function showEditNoteModal(existingNote, onSave) {
 
         const modalHtml = `
             <div id="editNoteModalOverlay" style="position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
-                <div id="editNoteModal" style="background:#181c2a;padding:24px 20px 18px 20px;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.35);min-width:320px;max-width:90vw;">
-                    <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Edit Note</div>
-                    <textarea id="editNoteTextarea" style="width:100%;min-height:80px;max-height:200px;padding:10px 12px;border-radius:12px;border:1px solid #444;background:#23273a;color:#e9ecf6;font-size:15px;resize:vertical;">${existingNote.replace(/</g, "&lt;")}</textarea>
+                <div id="editNoteModal" style="background:#f3f3f3;padding:24px 20px 18px 20px;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);min-width:320px;max-width:90vw;">
+                    <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#222;">Edit Note</div>
+                    <textarea id="editNoteTextarea" style="width:260px;min-width:0;max-width:100%;min-height:80px;max-height:200px;padding:10px 12px;border-radius:12px;border:1px solid #bbb;background:#fff;color:#222;font-size:15px;resize:vertical;">${existingNote.replace(/</g, "&lt;")}</textarea>
                     <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-                        <button id="editNoteCancelBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#333;color:#ccc;font-weight:600;">Cancel</button>
+                        <button id="editNoteCancelBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#eee;color:#444;font-weight:600;">Cancel</button>
                         <button id="editNoteSaveBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#72e3ff;color:#181c2a;font-weight:700;">Save</button>
                     </div>
                 </div>
