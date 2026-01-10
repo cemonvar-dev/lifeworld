@@ -223,7 +223,7 @@ function updateTileColor(i) {
 
     // Apply soft vertical gradients instead of solid fills to keep visuals subtle
     if (count === 0) {
-        $tile.css("background", "#F2EFC3"); // keep pale gray for empty
+        $tile.css("background", "#eeeab2ff"); // keep pale gray for empty
     } else if (count >= 1 && count <= 3) {
         $tile.css("background", "linear-gradient(to bottom, rgba(245,245,240,0.6), rgba(245,203,203,0.95))"); // pale -> soft pink
     } else if (count >= 4 && count <= 8) {
@@ -505,17 +505,13 @@ $(document).on("input", "#pickDateInput", function() {
 });
 
 $(document).on("change", "#doneToggle", function() {
-    // Auto-save when done toggle changes
-    autoSaveTileChanges(false);
-    // Refresh history to show the new log entry
-    refreshHistoryDisplay();
+    // Auto-save and close popup when done toggle changes
+    autoSaveTileChanges(true);
 });
 
 $(document).on("change", "#skipToggle", function() {
-    // Auto-save when skip toggle changes
-    autoSaveTileChanges(false);
-    // Refresh history to show the new log entry
-    refreshHistoryDisplay();
+    // Auto-save and close popup when skip toggle changes
+    autoSaveTileChanges(true);
 });
 
 // Auto-save tile name on blur
@@ -1163,29 +1159,57 @@ $(document).ready(function() {
     $(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
 });
 
+
+// Custom modal for editing log note with textarea
+function showEditNoteModal(existingNote, onSave) {
+        // Remove any existing modal
+        $("#editNoteModalOverlay").remove();
+
+        const modalHtml = `
+            <div id="editNoteModalOverlay" style="position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
+                <div id="editNoteModal" style="background:#181c2a;padding:24px 20px 18px 20px;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.35);min-width:320px;max-width:90vw;">
+                    <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Edit Note</div>
+                    <textarea id="editNoteTextarea" style="width:100%;min-height:80px;max-height:200px;padding:10px 12px;border-radius:12px;border:1px solid #444;background:#23273a;color:#e9ecf6;font-size:15px;resize:vertical;">${existingNote.replace(/</g, "&lt;")}</textarea>
+                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+                        <button id="editNoteCancelBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#333;color:#ccc;font-weight:600;">Cancel</button>
+                        <button id="editNoteSaveBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#72e3ff;color:#181c2a;font-weight:700;">Save</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        $("body").append(modalHtml);
+
+        $("#editNoteCancelBtn").on("click", function() {
+                $("#editNoteModalOverlay").remove();
+        });
+        $("#editNoteModalOverlay").on("click", function(e) {
+                if (e.target === this) $("#editNoteModalOverlay").remove();
+        });
+        $("#editNoteSaveBtn").on("click", function() {
+                const val = $("#editNoteTextarea").val();
+                $("#editNoteModalOverlay").remove();
+                onSave(val);
+        });
+        $("#editNoteTextarea").focus();
+}
+
 $(document).on("click", ".editLogBtn", function() {
-    let card = $(this).closest(".historyItem");
-    let logDate = card.data("logdate");
-    let logText = card.data("logtext");
+        let card = $(this).closest(".historyItem");
+        let logDate = card.data("logdate");
+        let logText = card.data("logtext");
 
-    // Find the actual log in the unsorted array by matching date and text
-    let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
+        // Find the actual log in the unsorted array by matching date and text
+        let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
 
-    if (!log) return;
+        if (!log) return;
 
-    let existingNote = log.note || "";
-    let newNote = prompt("Add extra info for this action:", existingNote);
-
-    // User cancelled
-    if (newNote === null) return;
-
-    // Save note (cannot modify done/skipped)
-    log.note = newNote.trim();
-
-    saveWorld();
-
-    // Refresh history display without closing popup
-    refreshHistoryDisplay();
+        let existingNote = log.note || "";
+        showEditNoteModal(existingNote, function(newNote) {
+                if (typeof newNote !== "string") return;
+                log.note = newNote.trim();
+                saveWorld();
+                refreshHistoryDisplay();
+        });
 });
 
 
