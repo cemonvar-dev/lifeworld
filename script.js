@@ -507,11 +507,15 @@ $(document).on("input", "#pickDateInput", function() {
 $(document).on("change", "#doneToggle", function() {
     // Auto-save and close popup when done toggle changes
     autoSaveTileChanges(true);
+    // Update tile UI state after closing
+    setTimeout(function() { renderTiles(); }, 10);
 });
 
 $(document).on("change", "#skipToggle", function() {
     // Auto-save and close popup when skip toggle changes
     autoSaveTileChanges(true);
+    // Update tile UI state after closing
+    setTimeout(function() { renderTiles(); }, 10);
 });
 
 // Auto-save tile name on blur
