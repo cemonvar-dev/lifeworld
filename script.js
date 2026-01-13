@@ -714,24 +714,16 @@ $(document).on("click", ".tagBtn", function() {
 });
 
 function applyFilters() {
+
     $(".tile").each(function() {
         const index = $(this).data("index");
         const t = tiles[index];
 
         const isEmpty = !t || (!t.name && t.logs.length === 0);
 
-        // Show empty tiles ONLY when everything is neutral
-        const allowEmpty =
-            filters.timeline === "all" &&
-            filters.status === null &&
-            filters.category === null;
-
+        // Never gray out empty tiles
         if (isEmpty) {
-            if (allowEmpty) {
-                $(this).removeClass("grayed-out").show();
-            } else {
-                $(this).addClass("grayed-out").show();
-            }
+            $(this).removeClass("grayed-out").show();
             return;
         }
 
