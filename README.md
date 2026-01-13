@@ -5,7 +5,7 @@ Each action you take in real life updates a tile in your world — forming a gen
 This repository contains the v0.3 web version, featuring tile management, logging, frequencies, Supabase sync, search, filters, and a modern popup UI.
 
 🚀 Features (v0.3)
-✓ 128-Tile Interactive Grid
+✓ 512-Tile Interactive Grid
 Click any tile to open the popup
 Empty tiles show a + icon
 Drag & drop tiles on desktop to reorder (mobile disables dragging automatically)

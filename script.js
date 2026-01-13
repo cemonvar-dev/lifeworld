@@ -1,4 +1,4 @@
-const TILE_COUNT = 128;
+const TILE_COUNT = 512;
 let currentUser = null;
 let tiles = {};
 let activeIndex = null;
