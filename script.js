@@ -1,3 +1,30 @@
+// --- Tag Dropdown logic ---
+$(document).on("click", "#tagDropdownBtn", function(e) {
+    e.stopPropagation();
+    $("#tagDropdownMenu").toggle();
+});
+
+// Hide dropdown when clicking outside
+$(document).on("click", function(e) {
+    if (!$(e.target).closest(".tagDropdown").length) {
+        $("#tagDropdownMenu").hide();
+    }
+});
+
+// Tag selection from dropdown
+$(document).on("click", ".tagDropdownMenu .tagBtn", function() {
+    const tag = $(this).data("tag");
+    if (filters.category === tag) {
+        filters.category = null;
+        $(".tagDropdownMenu .tagBtn").removeClass("active");
+    } else {
+        filters.category = tag;
+        $(".tagDropdownMenu .tagBtn").removeClass("active");
+        $(this).addClass("active");
+    }
+    applyFilters();
+    $("#tagDropdownMenu").hide();
+});
 const TILE_COUNT = 512;
 let currentUser = null;
 let tiles = {};
