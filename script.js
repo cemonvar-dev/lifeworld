@@ -725,20 +725,6 @@ $("#saveBtn").on("click", function() {
 });
 
 //filtering with a tag button
-$(document).on("click", ".tagBtn", function() {
-    const tag = $(this).data("tag");
-
-    if (filters.category === tag) {
-        filters.category = null;
-        $(".tagBtn").removeClass("active");
-    } else {
-        filters.category = tag;
-        $(".tagBtn").removeClass("active");
-        $(this).addClass("active");
-    }
-
-    applyFilters();
-});
 
 function applyFilters() {
 
