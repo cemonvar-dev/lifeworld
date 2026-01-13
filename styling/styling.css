@@ -331,6 +331,20 @@ footer {
   position: sticky;
   top: 0;
   background: white;
-  z-index: 90;
+  z-index: 100;
   border-bottom: 1px solid #eee;
+}
+
+#timelineFilter {
+  position: sticky;
+  top: 48px;
+  z-index: 99;
+  background: white;
+}
+
+#quickFilters {
+  position: sticky;
+  top: 96px;
+  z-index: 98;
+  background: white;
 }
