@@ -2,6 +2,6 @@
 .tile.grayed-out {
   opacity: 0.4;
   filter: grayscale(80%);
-  pointer-events: none;
+  /* pointer-events: none; */
   transition: opacity 0.2s, filter 0.2s;
 }
