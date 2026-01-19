@@ -263,78 +263,135 @@ function updateTileColor(i) {
 }
 
 function renderTiles() {
-    $("#grid").empty();
+        $("#grid").empty();
 
-    for (let i = 0; i < TILE_COUNT; i++) {
-        const t = tiles[i];
-        normalizeTile(i);
-
-        if (!t.name && t.logs.length === 0) {
-            $("#grid").append(`
-				<div class="tile empty" data-index="${i}">
-					<div class="plusIcon">+</div>
-				</div>
-			`);
-            continue;
-        }
-
-        const freqText = formatFrequency(t.frequency);
-        const nextText = computeNextOccurrenceDisplay(t);
-        let lastUpdateText = "";
-        if (t.logs && t.logs.length > 0) {
-            // newest = log with max date
-            const lastDoneLog = t.logs
-                .filter(l => l.text === "done")
-                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-            lastUpdateText = lastDoneLog ?
-                convertToShortDate(lastDoneLog.date) :
-                "";
-
-        }
-
-
-        // Determine time of day icon
-        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-  let emoji = "";
-        if (t.done) {
-            emoji = "💪";
-        } else if (t.skip) {
-            emoji = "😢";
+        // Mobile check
+        const isMobile = window.innerWidth <= 600;
+        if (isMobile) {
+                // Group tiles by tag
+                const allTags = [
+                        "health", "work", "learning", "habit", "home",
+                        "spirituality", "hobby", "games", "outdoor",
+                        "family", "friends", "arts", "cooking"
+                ].sort();
+                // For each tag, collect tiles
+                allTags.forEach(tag => {
+                        const tagTiles = Object.entries(tiles)
+                                .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
+                                .map(([i, t]) => ({ i, t }));
+                        if (tagTiles.length === 0) return;
+                        // Tag row container
+                        const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
+                        tagTiles.forEach(({ i, t }) => {
+                                normalizeTile(i);
+                                const freqText = formatFrequency(t.frequency);
+                                const nextText = computeNextOccurrenceDisplay(t);
+                                let lastUpdateText = "";
+                                if (t.logs && t.logs.length > 0) {
+                                        const lastDoneLog = t.logs
+                                                .filter(l => l.text === "done")
+                                                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                                        lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+                                }
+                                const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+                                const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+                                let emoji = "";
+                                if (t.done) {
+                                        emoji = "💪";
+                                } else if (t.skip) {
+                                        emoji = "😢";
+                                } else {
+                                        emoji = "💬";
+                                }
+                                $row.append(`
+                                    <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                            <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
+                                            <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                                        </div>
+                                        <div>
+                                            <div class="tileCenter">
+                                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
+                                            </div>
+                                            <div class="tileLast">${freqText}</div>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                                            <div style="display: flex; gap: 5px;">
+                                                        ${emoji}
+                                            </div>
+                                            <div>${lastUpdateText}</div>
+                                            <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
+                                        </div>
+                                    </div>
+                                `);
+                                updateTileColor(i);
+                        });
+                        // Add tag label
+                        $("#grid").append(`<div class="tagLabel">${tag}</div>`);
+                        $("#grid").append($row);
+                });
+                // Add empty tiles at the end (optional, or skip for mobile)
         } else {
-            emoji = "💬";
+                // Desktop: original logic
+                for (let i = 0; i < TILE_COUNT; i++) {
+                        const t = tiles[i];
+                        normalizeTile(i);
+                        if (!t.name && t.logs.length === 0) {
+                                $("#grid").append(`
+                                        <div class="tile empty" data-index="${i}">
+                                                <div class="plusIcon">+</div>
+                                        </div>
+                                `);
+                                continue;
+                        }
+                        const freqText = formatFrequency(t.frequency);
+                        const nextText = computeNextOccurrenceDisplay(t);
+                        let lastUpdateText = "";
+                        if (t.logs && t.logs.length > 0) {
+                                const lastDoneLog = t.logs
+                                        .filter(l => l.text === "done")
+                                        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                                lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+                        }
+                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+                        let emoji = "";
+                        if (t.done) {
+                                emoji = "💪";
+                        } else if (t.skip) {
+                                emoji = "😢";
+                        } else {
+                                emoji = "💬";
+                        }
+                        $("#grid").append(`    
+                            <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
+                                    <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                                </div>
+                                <div>
+                                    <div class="tileCenter">
+                                        <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
+                                    </div>
+                                    <div class="tileLast">${freqText}</div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                                    <div style="display: flex; gap: 5px;">
+                                                ${emoji}
+                                    </div>
+                                    <div>${lastUpdateText}</div>
+                                    <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
+                                </div>
+                            </div>
+                        `);
+                        updateTileColor(i);
+                }
         }
 
-        $("#grid").append(`    
-		  <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
-			<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-			  <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
-			  <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
-			</div>
-			<div>
-			  <div class="tileCenter">
-				<div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
-			  </div>
-			  <div class="tileLast">${freqText}</div>
-			</div>
-			<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
-			  <div style="display: flex; gap: 5px;">
-					${emoji}
-			  </div>
-              <div>${lastUpdateText}</div>
-			  <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
-			</div>
-		  </div>
-		`);
-
-        updateTileColor(i);
-    }
-
-    initDragAndDrop();
-    applyFilters();
-    applySearchFilter();
-    dailyResetFlags();
+        initDragAndDrop();
+        applyFilters();
+        applySearchFilter();
+        dailyResetFlags();
 }
 
 function openFirstEmptyTile() {
