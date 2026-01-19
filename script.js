@@ -280,8 +280,7 @@ function renderTiles() {
                         .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
                         .map(([i, t]) => ({ i, t }));
                     if (tagTiles.length === 0) return;
-                    // Add tag label above the row
-                    $("#grid").append(`<div class="tagLabel">${tag}</div>`);
+    
                     // Tag row container
                     const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
                     tagTiles.forEach(({ i, t }) => {
