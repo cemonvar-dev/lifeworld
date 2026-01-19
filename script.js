@@ -266,7 +266,7 @@ function renderTiles() {
         $("#grid").empty();
 
         // Mobile check
-        const isMobile = window.innerWidth <= 600;
+        const isMobile = window.outerWidth <= 600;
         if (isMobile) {
                 // Group tiles by tag
                 const allTags = [
