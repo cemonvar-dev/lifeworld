@@ -280,7 +280,7 @@ function renderTiles() {
                         .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
                         .map(([i, t]) => ({ i, t }));
                     if (tagTiles.length === 0) return;
-    
+          
                     // Tag row container
                     const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
                     tagTiles.forEach(({ i, t }) => {
@@ -328,6 +328,7 @@ function renderTiles() {
                         updateTileColor(i);
                     });
                     $("#grid").append($row);
+                    $("#grid").append(`<div></div>`);
                 });
                 // Add empty tiles at the end (optional, or skip for mobile)
         } else {
