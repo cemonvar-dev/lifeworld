@@ -327,7 +327,7 @@ function renderTiles() {
                                 updateTileColor(i);
                         });
                         // Add tag label
-                        $("#grid").append(`<div class="tagLabel">${tag}</div>`);
+
                         $("#grid").append($row);
                 });
                 // Add empty tiles at the end (optional, or skip for mobile)
