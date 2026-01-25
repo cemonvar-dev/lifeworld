@@ -52,6 +52,7 @@
           </div>
         </div>
         <div id="quickFilters" style="display:flex; gap:8px; align-items:center; margin-left:12px;">
+          <button id="filterCompletedBtn" class="qfBtn" title="Completed">✅</button>
           <button id="filterDoneBtn" class="qfBtn" title="Done">💪</button>
           <button id="filterSkippedBtn" class="qfBtn" title="Skipped">😢</button>
           <button id="filterNoActionBtn" class="qfBtn" title="No Action">💬</button>
@@ -176,6 +177,13 @@
       <div id="timeOfDaySelector" style="margin-top:12px; display:flex; gap:8px;">
         <button class="timeOfDayBtn" data-time="morning">🌅 Morning</button>
         <button class="timeOfDayBtn" data-time="evening">🌙 Evening</button>
+      </div>
+      <div class="toggleRow">
+        <label class="switch">
+          <input type="checkbox" id="completedToggle">
+          <span class="slider round"></span>
+        </label>
+        <span class="toggleLabel">Mark as completed</span>
       </div>
       <div class="toggleRow">
         <label class="switch">

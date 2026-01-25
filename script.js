@@ -31,7 +31,7 @@ let tiles = {};
 let activeIndex = null;
 const filters = {
     timeline: "today", // "today" | 1 | 2 | "3plus" | "all"
-    status: null, // "done" | "skip" | "noaction" | null
+    status: null, // "done" | "completed" | "skip" | "noaction" | null
     category: null // "arts", "health", etc | null
 };
 
@@ -50,6 +50,7 @@ function initEmptyTiles() {
                 date: null
             },
             done: false,
+            completed: false,
             skip: false,
             tags: [],
             timeOfDay: []
@@ -138,6 +139,7 @@ async function loadWorldFromCloud() {
                         date: null
                     },
                     done: false,
+                    completed: false,
                     skip: false,
                     tags: [],
                     timeOfDay: []
@@ -479,8 +481,30 @@ $(document).on("click", ".tile", function() {
 
     $("#tileTitle").text(tiles[activeIndex].name || "");
 
+    $("#completedToggle").prop("checked", tiles[activeIndex].completed === true);
     $("#doneToggle").prop("checked", tiles[activeIndex].done === true);
     $("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
+// Completed toggle logic
+$(document).on("change", "#completedToggle", function() {
+    if (activeIndex === null) return;
+    tiles[activeIndex].completed = $(this).is(":checked");
+    // Add a log entry for completed if not already completed today
+    const today = new Date().toISOString().slice(0, 10);
+    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "completed" && log.date && log.date.slice(0, 10) === today);
+    if (tiles[activeIndex].completed && !alreadyLogged) {
+        tiles[activeIndex].logs = tiles[activeIndex].logs || [];
+        tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
+    }
+    autoSaveTileChanges(false);
+    setTimeout(function() { renderTiles(); }, 10);
+});
+// Completed filter logic
+$(document).on("click", "#filterCompletedBtn", function() {
+    filters.status = filters.status === "completed" ? null : "completed";
+    applyFilters();
+    $(".qfBtn").removeClass("active");
+    if (filters.status) $(this).addClass("active");
+});
 
 
     // HISTORY
@@ -543,13 +567,13 @@ $(document).on("click", ".tile", function() {
 // ---- Completed Button Handler ----
 $(document).on("click", "#completedBtn", function() {
     if (activeIndex === null) return;
-    tiles[activeIndex].done = true;
-    // Add a log entry for completion if not already done today
+    tiles[activeIndex].completed = true;
+    // Add a log entry for completed if not already completed today
     const today = new Date().toISOString().slice(0, 10);
-    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "done" && log.date && log.date.slice(0, 10) === today);
+    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "completed" && log.date && log.date.slice(0, 10) === today);
     if (!alreadyLogged) {
         tiles[activeIndex].logs = tiles[activeIndex].logs || [];
-        tiles[activeIndex].logs.push({ text: "done", date: new Date().toISOString() });
+        tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
     }
     autoSaveTileChanges(true);
     setTimeout(function() { renderTiles(); }, 10);

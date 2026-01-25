@@ -14,7 +14,8 @@ function buildTodaysPlan() {
 
     // determine status
     let status = "pending";
-    if (t.done) status = "done";
+    if (t.completed) status = "completed";
+    else if (t.done) status = "done";
     else if (t.skip) status = "skipped";
 
     const item = {
@@ -51,7 +52,7 @@ function renderTodayPlanPopup() {
         ${items.map(i => `
           <div class="planItem ${i.status}">
             <div class="planStatus">
-              ${i.status === "done" ? "💪" : i.status === "skipped" ? "�" : "⏳"}
+              ${i.status === "completed" ? "✅" : i.status === "done" ? "💪" : i.status === "skipped" ? "😢" : "⏳"}
             </div>
             <div>${i.name}</div>
           </div>
