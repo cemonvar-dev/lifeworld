@@ -266,7 +266,6 @@ function updateTileColor(i) {
 
 function renderTiles() {
         $("#grid").empty();
-
         // Mobile check
         const isMobile = window.outerWidth <= 600;
         if (isMobile) {
@@ -279,7 +278,7 @@ function renderTiles() {
                 // For each tag, collect tiles
                 allTags.forEach(tag => {
                     const tagTiles = Object.entries(tiles)
-                        .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
+                        .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)) && !t.completed)
                         .map(([i, t]) => ({ i, t }));
                     if (tagTiles.length === 0) return;
           
@@ -306,11 +305,12 @@ function renderTiles() {
                         } else {
                             emoji = "💬";
                         }
-                        $row.append(`
-                          <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                              <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
-                              <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                        // ...existing code...
+                    });
+                    // ...existing code...
+                });
+                // ...existing code...
+        }
                             </div>
                             <div>
                               <div class="tileCenter">
@@ -847,6 +847,10 @@ function applyFilters() {
 
         // --- STATUS ---
         let statusOk = true;
+        if (t.completed) {
+            $(this).hide();
+            return;
+        }
         if (filters.status === "done") statusOk = t.done === true;
         else if (filters.status === "skip") statusOk = t.skip === true;
         else if (filters.status === "noaction") statusOk = !t.done && !t.skip;
