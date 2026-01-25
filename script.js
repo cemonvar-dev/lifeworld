@@ -540,6 +540,21 @@ $(document).on("click", ".tile", function() {
 
 });
 
+// ---- Completed Button Handler ----
+$(document).on("click", "#completedBtn", function() {
+    if (activeIndex === null) return;
+    tiles[activeIndex].done = true;
+    // Add a log entry for completion if not already done today
+    const today = new Date().toISOString().slice(0, 10);
+    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "done" && log.date && log.date.slice(0, 10) === today);
+    if (!alreadyLogged) {
+        tiles[activeIndex].logs = tiles[activeIndex].logs || [];
+        tiles[activeIndex].logs.push({ text: "done", date: new Date().toISOString() });
+    }
+    autoSaveTileChanges(true);
+    setTimeout(function() { renderTiles(); }, 10);
+});
+
 // ---- Frequency UI Handlers ----
 $(document).on("change", "input[name='freqMode']", function() {
     const mode = this.value;
