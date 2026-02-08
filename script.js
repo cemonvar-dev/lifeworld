@@ -486,6 +486,7 @@ $(document).on("click", ".tile", function () {
     // (Handler moved outside to avoid duplicate bindings)
 // Set as Header button handler (attach only once)
 $(document).on("click", "#setHeaderBtn", function () {
+    debugger;
     if (activeIndex === null) return;
     // Toggle header state
     tiles[activeIndex].header = !tiles[activeIndex].header;
