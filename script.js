@@ -268,112 +268,45 @@ function updateTileColor(i) {
 
 function renderTiles() {
     $("#grid").empty();
-
-    // Mobile check
-    const isMobile = window.outerWidth <= 600;
-    if (isMobile) {
-        // Group tiles by tag
-        const allTags = [
-            "health", "work", "learning", "habit", "home",
-            "spirituality", "hobby", "games", "outdoor",
-            "family", "friends", "arts", "cooking"
-        ].sort();
-        // For each tag, collect tiles
-        allTags.forEach(tag => {
-            const tagTiles = Object.entries(tiles)
-                .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
-                .map(([i, t]) => ({ i, t }));
-            if (tagTiles.length === 0) return;
-
-            // Tag row container
-            const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
-            tagTiles.forEach(({ i, t }) => {
-                normalizeTile(i);
-                const freqText = formatFrequency(t.frequency);
-                const nextText = computeNextOccurrenceDisplay(t);
-                let lastUpdateText = "";
-                if (t.logs && t.logs.length > 0) {
-                    const lastDoneLog = t.logs
-                        .filter(l => l.text === "done")
-                        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                    lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
-                }
-                const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-                const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-                let emoji = "";
-                if (t.done) {
-                    emoji = "💪";
-                } else if (t.skip) {
-                    emoji = "😢";
-                } else {
-                    emoji = "💬";
-                }
-                $row.append(`
-                          <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                              <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
-                              <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
-                            </div>
-                            <div>
-                              <div class="tileCenter">
-                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
-                              </div>
-                              <div class="tileLast">${freqText}</div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
-                              <div style="display: flex; gap: 5px;">
-                                    ${emoji}
-                              </div>
-                              <div>${lastUpdateText}</div>
-                              <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
-                            </div>
-                          </div>
-                        `);
-                updateTileColor(i);
-            });
-            $("#grid").append($row);
-            $("#grid").append(`<div></div>`);
-        });
-        // Add empty tiles at the end (optional, or skip for mobile)
-    } else {
-        // Desktop: original logic
-        for (let i = 0; i < TILE_COUNT; i++) {
-            const t = tiles[i];
-            normalizeTile(i);
-            if (!t.name && t.logs.length === 0) {
-                $("#grid").append(`
+ 
+    // Desktop: original logic
+    for (let i = 0; i < TILE_COUNT; i++) {
+        const t = tiles[i];
+        normalizeTile(i);
+        if (!t.name && t.logs.length === 0) {
+            $("#grid").append(`
                                 <div class="tile empty" data-index="${i}">
                                     <div class="plusIcon">+</div>
                                 </div>
                             `);
-                continue;
-            }
-            const freqText = formatFrequency(t.frequency);
-            const nextText = computeNextOccurrenceDisplay(t);
-            let lastUpdateText = "";
-            if (t.logs && t.logs.length > 0) {
-                const lastDoneLog = t.logs
-                    .filter(l => l.text === "done")
-                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
-            }
-                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-                        let emoji = "";
-                        if (t.done) {
-                            emoji = "💪";
-                        } else if (t.skip) {
-                            emoji = "😢";
-                        } else {
-                            emoji = "💬";
-                        }
-                        // Header badge
-                        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
-                        // Hide morning/evening and frequency badges for header tiles
-                        const showTimeIcon = !t.header ? timeIcon : "";
-                        const showFreqText = !t.header ? freqText : "";
-                        const showNextText = !t.header ? nextText : "";
-                        $("#grid").append(`    
+            continue;
+        }
+        const freqText = formatFrequency(t.frequency);
+        const nextText = computeNextOccurrenceDisplay(t);
+        let lastUpdateText = "";
+        if (t.logs && t.logs.length > 0) {
+            const lastDoneLog = t.logs
+                .filter(l => l.text === "done")
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+        }
+        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+        let emoji = "";
+        if (t.done) {
+            emoji = "💪";
+        } else if (t.skip) {
+            emoji = "😢";
+        } else {
+            emoji = "💬";
+        }
+        // Header badge
+        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
+        // Hide morning/evening and frequency badges for header tiles
+        const showTimeIcon = !t.header ? timeIcon : "";
+        const showFreqText = !t.header ? freqText : "";
+        const showNextText = !t.header ? nextText : "";
+        $("#grid").append(`    
                             <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;${t.header ? ' border: 2px solid #ffe066;' : ''}">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                                 <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${headerBadge}${t.name || ""}</div>
@@ -394,9 +327,9 @@ function renderTiles() {
                             </div>` : ""}
                             </div>
                         `);
-            updateTileColor(i);
-        }
+        updateTileColor(i);
     }
+
 
     initDragAndDrop();
     applyFilters();
@@ -488,21 +421,8 @@ $(document).on("click", ".tile", function () {
     }
 
     // (Handler moved outside to avoid duplicate bindings)
-// Set as Header button handler (attach only once)
-$(document).on("click", "#setHeaderBtn", function () {
-    debugger;
-    if (activeIndex === null) return;
-    // Toggle header state
-    tiles[activeIndex].header = !tiles[activeIndex].header;
-    // Update button UI
-    if (tiles[activeIndex].header) {
-        $(this).addClass("active").text("✅ Header");
-    } else {
-        $(this).removeClass("active").text("🏷️ Set as Header");
-    }
-    autoSaveTileChanges(false);
-    setTimeout(function () { renderTiles(); }, 10);
-});
+    // Set as Header button handler (attach only once)
+    $(document).on("click", "#setHeaderBtn", setTileAsHeader);
 
     // --- VIRTUAL EMPTY TILE ---
     if ($(this).hasClass("virtual-empty")) {
@@ -600,19 +520,7 @@ $(document).on("click", "#setHeaderBtn", function () {
 });
 
 // ---- Completed Button Handler ----
-$(document).on("click", "#completedBtn", function () {
-    if (activeIndex === null) return;
-    tiles[activeIndex].completed = true;
-    // Add a log entry for completed if not already completed today
-    const today = new Date().toISOString().slice(0, 10);
-    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "completed" && log.date && log.date.slice(0, 10) === today);
-    if (!alreadyLogged) {
-        tiles[activeIndex].logs = tiles[activeIndex].logs || [];
-        tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
-    }
-    autoSaveTileChanges(true);
-    setTimeout(function () { renderTiles(); }, 10);
-});
+$(document).on("click", "#completedBtn", completeTile);
 
 // ---- Frequency UI Handlers ----
 $(document).on("change", "input[name='freqMode']", function () {
@@ -655,10 +563,10 @@ $(document).on("click", ".timeOfDayBtn", function () {
 // Ensure tile has all properties (including header)
 normalizeTile(activeIndex);
 
-if (tiles!=null && activeIndex!=null && typeof tiles[activeIndex].header === "undefined") {
+if (tiles != null && activeIndex != null && typeof tiles[activeIndex].header === "undefined") {
     tiles[activeIndex].header = false;
 }
-if (tiles!=null && activeIndex!=null && tiles[activeIndex].header) {
+if (tiles != null && activeIndex != null && tiles[activeIndex].header) {
     $("#setHeaderBtn").addClass("active").text("✅ Header");
 } else {
     $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
@@ -1246,19 +1154,27 @@ $("#filterNoActionBtn").on("click", function () {
 
 
 
-$(document).on("click", "#deleteTileBtn", function () {
-    if (activeIndex === null) return;
+$(document).on("click", "#deleteTileBtn", deleteTile);
 
-    const confirmed = confirm("Are you sure you want to delete this tile? All history will be removed.");
-    if (!confirmed) return;
 
-    resetTile(activeIndex);
+
+/* document ready functions */
+$(document).ready(function () {
+    checkAuth();
+
+    // NEW: Daily reset
+    dailyResetFlags();
+
     saveWorld();
-    renderTiles();
+    $("#popup").css("display", "none");
 
-    $("#popup").hide();
-    $("#overlay").hide();
+    // Set "today" as active filter on page load
+    $(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
 });
+
+
+$(document).on("click", ".editLogBtn", editLog);
+
 
 function dailyResetFlags() {
     const today = formatDate(new Date());
@@ -1294,85 +1210,6 @@ function dailyResetFlags() {
     // Mark today's reset as completed
     localStorage.setItem("lwp_last_reset", today);
 }
-
-
-
-/* document ready functions */
-$(document).ready(function () {
-    checkAuth();
-
-    // NEW: Daily reset
-    dailyResetFlags();
-
-    saveWorld();
-    $("#popup").css("display", "none");
-
-    // Set "today" as active filter on page load
-    $(`.tItem[data-filter='${filters.timeline}']`).addClass("active");
-});
-
-
-// Custom modal for editing log note with textarea
-function showEditNoteModal(existingNote, onSave) {
-    // Add ESC key handler to close modal
-    function escHandler(e) {
-        if (e.key === "Escape") {
-            $("#editNoteModalOverlay").remove();
-            $(document).off("keydown", escHandler);
-        }
-    }
-    $(document).on("keydown", escHandler);
-    // Remove any existing modal
-    $("#editNoteModalOverlay").remove();
-
-    const modalHtml = `
-            <div id="editNoteModalOverlay" style="position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
-                <div id="editNoteModal" style="background:#f3f3f3;padding:24px 20px 18px 20px;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);min-width:320px;max-width:90vw;">
-                    <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#222;">Edit Note</div>
-                    <textarea id="editNoteTextarea" style="width:260px;min-width:0;max-width:100%;min-height:80px;max-height:200px;padding:10px 12px;border-radius:12px;border:1px solid #bbb;background:#fff;color:#222;font-size:15px;resize:vertical;">${existingNote.replace(/</g, "&lt;")}</textarea>
-                    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-                        <button id="editNoteCancelBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#eee;color:#444;font-weight:600;">Cancel</button>
-                        <button id="editNoteSaveBtn" style="padding:8px 16px;border-radius:10px;border:none;background:#72e3ff;color:#181c2a;font-weight:700;">Save</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    $("body").append(modalHtml);
-
-    $("#editNoteCancelBtn").on("click", function () {
-        $("#editNoteModalOverlay").remove();
-    });
-    $("#editNoteModalOverlay").on("click", function (e) {
-        if (e.target === this) $("#editNoteModalOverlay").remove();
-    });
-    $("#editNoteSaveBtn").on("click", function () {
-        const val = $("#editNoteTextarea").val();
-        $("#editNoteModalOverlay").remove();
-        onSave(val);
-    });
-    $("#editNoteTextarea").focus();
-}
-
-$(document).on("click", ".editLogBtn", function () {
-    let card = $(this).closest(".historyItem");
-    let logDate = card.data("logdate");
-    let logText = card.data("logtext");
-
-    // Find the actual log in the unsorted array by matching date and text
-    let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
-
-    if (!log) return;
-
-    let existingNote = log.note || "";
-    showEditNoteModal(existingNote, function (newNote) {
-        if (typeof newNote !== "string") return;
-        log.note = newNote.trim();
-        saveWorld();
-        refreshHistoryDisplay();
-    });
-});
-
-
 
 /*tile drag & drop */
 function initDragAndDrop() {
@@ -1466,7 +1303,6 @@ function resetAllFlags() {
 
     saveWorld(); // save to cloud or local depending on user
     renderTiles(); // refresh UI
-    
 }
 
 
