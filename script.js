@@ -474,11 +474,7 @@ function refreshHistoryDisplay() {
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
         // Set header button state
-
-
-
-        
-        if (tiles[activeIndex].header) {
+        if (tiles[activeIndex].header !== undefined && tiles[activeIndex].header) {
             $("#setHeaderBtn").addClass("active").text("✅ Header");
         } else {
             $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
