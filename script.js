@@ -53,7 +53,8 @@ function initEmptyTiles() {
             completed: false,
             skip: false,
             tags: [],
-            timeOfDay: []
+            timeOfDay: [],
+            header: false
         };
 
 
@@ -142,7 +143,8 @@ async function loadWorldFromCloud() {
                     completed: false,
                     skip: false,
                     tags: [],
-                    timeOfDay: []
+                    timeOfDay: [],
+                    header: false
                 };
 
             }
@@ -339,51 +341,53 @@ function renderTiles() {
                         const t = tiles[i];
                         normalizeTile(i);
                         if (!t.name && t.logs.length === 0) {
-                                $("#grid").append(`
-                                        <div class="tile empty" data-index="${i}">
-                                                <div class="plusIcon">+</div>
-                                        </div>
-                                `);
-                                continue;
+                            $("#grid").append(`
+                                <div class="tile empty" data-index="${i}">
+                                    <div class="plusIcon">+</div>
+                                </div>
+                            `);
+                            continue;
                         }
                         const freqText = formatFrequency(t.frequency);
                         const nextText = computeNextOccurrenceDisplay(t);
                         let lastUpdateText = "";
                         if (t.logs && t.logs.length > 0) {
-                                const lastDoneLog = t.logs
-                                        .filter(l => l.text === "done")
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                                lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+                            const lastDoneLog = t.logs
+                                .filter(l => l.text === "done")
+                                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                            lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
                         }
                         const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
                         const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
                         let emoji = "";
                         if (t.done) {
-                                emoji = "💪";
+                            emoji = "💪";
                         } else if (t.skip) {
-                                emoji = "😢";
+                            emoji = "😢";
                         } else {
-                                emoji = "💬";
+                            emoji = "💬";
                         }
+                        // Header badge
+                        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
                         $("#grid").append(`    
-                            <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                                    <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
-                                    <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                            <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;${t.header ? ' border: 2px solid #ffe066;' : ''}">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${headerBadge}${t.name || ""}</div>
+                                <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                            </div>
+                            <div>
+                                <div class="tileCenter">
+                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
                                 </div>
-                                <div>
-                                    <div class="tileCenter">
-                                        <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
-                                    </div>
-                                    <div class="tileLast">${freqText}</div>
+                                <div class="tileLast">${freqText}</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                                <div style="display: flex; gap: 5px;">
+                                    ${emoji}
                                 </div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
-                                    <div style="display: flex; gap: 5px;">
-                                                ${emoji}
-                                    </div>
-                                    <div>${lastUpdateText}</div>
-                                    <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
-                                </div>
+                                <div>${lastUpdateText}</div>
+                                <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
+                            </div>
                             </div>
                         `);
                         updateTileColor(i);
@@ -469,6 +473,26 @@ function refreshHistoryDisplay() {
 
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
+        // Set header button state
+        if (tiles[activeIndex].header) {
+            $("#setHeaderBtn").addClass("active").text("✅ Header");
+        } else {
+            $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
+        }
+    // Set as Header button handler
+    $(document).on("click", "#setHeaderBtn", function() {
+        if (activeIndex === null) return;
+        // Toggle header state
+        tiles[activeIndex].header = !tiles[activeIndex].header;
+        // Update button UI
+        if (tiles[activeIndex].header) {
+            $(this).addClass("active").text("✅ Header");
+        } else {
+            $(this).removeClass("active").text("🏷️ Set as Header");
+        }
+        autoSaveTileChanges(false);
+        setTimeout(function() { renderTiles(); }, 10);
+    });
     // --- VIRTUAL EMPTY TILE ---
     if ($(this).hasClass("virtual-empty")) {
         openFirstEmptyTile();
