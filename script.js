@@ -473,6 +473,9 @@ function refreshHistoryDisplay() {
 
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
+      activeIndex = $(this).data("index");
+    if (activeIndex === undefined) return;
+
         // Set header button state
         if (tiles[activeIndex].header !== undefined && tiles[activeIndex].header) {
             $("#setHeaderBtn").addClass("active").text("✅ Header");
@@ -500,8 +503,8 @@ $(document).on("click", ".tile", function() {
     }
 
     // --- REAL TILE ---
-    activeIndex = $(this).data("index");
-    if (activeIndex === undefined) return;
+    // activeIndex = $(this).data("index");
+    // if (activeIndex === undefined) return;
 
     $("#tileTitle").text(tiles[activeIndex].name || "");
 
