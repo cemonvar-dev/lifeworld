@@ -1,18 +1,18 @@
 // --- Tag Dropdown logic ---
-$(document).on("click", "#tagDropdownBtn", function(e) {
+$(document).on("click", "#tagDropdownBtn", function (e) {
     e.stopPropagation();
     $("#tagDropdownMenu").toggle();
 });
 
 // Hide dropdown when clicking outside
-$(document).on("click", function(e) {
+$(document).on("click", function (e) {
     if (!$(e.target).closest(".tagDropdown").length) {
         $("#tagDropdownMenu").hide();
     }
 });
 
 // Tag selection from dropdown
-$(document).on("click", ".tagDropdownMenu .tagBtn", function() {
+$(document).on("click", ".tagDropdownMenu .tagBtn", function () {
     const tag = $(this).data("tag");
     if (filters.category === tag) {
         filters.category = null;
@@ -89,8 +89,8 @@ function loadWorldFromLocal() {
                 }
             }
             for (let i = 0; i < TILE_COUNT; i++) normalizeTile(i);
-                dailyResetFlags();
-        } catch(e) {
+            dailyResetFlags();
+        } catch (e) {
             initEmptyTiles();
         }
     } else {
@@ -267,48 +267,48 @@ function updateTileColor(i) {
 }
 
 function renderTiles() {
-        $("#grid").empty();
+    $("#grid").empty();
 
-        // Mobile check
-        const isMobile = window.outerWidth <= 600;
-        if (isMobile) {
-                // Group tiles by tag
-                const allTags = [
-                        "health", "work", "learning", "habit", "home",
-                        "spirituality", "hobby", "games", "outdoor",
-                        "family", "friends", "arts", "cooking"
-                ].sort();
-                // For each tag, collect tiles
-                allTags.forEach(tag => {
-                    const tagTiles = Object.entries(tiles)
-                        .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
-                        .map(([i, t]) => ({ i, t }));
-                    if (tagTiles.length === 0) return;
-          
-                    // Tag row container
-                    const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
-                    tagTiles.forEach(({ i, t }) => {
-                        normalizeTile(i);
-                        const freqText = formatFrequency(t.frequency);
-                        const nextText = computeNextOccurrenceDisplay(t);
-                        let lastUpdateText = "";
-                        if (t.logs && t.logs.length > 0) {
-                            const lastDoneLog = t.logs
-                                .filter(l => l.text === "done")
-                                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                            lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
-                        }
-                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-                        let emoji = "";
-                        if (t.done) {
-                            emoji = "💪";
-                        } else if (t.skip) {
-                            emoji = "😢";
-                        } else {
-                            emoji = "💬";
-                        }
-                        $row.append(`
+    // Mobile check
+    const isMobile = window.outerWidth <= 600;
+    if (isMobile) {
+        // Group tiles by tag
+        const allTags = [
+            "health", "work", "learning", "habit", "home",
+            "spirituality", "hobby", "games", "outdoor",
+            "family", "friends", "arts", "cooking"
+        ].sort();
+        // For each tag, collect tiles
+        allTags.forEach(tag => {
+            const tagTiles = Object.entries(tiles)
+                .filter(([i, t]) => t.tags && t.tags.includes(tag) && (t.name || (t.logs && t.logs.length > 0)))
+                .map(([i, t]) => ({ i, t }));
+            if (tagTiles.length === 0) return;
+
+            // Tag row container
+            const $row = $(`<div class="tagRow" data-tag="${tag}"></div>`);
+            tagTiles.forEach(({ i, t }) => {
+                normalizeTile(i);
+                const freqText = formatFrequency(t.frequency);
+                const nextText = computeNextOccurrenceDisplay(t);
+                let lastUpdateText = "";
+                if (t.logs && t.logs.length > 0) {
+                    const lastDoneLog = t.logs
+                        .filter(l => l.text === "done")
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                    lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+                }
+                const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+                const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+                let emoji = "";
+                if (t.done) {
+                    emoji = "💪";
+                } else if (t.skip) {
+                    emoji = "😢";
+                } else {
+                    emoji = "💬";
+                }
+                $row.append(`
                           <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                               <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${t.name || ""}</div>
@@ -329,47 +329,47 @@ function renderTiles() {
                             </div>
                           </div>
                         `);
-                        updateTileColor(i);
-                    });
-                    $("#grid").append($row);
-                    $("#grid").append(`<div></div>`);
-                });
-                // Add empty tiles at the end (optional, or skip for mobile)
-        } else {
-                // Desktop: original logic
-                for (let i = 0; i < TILE_COUNT; i++) {
-                        const t = tiles[i];
-                        normalizeTile(i);
-                        if (!t.name && t.logs.length === 0) {
-                            $("#grid").append(`
+                updateTileColor(i);
+            });
+            $("#grid").append($row);
+            $("#grid").append(`<div></div>`);
+        });
+        // Add empty tiles at the end (optional, or skip for mobile)
+    } else {
+        // Desktop: original logic
+        for (let i = 0; i < TILE_COUNT; i++) {
+            const t = tiles[i];
+            normalizeTile(i);
+            if (!t.name && t.logs.length === 0) {
+                $("#grid").append(`
                                 <div class="tile empty" data-index="${i}">
                                     <div class="plusIcon">+</div>
                                 </div>
                             `);
-                            continue;
-                        }
-                        const freqText = formatFrequency(t.frequency);
-                        const nextText = computeNextOccurrenceDisplay(t);
-                        let lastUpdateText = "";
-                        if (t.logs && t.logs.length > 0) {
-                            const lastDoneLog = t.logs
-                                .filter(l => l.text === "done")
-                                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                            lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
-                        }
-                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-                        let emoji = "";
-                        if (t.done) {
-                            emoji = "💪";
-                        } else if (t.skip) {
-                            emoji = "😢";
-                        } else {
-                            emoji = "💬";
-                        }
-                        // Header badge
-                        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
-                        $("#grid").append(`    
+                continue;
+            }
+            const freqText = formatFrequency(t.frequency);
+            const nextText = computeNextOccurrenceDisplay(t);
+            let lastUpdateText = "";
+            if (t.logs && t.logs.length > 0) {
+                const lastDoneLog = t.logs
+                    .filter(l => l.text === "done")
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
+            }
+            const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+            const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+            let emoji = "";
+            if (t.done) {
+                emoji = "💪";
+            } else if (t.skip) {
+                emoji = "😢";
+            } else {
+                emoji = "💬";
+            }
+            // Header badge
+            const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
+            $("#grid").append(`    
                             <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;${t.header ? ' border: 2px solid #ffe066;' : ''}">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                                 <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${headerBadge}${t.name || ""}</div>
@@ -390,14 +390,14 @@ function renderTiles() {
                             </div>
                             </div>
                         `);
-                        updateTileColor(i);
-                }
+            updateTileColor(i);
         }
+    }
 
-        initDragAndDrop();
-        applyFilters();
-        applySearchFilter();
-        dailyResetFlags();
+    initDragAndDrop();
+    applyFilters();
+    applySearchFilter();
+    dailyResetFlags();
 }
 
 function openFirstEmptyTile() {
@@ -434,7 +434,7 @@ function refreshHistoryDisplay() {
     if (logs.length > 0) {
         $("#historyBox").html(
             logs.map((log, index) => {
-                   let emoji = "";
+                let emoji = "";
                 if (log.text === "done") {
                     emoji = "💪";
                 } else if (log.text === "skipped") {
@@ -472,18 +472,18 @@ function refreshHistoryDisplay() {
 }
 
 // ---- Popup / tile click ----
-$(document).on("click", ".tile", function() {
-      activeIndex = $(this).data("index");
+$(document).on("click", ".tile", function () {
+    activeIndex = $(this).data("index");
     if (activeIndex === undefined) return;
 
-        // Set header button state
-        if (tiles[activeIndex].header !== undefined && tiles[activeIndex].header) {
-            $("#setHeaderBtn").addClass("active").text("✅ Header");
-        } else {
-            $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
-        }
+    // Set header button state
+    if (tiles[activeIndex].header !== undefined && tiles[activeIndex].header) {
+        $("#setHeaderBtn").addClass("active").text("✅ Header");
+    } else {
+        $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
+    }
     // Set as Header button handler
-    $(document).on("click", "#setHeaderBtn", function() {
+    $(document).on("click", "#setHeaderBtn", function () {
         if (activeIndex === null) return;
         // Toggle header state
         tiles[activeIndex].header = !tiles[activeIndex].header;
@@ -494,7 +494,7 @@ $(document).on("click", ".tile", function() {
             $(this).removeClass("active").text("🏷️ Set as Header");
         }
         autoSaveTileChanges(false);
-        setTimeout(function() { renderTiles(); }, 10);
+        setTimeout(function () { renderTiles(); }, 10);
     });
     // --- VIRTUAL EMPTY TILE ---
     if ($(this).hasClass("virtual-empty")) {
@@ -511,27 +511,27 @@ $(document).on("click", ".tile", function() {
     $("#completedToggle").prop("checked", tiles[activeIndex].completed === true);
     $("#doneToggle").prop("checked", tiles[activeIndex].done === true);
     $("#skipToggle").prop("checked", tiles[activeIndex].skip === true);
-// Completed toggle logic
-$(document).on("change", "#completedToggle", function() {
-    if (activeIndex === null) return;
-    tiles[activeIndex].completed = $(this).is(":checked");
-    // Add a log entry for completed if not already completed today
-    const today = new Date().toISOString().slice(0, 10);
-    const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "completed" && log.date && log.date.slice(0, 10) === today);
-    if (tiles[activeIndex].completed && !alreadyLogged) {
-        tiles[activeIndex].logs = tiles[activeIndex].logs || [];
-        tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
-    }
-    autoSaveTileChanges(false);
-    setTimeout(function() { renderTiles(); }, 10);
-});
-// Completed filter logic
-$(document).on("click", "#filterCompletedBtn", function() {
-    filters.status = filters.status === "completed" ? null : "completed";
-    applyFilters();
-    $(".qfBtn").removeClass("active");
-    if (filters.status) $(this).addClass("active");
-});
+    // Completed toggle logic
+    $(document).on("change", "#completedToggle", function () {
+        if (activeIndex === null) return;
+        tiles[activeIndex].completed = $(this).is(":checked");
+        // Add a log entry for completed if not already completed today
+        const today = new Date().toISOString().slice(0, 10);
+        const alreadyLogged = (tiles[activeIndex].logs || []).some(log => log.text === "completed" && log.date && log.date.slice(0, 10) === today);
+        if (tiles[activeIndex].completed && !alreadyLogged) {
+            tiles[activeIndex].logs = tiles[activeIndex].logs || [];
+            tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
+        }
+        autoSaveTileChanges(false);
+        setTimeout(function () { renderTiles(); }, 10);
+    });
+    // Completed filter logic
+    $(document).on("click", "#filterCompletedBtn", function () {
+        filters.status = filters.status === "completed" ? null : "completed";
+        applyFilters();
+        $(".qfBtn").removeClass("active");
+        if (filters.status) $(this).addClass("active");
+    });
 
 
     // HISTORY
@@ -592,7 +592,7 @@ $(document).on("click", "#filterCompletedBtn", function() {
 });
 
 // ---- Completed Button Handler ----
-$(document).on("click", "#completedBtn", function() {
+$(document).on("click", "#completedBtn", function () {
     if (activeIndex === null) return;
     tiles[activeIndex].completed = true;
     // Add a log entry for completed if not already completed today
@@ -603,11 +603,11 @@ $(document).on("click", "#completedBtn", function() {
         tiles[activeIndex].logs.push({ text: "completed", date: new Date().toISOString() });
     }
     autoSaveTileChanges(true);
-    setTimeout(function() { renderTiles(); }, 10);
+    setTimeout(function () { renderTiles(); }, 10);
 });
 
 // ---- Frequency UI Handlers ----
-$(document).on("change", "input[name='freqMode']", function() {
+$(document).on("change", "input[name='freqMode']", function () {
     const mode = this.value;
 
     if (mode === "daily") {
@@ -626,84 +626,85 @@ $(document).on("change", "input[name='freqMode']", function() {
 });
 
 
-$(document).on("click", ".dayBtn", function() {
+$(document).on("click", ".dayBtn", function () {
     $(this).toggleClass("active");
     // Auto-save when day selection changes
     autoSaveTileChanges(false);
 });
 
-$(document).on("click", ".tagOption", function() {
+$(document).on("click", ".tagOption", function () {
     $(this).toggleClass("active");
     // Auto-save when tags change
     autoSaveTileChanges(false);
 });
 
-$(document).on("click", ".timeOfDayBtn", function() {
+$(document).on("click", ".timeOfDayBtn", function () {
     $(this).toggleClass("active");
     // Auto-save when time of day changes
     autoSaveTileChanges(false);
 });
 
-    // Ensure tile has all properties (including header)
-    normalizeTile(activeIndex);
-    if (typeof tiles[activeIndex].header === "undefined") {
-        tiles[activeIndex].header = false;
-    }
-    if (tiles[activeIndex].header) {
-        $("#setHeaderBtn").addClass("active").text("✅ Header");
-    } else {
-        $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
-    }
-$(document).on("change", "#pickDateInput", function() {
+if (activeIndex === null) return;
+// Ensure tile has all properties (including header)
+normalizeTile(activeIndex);
+if (typeof tiles[activeIndex].header === "undefined") {
+    tiles[activeIndex].header = false;
+}
+if (tiles[activeIndex].header) {
+    $("#setHeaderBtn").addClass("active").text("✅ Header");
+} else {
+    $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
+}
+$(document).on("change", "#pickDateInput", function () {
     // Auto-save when pick date changes
     autoSaveTileChanges(false);
 });
 
-$(document).on("input", "#pickDateInput", function() {
+$(document).on("input", "#pickDateInput", function () {
     // Also listen to input event for better date picker compatibility
     autoSaveTileChanges(false);
 });
 
-$(document).on("change", "#doneToggle", function() {
+$(document).on("change", "#doneToggle", function () {
     // Auto-save and close popup when done toggle changes
     autoSaveTileChanges(true);
     // Update tile UI state after closing
-    setTimeout(function() { renderTiles(); }, 10);
+    setTimeout(function () { renderTiles(); }, 10);
 });
 
-$(document).on("change", "#skipToggle", function() {
+$(document).on("change", "#skipToggle", function () {
     // Auto-save and close popup when skip toggle changes
     autoSaveTileChanges(true);
     // Update tile UI state after closing
-    setTimeout(function() { renderTiles(); }, 10);
+    setTimeout(function () { renderTiles(); }, 10);
 });
 
 // Auto-save tile name on blur
-$("#tileTitle").on("blur", function() {
+$("#tileTitle").on("blur", function () {
     autoSaveTileChanges(false);
 });
 
 
 // TOGGLE SETTINGS MENU
-$("#settingsIcon").on("click", function() {
+$("#settingsIcon").on("click", function () {
     $("#settingsMenu").toggle();
     $("#profileMenu").hide(); // hide profile menu if open
 });
 
 // Close settings menu when clicking outside
-$(document).on("click", function(e) {
+$(document).on("click", function (e) {
     if (!$(e.target).closest("#profileWrapper").length) {
         $("#settingsMenu").hide();
     }
 });
 
 
-$("#openThemeSelector").on("click", function() {
+$("#openThemeSelector").on("click", function () {
     $("#themePopup").show();
     $("#settingsMenu").hide();
 });
 
-$("#closeThemePopup").on("click", function() {
+$("#closeThemePopup").on("click", function () {
     $("#themePopup").hide();
 });
 
@@ -718,7 +719,7 @@ let savedTheme = localStorage.getItem("lwp_theme") || "light";
 applyTheme(savedTheme);
 
 // When selecting a theme
-$(document).on("click", ".themeOption", function() {
+$(document).on("click", ".themeOption", function () {
     let selected = $(this).data("theme");
 
     localStorage.setItem("lwp_theme", selected);
@@ -807,7 +808,7 @@ function autoSaveTileChanges(closePopup = false) {
     let selectedDate = null;
 
     if (mode === "custom") {
-        $(".dayBtn.active").each(function() {
+        $(".dayBtn.active").each(function () {
             days.push($(this).data("day"));
         });
     }
@@ -829,14 +830,14 @@ function autoSaveTileChanges(closePopup = false) {
 
     // Save tags
     let newTags = [];
-    $(".tagOption.active").each(function() {
+    $(".tagOption.active").each(function () {
         newTags.push($(this).data("tag"));
     });
     tiles[activeIndex].tags = newTags;
 
     // Save time of day
     let newTimeOfDay = [];
-    $(".timeOfDayBtn.active").each(function() {
+    $(".timeOfDayBtn.active").each(function () {
         newTimeOfDay.push($(this).data("time"));
     });
     tiles[activeIndex].timeOfDay = newTimeOfDay;
@@ -853,7 +854,7 @@ function autoSaveTileChanges(closePopup = false) {
 }
 
 // ---- Save ----
-$("#saveBtn").on("click", function() {
+$("#saveBtn").on("click", function () {
     autoSaveTileChanges(true);
 });
 
@@ -861,7 +862,7 @@ $("#saveBtn").on("click", function() {
 
 function applyFilters() {
 
-    $(".tile").each(function() {
+    $(".tile").each(function () {
         const index = $(this).data("index");
         const t = tiles[index];
 
@@ -1126,7 +1127,7 @@ function nextOccurrenceDays(tile) {
 
 /* control handler scripts */
 
-$(document).on("click", ".virtual-empty", function() {
+$(document).on("click", ".virtual-empty", function () {
     // find first real empty slot
     for (let i = 0; i < TILE_COUNT; i++) {
         const t = tiles[i];
@@ -1139,7 +1140,7 @@ $(document).on("click", ".virtual-empty", function() {
 
 
 // Click outside popup closes it
-$(document).on("mousedown", function(e) {
+$(document).on("mousedown", function (e) {
     const popup = $("#popup");
 
     // if popup is not visible, do nothing
@@ -1154,7 +1155,7 @@ $(document).on("mousedown", function(e) {
 
 
 // ESC closes popup
-$(document).on("keydown", function(e) {
+$(document).on("keydown", function (e) {
     if (e.key === "Escape") {
         if ($("#popup").is(":visible")) {
             $("#cancelBtn").click();
@@ -1163,14 +1164,14 @@ $(document).on("keydown", function(e) {
 });
 
 // ---- Cancel ----
-$("#cancelBtn").on("click", function() {
+$("#cancelBtn").on("click", function () {
 
     $("#popup").hide();
     $("#overlay").hide();
 });
 
 // Close when clicking outside
-$(document).on("click", function(e) {
+$(document).on("click", function (e) {
     if (!$(e.target).closest("#profileWrapper").length) {
         $("#profileMenu").hide();
     }
@@ -1181,7 +1182,7 @@ $("#menuLoginBtn").on("click", () => $("#loginBtn").click());
 $("#menuLogoutBtn").on("click", () => $("#logoutBtn").click());
 
 /* filtering */
-$(document).on("click", ".tItem", function() {
+$(document).on("click", ".tItem", function () {
     const clicked = $(this).data("filter");
 
     if (filters.timeline === clicked) {
@@ -1201,11 +1202,11 @@ $(document).on("click", ".tItem", function() {
 
 
 /* profile menu toggle */
-$("#profileIcon").on("click", function() {
+$("#profileIcon").on("click", function () {
     $("#profileMenu").toggle();
 });
 
-$(document).on("click", "#resetFlagsBtn", function() {
+$(document).on("click", "#resetFlagsBtn", function () {
     resetAllFlags();
 });
 
@@ -1222,21 +1223,21 @@ function toggleStatusFilter(type, btn) {
     applyFilters();
 }
 
-$("#filterDoneBtn").on("click", function() {
+$("#filterDoneBtn").on("click", function () {
     toggleStatusFilter("done", this);
 });
 
-$("#filterSkippedBtn").on("click", function() {
+$("#filterSkippedBtn").on("click", function () {
     toggleStatusFilter("skip", this);
 });
 
-$("#filterNoActionBtn").on("click", function() {
+$("#filterNoActionBtn").on("click", function () {
     toggleStatusFilter("noaction", this);
 });
 
 
 
-$(document).on("click", "#deleteTileBtn", function() {
+$(document).on("click", "#deleteTileBtn", function () {
     if (activeIndex === null) return;
 
     const confirmed = confirm("Are you sure you want to delete this tile? All history will be removed.");
@@ -1288,7 +1289,7 @@ function dailyResetFlags() {
 
 
 /* document ready functions */
-$(document).ready(function() {
+$(document).ready(function () {
     checkAuth();
 
     // NEW: Daily reset
@@ -1304,18 +1305,18 @@ $(document).ready(function() {
 
 // Custom modal for editing log note with textarea
 function showEditNoteModal(existingNote, onSave) {
-                // Add ESC key handler to close modal
-                function escHandler(e) {
-                    if (e.key === "Escape") {
-                        $("#editNoteModalOverlay").remove();
-                        $(document).off("keydown", escHandler);
-                    }
-                }
-                $(document).on("keydown", escHandler);
-        // Remove any existing modal
-        $("#editNoteModalOverlay").remove();
+    // Add ESC key handler to close modal
+    function escHandler(e) {
+        if (e.key === "Escape") {
+            $("#editNoteModalOverlay").remove();
+            $(document).off("keydown", escHandler);
+        }
+    }
+    $(document).on("keydown", escHandler);
+    // Remove any existing modal
+    $("#editNoteModalOverlay").remove();
 
-        const modalHtml = `
+    const modalHtml = `
             <div id="editNoteModalOverlay" style="position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
                 <div id="editNoteModal" style="background:#f3f3f3;padding:24px 20px 18px 20px;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.18);min-width:320px;max-width:90vw;">
                     <div style="font-weight:700;font-size:16px;margin-bottom:10px;color:#222;">Edit Note</div>
@@ -1327,39 +1328,39 @@ function showEditNoteModal(existingNote, onSave) {
                 </div>
             </div>
         `;
-        $("body").append(modalHtml);
+    $("body").append(modalHtml);
 
-        $("#editNoteCancelBtn").on("click", function() {
-                $("#editNoteModalOverlay").remove();
-        });
-        $("#editNoteModalOverlay").on("click", function(e) {
-                if (e.target === this) $("#editNoteModalOverlay").remove();
-        });
-        $("#editNoteSaveBtn").on("click", function() {
-                const val = $("#editNoteTextarea").val();
-                $("#editNoteModalOverlay").remove();
-                onSave(val);
-        });
-        $("#editNoteTextarea").focus();
+    $("#editNoteCancelBtn").on("click", function () {
+        $("#editNoteModalOverlay").remove();
+    });
+    $("#editNoteModalOverlay").on("click", function (e) {
+        if (e.target === this) $("#editNoteModalOverlay").remove();
+    });
+    $("#editNoteSaveBtn").on("click", function () {
+        const val = $("#editNoteTextarea").val();
+        $("#editNoteModalOverlay").remove();
+        onSave(val);
+    });
+    $("#editNoteTextarea").focus();
 }
 
-$(document).on("click", ".editLogBtn", function() {
-        let card = $(this).closest(".historyItem");
-        let logDate = card.data("logdate");
-        let logText = card.data("logtext");
+$(document).on("click", ".editLogBtn", function () {
+    let card = $(this).closest(".historyItem");
+    let logDate = card.data("logdate");
+    let logText = card.data("logtext");
 
-        // Find the actual log in the unsorted array by matching date and text
-        let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
+    // Find the actual log in the unsorted array by matching date and text
+    let log = tiles[activeIndex].logs.find(l => l.date === logDate && l.text === logText);
 
-        if (!log) return;
+    if (!log) return;
 
-        let existingNote = log.note || "";
-        showEditNoteModal(existingNote, function(newNote) {
-                if (typeof newNote !== "string") return;
-                log.note = newNote.trim();
-                saveWorld();
-                refreshHistoryDisplay();
-        });
+    let existingNote = log.note || "";
+    showEditNoteModal(existingNote, function (newNote) {
+        if (typeof newNote !== "string") return;
+        log.note = newNote.trim();
+        saveWorld();
+        refreshHistoryDisplay();
+    });
 });
 
 
@@ -1373,16 +1374,16 @@ function initDragAndDrop() {
 
     $(".tile").draggable({
         revert: "invalid",
-        start: function() {
+        start: function () {
             $(this).css("z-index", 9999);
         },
-        stop: function() {
+        stop: function () {
             $(this).css("z-index", "");
         }
     });
 
     $(".tile").droppable({
-        drop: function(event, ui) {
+        drop: function (event, ui) {
             let from = $(ui.draggable).data("index");
             let to = $(this).data("index");
             if (from === to) return;
@@ -1400,10 +1401,10 @@ function swapTiles(a, b) {
 }
 
 function normalizeTile(i) {
-    if(tiles==undefined || tiles[i] === undefined) {
+    if (tiles == undefined || tiles[i] === undefined) {
         return;
     }
-    
+
     if (!tiles[i].logs) tiles[i].logs = [];
 
     tiles[i].logs = tiles[i].logs.map(l => {
@@ -1481,11 +1482,11 @@ function applySearchFilter() {
     }
 }
 
-$("#searchBox").on("keyup", function() {
+$("#searchBox").on("keyup", function () {
     applySearchFilter();
 });
 
-$(document).on("click", ".deleteLogBtn", function() {
+$(document).on("click", ".deleteLogBtn", function () {
     const logDate = $(this).closest(".historyItem").data("logdate");
     const logText = $(this).closest(".historyItem").data("logtext");
 
