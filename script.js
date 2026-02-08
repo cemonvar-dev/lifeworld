@@ -1466,6 +1466,7 @@ function resetAllFlags() {
 
     saveWorld(); // save to cloud or local depending on user
     renderTiles(); // refresh UI
+    
 }
 
 
