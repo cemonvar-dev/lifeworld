@@ -482,6 +482,7 @@ $(document).on("click", ".tile", function () {
     } else {
         $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
     }
+
     // Set as Header button handler
     $(document).on("click", "#setHeaderBtn", function () {
         if (activeIndex === null) return;
@@ -496,6 +497,7 @@ $(document).on("click", ".tile", function () {
         autoSaveTileChanges(false);
         setTimeout(function () { renderTiles(); }, 10);
     });
+
     // --- VIRTUAL EMPTY TILE ---
     if ($(this).hasClass("virtual-empty")) {
         openFirstEmptyTile();
@@ -503,8 +505,8 @@ $(document).on("click", ".tile", function () {
     }
 
     // --- REAL TILE ---
-    // activeIndex = $(this).data("index");
-    // if (activeIndex === undefined) return;
+    activeIndex = $(this).data("index");
+    if (activeIndex === undefined) return;
 
     $("#tileTitle").text(tiles[activeIndex].name || "");
 
@@ -647,6 +649,7 @@ $(document).on("click", ".timeOfDayBtn", function () {
 if (activeIndex === null) return;
 // Ensure tile has all properties (including header)
 normalizeTile(activeIndex);
+
 if (typeof tiles[activeIndex].header === "undefined") {
     tiles[activeIndex].header = false;
 }
@@ -655,6 +658,7 @@ if (tiles[activeIndex].header) {
 } else {
     $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
 }
+
 $(document).on("change", "#pickDateInput", function () {
     // Auto-save when pick date changes
     autoSaveTileChanges(false);
