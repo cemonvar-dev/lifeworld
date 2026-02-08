@@ -649,10 +649,10 @@ $(document).on("click", ".timeOfDayBtn", function () {
 // Ensure tile has all properties (including header)
 normalizeTile(activeIndex);
 
-if (typeof tiles[activeIndex].header === "undefined") {
+if (tiles!=null && activeIndex!=null && typeof tiles[activeIndex].header === "undefined") {
     tiles[activeIndex].header = false;
 }
-if (tiles[activeIndex].header) {
+if (tiles!=null && activeIndex!=null && tiles[activeIndex].header) {
     $("#setHeaderBtn").addClass("active").text("✅ Header");
 } else {
     $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
