@@ -646,7 +646,6 @@ $(document).on("click", ".timeOfDayBtn", function () {
     autoSaveTileChanges(false);
 });
 
-if (activeIndex === null) return;
 // Ensure tile has all properties (including header)
 normalizeTile(activeIndex);
 
