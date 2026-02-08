@@ -385,13 +385,13 @@ function renderTiles() {
                                 </div>
                                 <div class="tileLast">${showFreqText}</div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                            ${!t.header ? `<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
                                 <div style="display: flex; gap: 5px;">
                                     ${emoji}
                                 </div>
                                 <div>${lastUpdateText}</div>
                                 <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
-                            </div>
+                            </div>` : ""}
                             </div>
                         `);
             updateTileColor(i);
