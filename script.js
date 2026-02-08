@@ -357,29 +357,33 @@ function renderTiles() {
                     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
                 lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
             }
-            const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
-            const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-            let emoji = "";
-            if (t.done) {
-                emoji = "💪";
-            } else if (t.skip) {
-                emoji = "😢";
-            } else {
-                emoji = "💬";
-            }
-            // Header badge
-            const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
-            $("#grid").append(`    
+                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+                        let emoji = "";
+                        if (t.done) {
+                            emoji = "💪";
+                        } else if (t.skip) {
+                            emoji = "😢";
+                        } else {
+                            emoji = "💬";
+                        }
+                        // Header badge
+                        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
+                        // Hide morning/evening and frequency badges for header tiles
+                        const showTimeIcon = !t.header ? timeIcon : "";
+                        const showFreqText = !t.header ? freqText : "";
+                        const showNextText = !t.header ? nextText : "";
+                        $("#grid").append(`    
                             <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;${t.header ? ' border: 2px solid #ffe066;' : ''}">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                                 <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${headerBadge}${t.name || ""}</div>
-                                <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                                <div style="font-size: 1.2em; flex-shrink: 0;">${showTimeIcon}</div>
                             </div>
                             <div>
                                 <div class="tileCenter">
-                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
+                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${showNextText}</div>  
                                 </div>
-                                <div class="tileLast">${freqText}</div>
+                                <div class="tileLast">${showFreqText}</div>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
                                 <div style="display: flex; gap: 5px;">
