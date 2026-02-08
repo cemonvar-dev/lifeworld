@@ -336,112 +336,66 @@ function renderTiles() {
         });
         // Add empty tiles at the end (optional, or skip for mobile)
     } else {
-        // Desktop: sticky header per row logic
-        // 1. Group tiles by header
-        let groups = [];
-        let currentGroup = null;
+        // Desktop: original logic
         for (let i = 0; i < TILE_COUNT; i++) {
             const t = tiles[i];
             normalizeTile(i);
             if (!t.name && t.logs.length === 0) {
+                $("#grid").append(`
+                                <div class="tile empty" data-index="${i}">
+                                    <div class="plusIcon">+</div>
+                                </div>
+                            `);
                 continue;
             }
-            if (t.header) {
-                if (currentGroup && currentGroup.tiles.length > 0) {
-                    groups.push(currentGroup);
-                }
-                currentGroup = { headerIndex: i, headerTile: t, tiles: [] };
+            const freqText = formatFrequency(t.frequency);
+            const nextText = computeNextOccurrenceDisplay(t);
+            let lastUpdateText = "";
+            if (t.logs && t.logs.length > 0) {
+                const lastDoneLog = t.logs
+                    .filter(l => l.text === "done")
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
             }
-            if (!currentGroup) {
-                // If no header yet, start a default group
-                currentGroup = { headerIndex: null, headerTile: null, tiles: [] };
-            }
-            currentGroup.tiles.push({ index: i, tile: t });
-        }
-        if (currentGroup && currentGroup.tiles.length > 0) {
-            groups.push(currentGroup);
-        }
-
-        // 2. Render each group as rows with sticky header
-        const tilesPerRow = 4; // Adjust for your grid
-        groups.forEach(group => {
-            let { headerIndex, headerTile, tiles } = group;
-            for (let row = 0; row < Math.ceil(tiles.length / tilesPerRow); row++) {
-                let $row = $("<div class='tileRow' style='display:flex;gap:6px;margin-bottom:10px;'></div>");
-                // Header cell
-                if (headerTile) {
-                    const headerBadge = '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>';
-                    $row.append(`
-                        <div class="tile header-tile" data-index="${headerIndex}" style="background:#fffbe6;border:2px solid #ffe066;min-width:150px;max-width:150px;display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                            ${headerBadge}${headerTile.name || ""}
-                        </div>
-                    `);
-                } else {
-                    $row.append(`<div class="tile header-tile" style="background:#f6f6f2;min-width:150px;max-width:150px;"></div>`);
-                }
-                // Tiles for this row
-                for (let j = 0; j < tilesPerRow; j++) {
-                    const tileIdx = row * tilesPerRow + j;
-                    if (tileIdx >= tiles.length) break;
-                    const { index, tile } = tiles[tileIdx];
-                    if (tile.header) continue; // skip header tile itself
-                    const freqText = formatFrequency(tile.frequency);
-                    const nextText = computeNextOccurrenceDisplay(tile);
-                    let lastUpdateText = "";
-                    if (tile.logs && tile.logs.length > 0) {
-                        const lastDoneLog = tile.logs
-                            .filter(l => l.text === "done")
-                            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                        lastUpdateText = lastDoneLog ? convertToShortDate(lastDoneLog.date) : "";
-                    }
-                    const timeOfDay = tile.timeOfDay && tile.timeOfDay.length > 0 ? tile.timeOfDay[0] : "evening";
-                    const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
-                    let emoji = "";
-                    if (tile.done) {
-                        emoji = "💪";
-                    } else if (tile.skip) {
-                        emoji = "😢";
-                    } else {
-                        emoji = "💬";
-                    }
-                    $row.append(`
-                        <div class="tile" data-index="${index}" style="display: flex; flex-direction: column; justify-content: space-between;">
+                        const timeOfDay = t.timeOfDay && t.timeOfDay.length > 0 ? t.timeOfDay[0] : "evening";
+                        const timeIcon = timeOfDay === "morning" ? "🌅" : "🌙";
+                        let emoji = "";
+                        if (t.done) {
+                            emoji = "💪";
+                        } else if (t.skip) {
+                            emoji = "😢";
+                        } else {
+                            emoji = "💬";
+                        }
+                        // Header badge
+                        const headerBadge = t.header ? '<span class="header-badge" style="background:#ffe066;color:#333;padding:2px 8px;border-radius:8px;font-size:0.85em;margin-right:6px;">Header</span>' : '';
+                        // Hide morning/evening and frequency badges for header tiles
+                        const showTimeIcon = !t.header ? timeIcon : "";
+                        const showFreqText = !t.header ? freqText : "";
+                        const showNextText = !t.header ? nextText : "";
+                        $("#grid").append(`    
+                            <div class="tile" data-index="${i}" style="display: flex; flex-direction: column; justify-content: space-between;${t.header ? ' border: 2px solid #ffe066;' : ''}">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                                <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${tile.name || ""}</div>
-                                <div style="font-size: 1.2em; flex-shrink: 0;">${timeIcon}</div>
+                                <div class="tileName" style="flex: 1; word-wrap: break-word; overflow-wrap: break-word; margin-right: 8px; font-weight: bold;">${headerBadge}${t.name || ""}</div>
+                                <div style="font-size: 1.2em; flex-shrink: 0;">${showTimeIcon}</div>
                             </div>
                             <div>
                                 <div class="tileCenter">
-                                    <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${nextText}</div>  
+                                <div class="tileNext" style="font-weight: bold; font-size: 1.1em; margin-bottom: 8px;">${showNextText}</div>  
                                 </div>
-                                <div class="tileLast">${freqText}</div>
+                                <div class="tileLast">${showFreqText}</div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
+                            ${!t.header ? `<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px;">
                                 <div style="display: flex; gap: 5px;">
                                     ${emoji}
                                 </div>
                                 <div>${lastUpdateText}</div>
-                                <div class="tileCount" style="font-weight: bold;">(${(tile.logs || []).filter(l => l.text === "done").length || "0"})</div>
+                                <div class="tileCount" style="font-weight: bold;">(${(t.logs || []).filter(l => l.text === "done").length || "0"})</div>
+                            </div>` : ""}
                             </div>
-                        </div>
-                    `);
-                    updateTileColor(index);
-                }
-                // Fill empty cells if needed
-                let totalCells = 1 + tilesPerRow;
-                while ($row.children().length < totalCells) {
-                    $row.append(`<div class="tile empty" style="background:white;border:2px dashed #d9d9d9;min-width:150px;max-width:150px;"></div>`);
-                }
-                $("#grid").append($row);
-            }
-        });
-        // Add empty tile at the end
-        $("#grid").append(`
-            <div class="tile empty" style="background:white;border:2px dashed #d9d9d9;min-width:150px;max-width:150px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:300;">
-                <div class="plusIcon">+</div>
-            </div>
-        `);
-        // ...existing code...
+                        `);
+            updateTileColor(i);
+        }
     }
 
     initDragAndDrop();
