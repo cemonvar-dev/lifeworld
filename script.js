@@ -1400,6 +1400,10 @@ function swapTiles(a, b) {
 }
 
 function normalizeTile(i) {
+    if(tiles==undefined || tiles[i] === undefined) {
+        return;
+    }
+    
     if (!tiles[i].logs) tiles[i].logs = [];
 
     tiles[i].logs = tiles[i].logs.map(l => {
