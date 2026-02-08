@@ -483,20 +483,21 @@ $(document).on("click", ".tile", function () {
         $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
     }
 
-    // Set as Header button handler
-    $(document).on("click", "#setHeaderBtn", function () {
-        if (activeIndex === null) return;
-        // Toggle header state
-        tiles[activeIndex].header = !tiles[activeIndex].header;
-        // Update button UI
-        if (tiles[activeIndex].header) {
-            $(this).addClass("active").text("✅ Header");
-        } else {
-            $(this).removeClass("active").text("🏷️ Set as Header");
-        }
-        autoSaveTileChanges(false);
-        setTimeout(function () { renderTiles(); }, 10);
-    });
+    // (Handler moved outside to avoid duplicate bindings)
+// Set as Header button handler (attach only once)
+$(document).on("click", "#setHeaderBtn", function () {
+    if (activeIndex === null) return;
+    // Toggle header state
+    tiles[activeIndex].header = !tiles[activeIndex].header;
+    // Update button UI
+    if (tiles[activeIndex].header) {
+        $(this).addClass("active").text("✅ Header");
+    } else {
+        $(this).removeClass("active").text("🏷️ Set as Header");
+    }
+    autoSaveTileChanges(false);
+    setTimeout(function () { renderTiles(); }, 10);
+});
 
     // --- VIRTUAL EMPTY TILE ---
     if ($(this).hasClass("virtual-empty")) {
