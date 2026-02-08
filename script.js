@@ -474,6 +474,10 @@ function refreshHistoryDisplay() {
 // ---- Popup / tile click ----
 $(document).on("click", ".tile", function() {
         // Set header button state
+
+
+
+        
         if (tiles[activeIndex].header) {
             $("#setHeaderBtn").addClass("active").text("✅ Header");
         } else {
@@ -641,6 +645,16 @@ $(document).on("click", ".timeOfDayBtn", function() {
     autoSaveTileChanges(false);
 });
 
+    // Ensure tile has all properties (including header)
+    normalizeTile(activeIndex);
+    if (typeof tiles[activeIndex].header === "undefined") {
+        tiles[activeIndex].header = false;
+    }
+    if (tiles[activeIndex].header) {
+        $("#setHeaderBtn").addClass("active").text("✅ Header");
+    } else {
+        $("#setHeaderBtn").removeClass("active").text("🏷️ Set as Header");
+    }
 $(document).on("change", "#pickDateInput", function() {
     // Auto-save when pick date changes
     autoSaveTileChanges(false);
