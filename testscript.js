@@ -148,11 +148,11 @@ function openTilePopup(tileId) {
 			const actionColor = log.text === 'done' ? 'bg-green-400' : log.text === 'skip' ? 'bg-yellow-400' : log.text === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			timelineHtml += `
-				<div class="mb-4 relative group">
-					<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
+				<div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
+					<div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
 					<div class="flex items-center justify-between">
 						<div class="text-sm font-semibold">${log.text}</div>
-						<button class="delete-log text-red-300 hover:text-red-500 text-xs font-bold opacity-0 group-hover:opacity-100 transition" data-log-idx="${origIdx}">&times;</button>
+						<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold opacity-0 group-hover:opacity-100 transition px-1" data-log-idx="${origIdx}">&times;</button>
 					</div>
 					<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
 					${noteHtml}
