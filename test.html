@@ -213,6 +213,7 @@
 					<div>
 						<div class="text-xl font-bold">${raw.name}</div>
 						<div class="text-sm text-slate-500">${statusLabel}</div>
+						<div class="text-xs text-slate-400">${raw.lastUpdate ? 'Last update: ' + new Date(raw.lastUpdate).toLocaleDateString() : ''}</div>
 					</div>
 				</div>
 				<div class="mb-1 text-sm font-semibold">Tags</div>
@@ -229,10 +230,6 @@
 					<label class="text-xs text-slate-500">Date</label>
 					<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${(raw.frequency && raw.frequency.date) || ''}" />
 				</div>
-				<div class="grid grid-cols-2 gap-2 text-sm mb-2">
-					<div><span class="text-slate-500">Total logs:</span> ${logs.length}</div>
-					<div><span class="text-slate-500">Last update:</span> ${raw.lastUpdate ? new Date(raw.lastUpdate).toLocaleDateString() : '—'}</div>
-				</div>
 				<div class="mb-1 text-sm font-semibold">Time of Day</div>
 				<div id="todBtns" class="flex flex-wrap gap-2 mb-4">
 					${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${(raw.timeOfDay || []).includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
@@ -240,6 +237,7 @@
 				<hr class="my-3 border-slate-200">
 				<div class="text-md font-semibold mb-1">Log Timeline</div>
 				<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
+				<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
 			`;
 
 			// Wire up tag interactions
