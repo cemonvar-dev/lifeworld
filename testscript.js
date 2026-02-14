@@ -182,7 +182,7 @@ function openTilePopup(tileId) {
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		<div id="tagChips" class="flex flex-wrap gap-2 mb-3">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
 		<div id="presetTags" class="flex flex-wrap gap-2 mb-2">${presetTagsHtml}</div>
-		<div class="mb-8"><button id="newTagBtn" class="px-3 py-1 rounded-full text-xs border border-dashed border-slate-400 text-slate-500 hover:bg-slate-100 transition">+ New Tag</button></div>
+		<div class="mb-8"><button id="newTagBtn" class="px-4 py-2 rounded-full text-sm font-medium border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition">+ New Tag</button></div>
 		<div class="mb-2 text-sm font-semibold">Frequency</div>
 		<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
 			${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
