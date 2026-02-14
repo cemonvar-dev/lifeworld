@@ -218,8 +218,14 @@
 				<div class="mb-1 text-sm font-semibold">Tags</div>
 				<div id="tagChips" class="flex flex-wrap gap-2 mb-2">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
 				<div id="presetTags" class="flex flex-wrap gap-1 mb-4">${presetTagsHtml}</div>
+				<div class="mb-1 text-sm font-semibold">Frequency</div>
+				<div id="freqBtns" class="flex flex-wrap gap-2 mb-2">
+					${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
+				</div>
+				<div id="weeklyDays" class="flex flex-wrap gap-1 mb-4" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
+					${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${(raw.frequency && raw.frequency.days && raw.frequency.days.includes(String(i))) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+				</div>
 				<div class="grid grid-cols-2 gap-2 text-sm mb-4">
-					<div><span class="text-slate-500">Frequency:</span> ${freqMode}</div>
 					<div><span class="text-slate-500">Time of day:</span> ${timeOfDay}</div>
 					<div><span class="text-slate-500">Total logs:</span> ${logs.length}</div>
 					<div><span class="text-slate-500">Last update:</span> ${raw.lastUpdate ? new Date(raw.lastUpdate).toLocaleDateString() : '—'}</div>
@@ -243,6 +249,22 @@
 				});
 			});
 
+			// Wire up frequency buttons
+			document.querySelectorAll('.freq-btn').forEach(btn => {
+				btn.addEventListener('click', e => {
+					e.stopPropagation();
+					setFrequency(btn.dataset.freq);
+				});
+			});
+
+			// Wire up weekly day buttons
+			document.querySelectorAll('.day-btn').forEach(btn => {
+				btn.addEventListener('click', e => {
+					e.stopPropagation();
+					toggleWeeklyDay(btn.dataset.day);
+				});
+			});
+
 			overlay.classList.remove('hidden');
 		}
 
@@ -263,16 +285,43 @@
 			// Re-render popup to reflect change
 			openTilePopup(activeTileId);
 			// Save to Supabase
-			await saveTagsToCloud();
+			await saveTileToCloud();
 		}
 
-		async function saveTagsToCloud() {
+		async function setFrequency(mode) {
+			if (activeTileId === null) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw) return;
+			raw.frequency = raw.frequency || { mode: 'daily', days: [], date: null };
+			raw.frequency.mode = mode;
+			if (mode !== 'weekly') raw.frequency.days = [];
+			openTilePopup(activeTileId);
+			await saveTileToCloud();
+		}
+
+		async function toggleWeeklyDay(day) {
+			if (activeTileId === null) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw) return;
+			raw.frequency = raw.frequency || { mode: 'weekly', days: [], date: null };
+			raw.frequency.days = raw.frequency.days || [];
+			const idx = raw.frequency.days.indexOf(String(day));
+			if (idx >= 0) {
+				raw.frequency.days.splice(idx, 1);
+			} else {
+				raw.frequency.days.push(String(day));
+			}
+			openTilePopup(activeTileId);
+			await saveTileToCloud();
+		}
+
+		async function saveTileToCloud() {
 			const { data: { session } } = await supa.auth.getSession();
 			if (!session || !session.user) return;
 			const { error } = await supa
 				.from('worlds')
 				.upsert({ user_id: session.user.id, data: rawTiles }, { onConflict: 'user_id' });
-			if (error) console.error('Tag save error:', error);
+			if (error) console.error('Save error:', error);
 		}
 	</script>
 </body>
