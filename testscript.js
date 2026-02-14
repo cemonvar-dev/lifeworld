@@ -144,7 +144,7 @@ function openTilePopup(tileId) {
 	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.created_at).toLocaleDateString() : '';
 
 	const freqMode = raw.frequency_mode || 'daily';
-	const timeOfDayArr = raw.time_of_day ? raw.time_of_day.split(',').filter(Boolean) : [];
+	const timeOfDayArr = (typeof raw.time_of_day === 'string' && raw.time_of_day) ? raw.time_of_day.split(',').filter(Boolean) : [];
 	const currentTags = raw.tags || [];
 	const freqDays = (raw.task_frequency_days || []).map(d => String(d.day_of_week));
 
