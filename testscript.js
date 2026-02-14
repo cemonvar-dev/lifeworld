@@ -592,6 +592,53 @@ function applyFilters() {
 	renderGallery(filtered);
 }
 
+// ---- Reset Today's Logs ----
+async function resetTodayLogs() {
+	if (!confirm('Reset all done/skip flags for today?')) return;
+	const today = new Date().toISOString().split('T')[0];
+	// Find today's done/skip logs across all tiles
+	const logIdsToReset = [];
+	Object.values(rawTiles).forEach(raw => {
+		(raw.task_logs || []).forEach(log => {
+			const logDate = log.created_at ? log.created_at.split('T')[0] : '';
+			if (logDate === today && (log.status === 'done' || log.status === 'skip' || log.status === 'completed')) {
+				logIdsToReset.push(log.id);
+			}
+		});
+	});
+	if (logIdsToReset.length === 0) {
+		alert('Nothing to reset — no done/skip logs for today.');
+		return;
+	}
+	// Update status to 'reset' in DB
+	const { error } = await supa.from('task_logs').update({ status: 'reset' }).in('id', logIdsToReset);
+	if (error) { console.error('Reset error:', error); return; }
+	// Update local data
+	Object.values(rawTiles).forEach(raw => {
+		(raw.task_logs || []).forEach(log => {
+			if (logIdsToReset.includes(log.id)) {
+				log.status = 'reset';
+			}
+		});
+	});
+	// Rebuild display tiles
+	tiles = Object.values(rawTiles).map(task => {
+		const logs = task.task_logs || [];
+		const lastLog = logs[0];
+		const lastStatus = lastLog ? lastLog.status : null;
+		return {
+			id: task.id,
+			name: task.name,
+			tags: task.tags || [],
+			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
+			emoji: task.emoji || '🟦',
+			count: logs.length,
+			lastUpdate: lastLog ? lastLog.created_at : null
+		};
+	});
+	applyFilters();
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
@@ -606,5 +653,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
 	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
+	document.getElementById('resetBtn').addEventListener('click', resetTodayLogs);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 });
