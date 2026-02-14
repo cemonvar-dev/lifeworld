@@ -46,7 +46,8 @@ async function fetchTilesFromSupabase() {
 			tags: t.tags || [],
 			status: t.completed ? "completed" : t.done ? "done" : t.skip ? "skipped" : "noaction",
 			emoji: t.emoji || "🟦",
-			count: (t.logs && t.logs.length) || 0
+			count: (t.logs && t.logs.length) || 0,
+			lastUpdate: t.lastUpdate || null
 		}));
 	renderGallery(tiles);
 }
@@ -87,6 +88,7 @@ function renderGallery(filteredTiles) {
 			const tileDiv = document.createElement("div");
 			tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer";
 			tileDiv.dataset.tileId = tile.id;
+			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			tileDiv.innerHTML = `
 				<div class="text-3xl">${tile.emoji || "🟦"}</div>
 				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
@@ -95,6 +97,7 @@ function renderGallery(filteredTiles) {
 					<span class="text-xs text-slate-500">${tile.status}</span>
 					<span class="text-xs text-slate-500">(${tile.count})</span>
 				</div>
+				<div class="text-xs text-slate-400 mt-1">🕓 ${lastUpd}</div>
 			`;
 			tileDiv.addEventListener('click', () => openTilePopup(tile.id));
 			groupGrid.appendChild(tileDiv);
@@ -200,6 +203,8 @@ function openTilePopup(tileId) {
 		<div class="text-md font-semibold mb-1">Log Timeline</div>
 		<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
 		<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
+		<hr class="my-5 border-slate-200">
+		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition">🗑️ Delete Tile</button>
 	`;
 
 	// Wire up tag interactions
@@ -251,6 +256,17 @@ function openTilePopup(tileId) {
 			e.stopPropagation();
 			toggleTimeOfDay(btn.dataset.tod);
 		});
+	});
+
+	// Wire up delete button
+	document.getElementById('deleteTileBtn').addEventListener('click', async () => {
+		if (activeTileId === null) return;
+		if (!confirm('Are you sure you want to delete this tile? This cannot be undone.')) return;
+		delete rawTiles[activeTileId];
+		tiles = tiles.filter(t => t.id !== activeTileId);
+		await saveTileToCloud();
+		closeTilePopup();
+		renderGallery(tiles);
 	});
 
 	overlay.classList.remove('hidden');
