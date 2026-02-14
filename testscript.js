@@ -204,7 +204,7 @@ function openTilePopup(tileId) {
 		<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
 		<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
 		<hr class="my-5 border-slate-200">
-		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition">🗑️ Delete Tile</button>
+		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
 
 	// Wire up tag interactions
@@ -288,6 +288,8 @@ async function toggleTag(tag) {
 	if (displayTile) displayTile.tags = [...raw.tags];
 	// Re-render popup to reflect change
 	openTilePopup(activeTileId);
+	// Re-render gallery so grouping updates immediately
+	renderGallery(tiles);
 	// Save to Supabase
 	await saveTileToCloud();
 }
