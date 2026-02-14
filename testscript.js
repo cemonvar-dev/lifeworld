@@ -139,16 +139,21 @@ function openTilePopup(tileId) {
 		timelineHtml = '<div class="text-slate-400 text-sm py-4">No logs yet.</div>';
 	} else {
 		timelineHtml = '<div class="relative pl-6 border-l-2 border-slate-200 mt-2">';
-		logs.forEach(log => {
+		logs.forEach((log, sortedIdx) => {
+			// Find the original index in raw.logs
+			const origIdx = raw.logs.indexOf(log);
 			const d = new Date(log.date);
 			const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
 			const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
 			const actionColor = log.text === 'done' ? 'bg-green-400' : log.text === 'skip' ? 'bg-yellow-400' : log.text === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			timelineHtml += `
-				<div class="mb-4 relative">
+				<div class="mb-4 relative group">
 					<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
-					<div class="text-sm font-semibold">${log.text}</div>
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-semibold">${log.text}</div>
+						<button class="delete-log text-red-300 hover:text-red-500 text-xs font-bold opacity-0 group-hover:opacity-100 transition" data-log-idx="${origIdx}">&times;</button>
+					</div>
 					<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
 					${noteHtml}
 				</div>`;
@@ -259,12 +264,28 @@ function openTilePopup(tileId) {
 	// Wire up delete button
 	document.getElementById('deleteTileBtn').addEventListener('click', async () => {
 		if (activeTileId === null) return;
-		if (!confirm('Are you sure you want to delete this tile? This cannot be undone.')) return;
 		delete rawTiles[activeTileId];
 		tiles = tiles.filter(t => t.id !== activeTileId);
 		await saveTileToCloud();
 		closeTilePopup();
 		renderGallery(tiles);
+	});
+
+	// Wire up log delete buttons
+	document.querySelectorAll('.delete-log').forEach(btn => {
+		btn.addEventListener('click', async e => {
+			e.stopPropagation();
+			const idx = parseInt(btn.dataset.logIdx);
+			if (activeTileId === null || isNaN(idx)) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw || !raw.logs) return;
+			raw.logs.splice(idx, 1);
+			// Update display tile count
+			const displayTile = tiles.find(t => t.id === activeTileId);
+			if (displayTile) displayTile.count = raw.logs.length;
+			openTilePopup(activeTileId);
+			await saveTileToCloud();
+		});
 	});
 
 	overlay.classList.remove('hidden');
