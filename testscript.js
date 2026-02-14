@@ -488,7 +488,7 @@ async function quickLog(tileId, status) {
 		// Insert new log
 		const { data, error } = await supa
 			.from('task_logs')
-			.insert({ task_id: tileId, status, log_date: today })
+			.insert({ task_id: tileId, status })
 			.select()
 			.single();
 		if (error) { console.error('Quick log error:', error); return; }
@@ -559,6 +559,7 @@ async function addNewTile() {
 
 	if (error || !data) {
 		console.error('Add error:', error);
+		alert('Failed to add tile: ' + (error?.message || 'unknown error'));
 		return;
 	}
 
@@ -581,8 +582,8 @@ async function addNewTile() {
 	});
 
 	buildTagsFromTiles();
-	openTilePopup(data.id);
 	applyFilters();
+	openTilePopup(data.id);
 }
 
 // ---- Tag Filter ----
