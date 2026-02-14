@@ -1,6 +1,7 @@
 let tiles = [];
 let rawTiles = {}; // full tile objects keyed by id (for popup details)
 let activeTileId = null; // currently open tile
+let activeTagFilter = null; // currently active tag filter
 
 const ALL_TAGS = [
 	{ key: 'arts', label: '🎨 Arts' },
@@ -345,15 +346,116 @@ async function saveTileToCloud() {
 	if (error) console.error('Save error:', error);
 }
 
+// ---- Tag Filter ----
+function openTagFilterPopup() {
+	const overlay = document.getElementById('tagFilterOverlay');
+	const grid = document.getElementById('tagFilterGrid');
+
+	// Collect tags actually in use + count
+	const tagCounts = {};
+	tiles.forEach(tile => {
+		(tile.tags || []).forEach(t => {
+			tagCounts[t] = (tagCounts[t] || 0) + 1;
+		});
+	});
+
+	grid.innerHTML = '';
+
+	// "All" tile
+	const allBtn = document.createElement('button');
+	allBtn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+		activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+	}`;
+	allBtn.innerHTML = `<span class="text-2xl">🌐</span><span class="text-sm font-semibold">All</span><span class="text-xs text-slate-400">${tiles.length} tiles</span>`;
+	allBtn.addEventListener('click', () => { setTagFilter(null); });
+	grid.appendChild(allBtn);
+
+	// Tag tiles
+	ALL_TAGS.forEach(at => {
+		const count = tagCounts[at.key] || 0;
+		if (count === 0) return; // hide unused tags
+		const btn = document.createElement('button');
+		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		}`;
+		btn.innerHTML = `<span class="text-2xl">${at.label.split(' ')[0]}</span><span class="text-sm font-semibold">${at.label.split(' ').slice(1).join(' ')}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
+		btn.addEventListener('click', () => { setTagFilter(at.key); });
+		grid.appendChild(btn);
+	});
+
+	// Untagged
+	const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
+	if (untaggedCount > 0) {
+		const btn = document.createElement('button');
+		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+			activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		}`;
+		btn.innerHTML = `<span class="text-2xl">📦</span><span class="text-sm font-semibold">Untagged</span><span class="text-xs text-slate-400">${untaggedCount} tiles</span>`;
+		btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
+		grid.appendChild(btn);
+	}
+
+	overlay.classList.remove('hidden');
+}
+
+function closeTagFilterPopup() {
+	document.getElementById('tagFilterOverlay').classList.add('hidden');
+}
+
+function setTagFilter(tag) {
+	activeTagFilter = tag;
+	closeTagFilterPopup();
+	applyFilters();
+	updateFilterBar();
+}
+
+function updateFilterBar() {
+	const bar = document.getElementById('activeFilterBar');
+	const label = document.getElementById('activeFilterLabel');
+	if (activeTagFilter === null) {
+		bar.classList.add('hidden');
+	} else {
+		bar.classList.remove('hidden');
+		if (activeTagFilter === '__untagged__') {
+			label.textContent = '📦 Untagged';
+		} else {
+			const info = ALL_TAGS.find(t => t.key === activeTagFilter);
+			label.textContent = info ? info.label : activeTagFilter;
+		}
+	}
+}
+
+function applyFilters() {
+	let filtered = [...tiles];
+	// Tag filter
+	if (activeTagFilter === '__untagged__') {
+		filtered = filtered.filter(t => !t.tags || t.tags.length === 0);
+	} else if (activeTagFilter) {
+		filtered = filtered.filter(t => (t.tags || []).includes(activeTagFilter));
+	}
+	// Search filter
+	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+	if (q) {
+		filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
+	}
+	renderGallery(filtered);
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
 	fetchTilesFromSupabase();
 
 	// Search filter
-	document.getElementById("searchBox").addEventListener("input", function() {
-		const q = this.value.trim().toLowerCase();
-		const filtered = tiles.filter(tile => tile.name.toLowerCase().includes(q));
-		renderGallery(filtered);
+	document.getElementById('searchBox').addEventListener('input', () => applyFilters());
+
+	// Tag filter popup
+	document.getElementById('tagFilterBtn').addEventListener('click', openTagFilterPopup);
+	document.getElementById('closeTagFilter').addEventListener('click', closeTagFilterPopup);
+	document.getElementById('tagFilterOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
+
+	// Clear filter
+	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
 });
