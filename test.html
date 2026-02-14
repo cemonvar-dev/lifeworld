@@ -216,22 +216,23 @@
 						<div class="text-xs text-slate-400">${raw.lastUpdate ? 'Last update: ' + new Date(raw.lastUpdate).toLocaleDateString() : ''}</div>
 					</div>
 				</div>
-				<div class="mb-1 text-sm font-semibold">Tags</div>
-				<div id="tagChips" class="flex flex-wrap gap-2 mb-2">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
-				<div id="presetTags" class="flex flex-wrap gap-1 mb-4">${presetTagsHtml}</div>
-				<div class="mb-1 text-sm font-semibold">Frequency</div>
-				<div id="freqBtns" class="flex flex-wrap gap-2 mb-2">
+				<hr class="my-4 border-slate-200">
+				<div class="mb-2 text-sm font-semibold">Tags</div>
+				<div id="tagChips" class="flex flex-wrap gap-2 mb-3">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
+				<div id="presetTags" class="flex flex-wrap gap-1 mb-6">${presetTagsHtml}</div>
+				<div class="mb-2 text-sm font-semibold">Frequency</div>
+				<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
 					${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
 				</div>
-				<div id="weeklyDays" class="flex flex-wrap gap-1 mb-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
+				<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
 					${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${(raw.frequency && raw.frequency.days && raw.frequency.days.includes(String(i))) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
 				</div>
-				<div id="onceDatePicker" class="mb-4" style="display:${freqMode === 'once' ? 'block' : 'none'}">
+				<div id="onceDatePicker" class="mb-6" style="display:${freqMode === 'once' ? 'block' : 'none'}">
 					<label class="text-xs text-slate-500">Date</label>
 					<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${(raw.frequency && raw.frequency.date) || ''}" />
 				</div>
-				<div class="mb-1 text-sm font-semibold">Time of Day</div>
-				<div id="todBtns" class="flex flex-wrap gap-2 mb-4">
+				<div class="mb-2 text-sm font-semibold">Time of Day</div>
+				<div id="todBtns" class="flex flex-wrap gap-2 mb-6">
 					${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${(raw.timeOfDay || []).includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 				</div>
 				<hr class="my-3 border-slate-200">
