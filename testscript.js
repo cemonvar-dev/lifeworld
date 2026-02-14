@@ -181,7 +181,8 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		<div id="tagChips" class="flex flex-wrap gap-2 mb-3">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
-		<div id="presetTags" class="flex flex-wrap gap-2 mb-8">${presetTagsHtml}</div>
+		<div id="presetTags" class="flex flex-wrap gap-2 mb-2">${presetTagsHtml}</div>
+		<div class="mb-8"><button id="newTagBtn" class="px-3 py-1 rounded-full text-xs border border-dashed border-slate-400 text-slate-500 hover:bg-slate-100 transition">+ New Tag</button></div>
 		<div class="mb-2 text-sm font-semibold">Frequency</div>
 		<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
 			${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
@@ -217,6 +218,27 @@ function openTilePopup(tileId) {
 			e.stopPropagation();
 			toggleTag(btn.dataset.tag);
 		});
+	});
+
+	// Wire up new tag button
+	document.getElementById('newTagBtn').addEventListener('click', async e => {
+		e.stopPropagation();
+		const newTag = prompt('Enter new tag name:');
+		if (!newTag || !newTag.trim()) return;
+		const key = newTag.trim().toLowerCase().replace(/\s+/g, '-');
+		if (activeTileId === null) return;
+		const raw = rawTiles[activeTileId];
+		if (!raw) return;
+		raw.tags = raw.tags || [];
+		if (!raw.tags.includes(key)) {
+			raw.tags.push(key);
+			const displayTile = tiles.find(t => t.id === activeTileId);
+			if (displayTile) displayTile.tags = [...raw.tags];
+			buildTagsFromTiles();
+			openTilePopup(activeTileId);
+			renderGallery(tiles);
+			await saveTileToCloud();
+		}
 	});
 
 	// Wire up frequency buttons
