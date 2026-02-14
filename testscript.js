@@ -170,7 +170,7 @@ function renderGallery(filteredTiles) {
 				<div class="text-3xl">${tile.emoji}</div>
 				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
 				<div class="flex gap-2 mt-1">
-					<span class="text-xs text-slate-500">${tile.status}</span>
+					<span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
 					<span class="text-xs text-slate-500">(${tile.count})</span>
 				</div>
 				<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
@@ -178,8 +178,23 @@ function renderGallery(filteredTiles) {
 					<span class="text-xs text-slate-400">📌 ${createdAt}</span>
 					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
 				</div>
+				<div class="flex gap-2 mt-2 w-full">
+					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-green-200 text-green-800' : 'bg-green-50 text-green-600 hover:bg-green-200'}" data-tile-id="${tile.id}">✅ Done</button>
+					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-yellow-200 text-yellow-800' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+				</div>
 			`;
-			tileDiv.addEventListener('click', () => openTilePopup(tile.id));
+			tileDiv.addEventListener('click', (e) => {
+				if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
+				openTilePopup(tile.id);
+			});
+			tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
+				e.stopPropagation();
+				quickLog(tile.id, 'done');
+			});
+			tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
+				e.stopPropagation();
+				quickLog(tile.id, 'skip');
+			});
 			groupGrid.appendChild(tileDiv);
 		});
 		groupSection.appendChild(groupGrid);
@@ -432,6 +447,53 @@ async function toggleTimeOfDay(tod) {
 }
 
 // ---- Log Operations ----
+async function quickLog(tileId, status) {
+	const raw = rawTiles[tileId];
+	if (!raw) return;
+
+	const today = new Date().toISOString().split('T')[0];
+
+	// Check if there's already a log for today — update it instead of creating duplicate
+	const existingLog = (raw.task_logs || []).find(l => {
+		const logDate = l.created_at ? l.created_at.split('T')[0] : '';
+		return logDate === today && (l.status === 'done' || l.status === 'skip' || l.status === 'completed');
+	});
+
+	if (existingLog) {
+		// Update existing log
+		existingLog.status = status;
+		const { error } = await supa.from('task_logs').update({ status }).eq('id', existingLog.id);
+		if (error) console.error('Quick log update error:', error);
+	} else {
+		// Insert new log
+		const { data, error } = await supa
+			.from('task_logs')
+			.insert({ task_id: tileId, status, log_date: today })
+			.select()
+			.single();
+		if (error) { console.error('Quick log error:', error); return; }
+		if (data) {
+			raw.task_logs = raw.task_logs || [];
+			raw.task_logs.unshift(data);
+		}
+	}
+
+	// Update display tile
+	const displayTile = tiles.find(t => t.id === tileId);
+	if (displayTile) {
+		displayTile.status = status === 'done' ? 'done' : status === 'skip' ? 'skipped' : 'noaction';
+		displayTile.count = (raw.task_logs || []).length;
+		displayTile.lastUpdate = new Date().toISOString();
+		const health = calculateHealth(raw);
+		const plant = healthToPlant(health);
+		displayTile.emoji = plant.emoji;
+		displayTile.health = health;
+		displayTile.healthLabel = plant.label;
+		displayTile.healthColor = plant.color;
+	}
+	applyFilters();
+}
+
 async function deleteLog(logId) {
 	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
@@ -518,10 +580,10 @@ function openTagFilterPopup() {
 
 	// "All" tile
 	const allBtn = document.createElement('button');
-	allBtn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+	allBtn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 		activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 	}`;
-	allBtn.innerHTML = `<span class="text-2xl">🌐</span><span class="text-sm font-semibold">All</span><span class="text-xs text-slate-400">${tiles.length} tiles</span>`;
+	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	grid.appendChild(allBtn);
 
@@ -530,10 +592,10 @@ function openTagFilterPopup() {
 		const count = tagCounts[at.key] || 0;
 		if (count === 0) return;
 		const btn = document.createElement('button');
-		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+		btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-		btn.innerHTML = `<span class="text-2xl">🏷️</span><span class="text-sm font-semibold">${at.label}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
+		btn.innerHTML = `<span class="text-base">🏷️</span><span class="text-xs font-semibold">${at.label}</span><span class="text-[10px] text-slate-400">${count}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(at.key); });
 		grid.appendChild(btn);
 	});
@@ -542,18 +604,18 @@ function openTagFilterPopup() {
 	const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
 	if (untaggedCount > 0) {
 		const btn = document.createElement('button');
-		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
+		btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 			activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-		btn.innerHTML = `<span class="text-2xl">📦</span><span class="text-sm font-semibold">Untagged</span><span class="text-xs text-slate-400">${untaggedCount} tiles</span>`;
+		btn.innerHTML = `<span class="text-base">📦</span><span class="text-xs font-semibold">Untagged</span><span class="text-[10px] text-slate-400">${untaggedCount}</span>`;
 		btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
 		grid.appendChild(btn);
 	}
 
 	// "+ New Tag" button
 	const newBtn = document.createElement('button');
-	newBtn.className = 'flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center';
-	newBtn.innerHTML = `<span class="text-2xl">➕</span><span class="text-sm font-semibold">New Tag</span>`;
+	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center';
+	newBtn.innerHTML = `<span class="text-base">➕</span><span class="text-xs font-semibold">New Tag</span>`;
 	newBtn.addEventListener('click', () => {
 		const newTag = prompt('Enter new tag name:');
 		if (!newTag || !newTag.trim()) return;
