@@ -34,6 +34,23 @@
 
 		let tiles = [];
 		let rawTiles = {}; // full tile objects keyed by id (for popup details)
+		let activeTileId = null; // currently open tile
+
+		const ALL_TAGS = [
+			{ key: 'arts', label: '🎨 Arts' },
+			{ key: 'cooking', label: '🍳 Cooking' },
+			{ key: 'family', label: '👨‍👩‍👧‍👦 Family' },
+			{ key: 'friends', label: '🤝 Friends' },
+			{ key: 'games', label: '🎮 Games' },
+			{ key: 'habit', label: '🔥 Habit' },
+			{ key: 'health', label: '💚 Health' },
+			{ key: 'hobby', label: '🎯 Hobby' },
+			{ key: 'home', label: '🏡 Home' },
+			{ key: 'learning', label: '📚 Learning' },
+			{ key: 'outdoor', label: '🌲 Outdoor' },
+			{ key: 'spirituality', label: '✨ Spirituality' },
+			{ key: 'work', label: '💼 Work' }
+		];
 
 		// Try to get user session and fetch tiles from Supabase
 		async function fetchTilesFromSupabase() {
@@ -146,11 +163,12 @@
 		function openTilePopup(tileId) {
 			const raw = rawTiles[tileId];
 			if (!raw) return;
+			activeTileId = tileId;
 
 			const statusLabel = raw.completed ? '✅ Completed' : raw.done ? '💪 Done' : raw.skip ? '😢 Skipped' : '💬 No Action';
 			const freqMode = raw.frequency ? raw.frequency.mode : 'daily';
-			const tags = (raw.tags || []).map(t => `<span class='px-2 py-0.5 rounded bg-slate-200 text-xs'>${t}</span>`).join(' ');
 			const timeOfDay = (raw.timeOfDay || []).join(', ') || '—';
+			const currentTags = raw.tags || [];
 
 			// Build logs timeline (sorted newest first)
 			const logs = (raw.logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -176,6 +194,19 @@
 				timelineHtml += '</div>';
 			}
 
+			// Build tag chips (removable)
+			const tagChipsHtml = currentTags.map(t => {
+				const info = ALL_TAGS.find(at => at.key === t);
+				const label = info ? info.label : t;
+				return `<span class='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200 text-xs'>${label}<button class='remove-tag ml-1 text-slate-400 hover:text-red-500 font-bold' data-tag='${t}'>&times;</button></span>`;
+			}).join(' ');
+
+			// Build preset tag buttons (highlight active ones)
+			const presetTagsHtml = ALL_TAGS.map(at => {
+				const active = currentTags.includes(at.key);
+				return `<button class='preset-tag px-2 py-1 rounded-full text-xs border transition ${active ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tag='${at.key}'>${at.label}</button>`;
+			}).join('');
+
 			popupBody.innerHTML = `
 				<div class="flex items-center gap-3 mb-4">
 					<span class="text-4xl">${raw.emoji || '🟦'}</span>
@@ -184,7 +215,9 @@
 						<div class="text-sm text-slate-500">${statusLabel}</div>
 					</div>
 				</div>
-				<div class="flex flex-wrap gap-2 mb-3">${tags || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
+				<div class="mb-1 text-sm font-semibold">Tags</div>
+				<div id="tagChips" class="flex flex-wrap gap-2 mb-2">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
+				<div id="presetTags" class="flex flex-wrap gap-1 mb-4">${presetTagsHtml}</div>
 				<div class="grid grid-cols-2 gap-2 text-sm mb-4">
 					<div><span class="text-slate-500">Frequency:</span> ${freqMode}</div>
 					<div><span class="text-slate-500">Time of day:</span> ${timeOfDay}</div>
@@ -195,7 +228,51 @@
 				<div class="text-md font-semibold mb-1">Log Timeline</div>
 				<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
 			`;
+
+			// Wire up tag interactions
+			document.querySelectorAll('.remove-tag').forEach(btn => {
+				btn.addEventListener('click', e => {
+					e.stopPropagation();
+					toggleTag(btn.dataset.tag);
+				});
+			});
+			document.querySelectorAll('.preset-tag').forEach(btn => {
+				btn.addEventListener('click', e => {
+					e.stopPropagation();
+					toggleTag(btn.dataset.tag);
+				});
+			});
+
 			overlay.classList.remove('hidden');
+		}
+
+		async function toggleTag(tag) {
+			if (activeTileId === null) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw) return;
+			raw.tags = raw.tags || [];
+			const idx = raw.tags.indexOf(tag);
+			if (idx >= 0) {
+				raw.tags.splice(idx, 1);
+			} else {
+				raw.tags.push(tag);
+			}
+			// Update the display tile array too
+			const displayTile = tiles.find(t => t.id === activeTileId);
+			if (displayTile) displayTile.tags = [...raw.tags];
+			// Re-render popup to reflect change
+			openTilePopup(activeTileId);
+			// Save to Supabase
+			await saveTagsToCloud();
+		}
+
+		async function saveTagsToCloud() {
+			const { data: { session } } = await supa.auth.getSession();
+			if (!session || !session.user) return;
+			const { error } = await supa
+				.from('worlds')
+				.upsert({ user_id: session.user.id, data: rawTiles }, { onConflict: 'user_id' });
+			if (error) console.error('Tag save error:', error);
 		}
 	</script>
 </body>
