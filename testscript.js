@@ -458,6 +458,46 @@ function applyFilters() {
 	renderGallery(filtered);
 }
 
+// ---- Add New Tile ----
+async function addNewTile() {
+	const name = prompt('Enter tile name:');
+	if (!name || !name.trim()) return;
+
+	// Find the next available numeric key
+	const existingKeys = Object.keys(rawTiles).map(Number).filter(n => !isNaN(n));
+	const nextId = existingKeys.length > 0 ? Math.max(...existingKeys) + 1 : 0;
+
+	const newTile = {
+		name: name.trim(),
+		tags: [],
+		logs: [],
+		lastUpdate: null,
+		nextOccurrence: null,
+		frequency: { mode: 'daily', days: [], date: null },
+		done: false,
+		completed: false,
+		skip: false,
+		timeOfDay: [],
+		header: '',
+		emoji: '🟦'
+	};
+
+	rawTiles[String(nextId)] = newTile;
+	tiles.push({
+		id: String(nextId),
+		name: newTile.name,
+		tags: [],
+		status: 'noaction',
+		emoji: '🟦',
+		count: 0,
+		lastUpdate: null
+	});
+
+	buildTagsFromTiles();
+	applyFilters();
+	await saveTileToCloud();
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
@@ -475,4 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	// Clear filter
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
+
+	// Add new tile
+	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 });
