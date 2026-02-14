@@ -466,6 +466,7 @@ async function addNewTile() {
 	// Find the next available numeric key
 	const existingKeys = Object.keys(rawTiles).map(Number).filter(n => !isNaN(n));
 	const nextId = existingKeys.length > 0 ? Math.max(...existingKeys) + 1 : 0;
+	const tileId = String(nextId);
 
 	const newTile = {
 		name: name.trim(),
@@ -482,9 +483,9 @@ async function addNewTile() {
 		emoji: '🟦'
 	};
 
-	rawTiles[String(nextId)] = newTile;
+	rawTiles[tileId] = newTile;
 	tiles.push({
-		id: String(nextId),
+		id: tileId,
 		name: newTile.name,
 		tags: [],
 		status: 'noaction',
@@ -496,6 +497,9 @@ async function addNewTile() {
 	buildTagsFromTiles();
 	applyFilters();
 	await saveTileToCloud();
+
+	// Open tile detail popup so user can set tags, frequency, etc.
+	openTilePopup(tileId);
 }
 
 // ---- Init ----
