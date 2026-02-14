@@ -229,10 +229,13 @@
 					<label class="text-xs text-slate-500">Date</label>
 					<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${(raw.frequency && raw.frequency.date) || ''}" />
 				</div>
-				<div class="grid grid-cols-2 gap-2 text-sm mb-4">
-					<div><span class="text-slate-500">Time of day:</span> ${timeOfDay}</div>
+				<div class="grid grid-cols-2 gap-2 text-sm mb-2">
 					<div><span class="text-slate-500">Total logs:</span> ${logs.length}</div>
 					<div><span class="text-slate-500">Last update:</span> ${raw.lastUpdate ? new Date(raw.lastUpdate).toLocaleDateString() : '—'}</div>
+				</div>
+				<div class="mb-1 text-sm font-semibold">Time of Day</div>
+				<div id="todBtns" class="flex flex-wrap gap-2 mb-4">
+					${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${(raw.timeOfDay || []).includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 				</div>
 				<hr class="my-3 border-slate-200">
 				<div class="text-md font-semibold mb-1">Log Timeline</div>
@@ -282,6 +285,14 @@
 				});
 			}
 
+			// Wire up time-of-day buttons
+			document.querySelectorAll('.tod-btn').forEach(btn => {
+				btn.addEventListener('click', e => {
+					e.stopPropagation();
+					toggleTimeOfDay(btn.dataset.tod);
+				});
+			});
+
 			overlay.classList.remove('hidden');
 		}
 
@@ -327,6 +338,21 @@
 				raw.frequency.days.splice(idx, 1);
 			} else {
 				raw.frequency.days.push(String(day));
+			}
+			openTilePopup(activeTileId);
+			await saveTileToCloud();
+		}
+
+		async function toggleTimeOfDay(tod) {
+			if (activeTileId === null) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw) return;
+			raw.timeOfDay = raw.timeOfDay || [];
+			const idx = raw.timeOfDay.indexOf(tod);
+			if (idx >= 0) {
+				raw.timeOfDay.splice(idx, 1);
+			} else {
+				raw.timeOfDay.push(tod);
 			}
 			openTilePopup(activeTileId);
 			await saveTileToCloud();
