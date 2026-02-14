@@ -22,9 +22,18 @@
 			<div id="gallery" class="flex flex-col"></div>
 		</section>
 	</main>
+
+	<!-- Tile Detail Popup -->
+	<div id="tileOverlay" class="fixed inset-0 bg-black/40 z-50 hidden flex items-start justify-center pt-[5vh] overflow-y-auto">
+		<div id="tilePopup" class="bg-white rounded-2xl shadow-2xl w-[90%] max-w-lg p-6 relative mb-10">
+			<button id="closePopup" class="absolute top-3 right-4 text-2xl text-slate-400 hover:text-slate-700">&times;</button>
+			<div id="popupBody"></div>
+		</div>
+	</div>
 	<script>
 
 		let tiles = [];
+		let rawTiles = {}; // full tile objects keyed by id (for popup details)
 
 		// Try to get user session and fetch tiles from Supabase
 		async function fetchTilesFromSupabase() {
@@ -45,6 +54,7 @@
 				return;
 			}
 			// Supabase stores tiles as an object, convert to array and add id
+			rawTiles = data.data;
 			tiles = Object.entries(data.data)
 				.filter(([_, t]) => t && t.name && t.name.trim() !== "")
 				.map(([id, t]) => ({
@@ -92,7 +102,8 @@
 				groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
 				groups[tag].forEach(tile => {
 					const tileDiv = document.createElement("div");
-					tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition";
+					tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer";
+					tileDiv.dataset.tileId = tile.id;
 					tileDiv.innerHTML = `
 						<div class="text-3xl">${tile.emoji || "🟦"}</div>
 						<div class="font-semibold text-center truncate w-full">${tile.name}</div>
@@ -102,6 +113,7 @@
 							<span class="text-xs text-slate-500">(${tile.count})</span>
 						</div>
 					`;
+					tileDiv.addEventListener('click', () => openTilePopup(tile.id));
 					groupGrid.appendChild(tileDiv);
 				});
 				groupSection.appendChild(groupGrid);
@@ -119,6 +131,72 @@
 			const filtered = tiles.filter(tile => tile.name.toLowerCase().includes(q));
 			renderGallery(filtered);
 		});
+
+		// ---- Tile Detail Popup ----
+		const overlay = document.getElementById('tileOverlay');
+		const popupBody = document.getElementById('popupBody');
+		document.getElementById('closePopup').addEventListener('click', closeTilePopup);
+		overlay.addEventListener('click', e => { if (e.target === overlay) closeTilePopup(); });
+		document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTilePopup(); });
+
+		function closeTilePopup() {
+			overlay.classList.add('hidden');
+		}
+
+		function openTilePopup(tileId) {
+			const raw = rawTiles[tileId];
+			if (!raw) return;
+
+			const statusLabel = raw.completed ? '✅ Completed' : raw.done ? '💪 Done' : raw.skip ? '😢 Skipped' : '💬 No Action';
+			const freqMode = raw.frequency ? raw.frequency.mode : 'daily';
+			const tags = (raw.tags || []).map(t => `<span class='px-2 py-0.5 rounded bg-slate-200 text-xs'>${t}</span>`).join(' ');
+			const timeOfDay = (raw.timeOfDay || []).join(', ') || '—';
+
+			// Build logs timeline (sorted newest first)
+			const logs = (raw.logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+			let timelineHtml = '';
+			if (logs.length === 0) {
+				timelineHtml = '<div class="text-slate-400 text-sm py-4">No logs yet.</div>';
+			} else {
+				timelineHtml = '<div class="relative pl-6 border-l-2 border-slate-200 mt-2">';
+				logs.forEach(log => {
+					const d = new Date(log.date);
+					const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+					const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+					const actionColor = log.text === 'done' ? 'bg-green-400' : log.text === 'skip' ? 'bg-yellow-400' : log.text === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
+					const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
+					timelineHtml += `
+						<div class="mb-4 relative">
+							<div class="absolute -left-[21px] top-1 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
+							<div class="text-sm font-semibold">${log.text}</div>
+							<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
+							${noteHtml}
+						</div>`;
+				});
+				timelineHtml += '</div>';
+			}
+
+			popupBody.innerHTML = `
+				<div class="flex items-center gap-3 mb-4">
+					<span class="text-4xl">${raw.emoji || '🟦'}</span>
+					<div>
+						<div class="text-xl font-bold">${raw.name}</div>
+						<div class="text-sm text-slate-500">${statusLabel}</div>
+					</div>
+				</div>
+				<div class="flex flex-wrap gap-2 mb-3">${tags || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
+				<div class="grid grid-cols-2 gap-2 text-sm mb-4">
+					<div><span class="text-slate-500">Frequency:</span> ${freqMode}</div>
+					<div><span class="text-slate-500">Time of day:</span> ${timeOfDay}</div>
+					<div><span class="text-slate-500">Total logs:</span> ${logs.length}</div>
+					<div><span class="text-slate-500">Last update:</span> ${raw.lastUpdate ? new Date(raw.lastUpdate).toLocaleDateString() : '—'}</div>
+				</div>
+				<hr class="my-3 border-slate-200">
+				<div class="text-md font-semibold mb-1">Log Timeline</div>
+				<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
+			`;
+			overlay.classList.remove('hidden');
+		}
 	</script>
 </body>
 </html>
