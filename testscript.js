@@ -296,9 +296,11 @@ async function toggleTag(tag) {
 	const displayTile = tiles.find(t => t.id === activeTileId);
 	if (displayTile) displayTile.tags = [...raw.tags];
 	buildTagsFromTiles();
-	openTilePopup(activeTileId);
+	// Close popup so user can quickly tag the next tile
+	document.getElementById('tileOverlay').classList.add('hidden');
+	activeTileId = null;
 	renderGallery(tiles);
-	await updateTask(activeTileId, { tags: raw.tags });
+	await updateTask(raw.id, { tags: raw.tags });
 }
 
 // ---- Frequency Operations ----
