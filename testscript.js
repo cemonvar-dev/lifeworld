@@ -18,6 +18,65 @@ function buildTagsFromTiles() {
 	}));
 }
 
+// ---- Health Score ----
+function calculateHealth(task) {
+	const logs = task.task_logs || [];
+	const mode = task.frequency_mode || 'daily';
+	const freqDays = (task.task_frequency_days || []).map(d => d.day_of_week);
+	const now = new Date();
+	const startDate = task.created_at ? new Date(task.created_at) : now;
+	const lookbackDays = 30;
+	const lookbackStart = new Date(now);
+	lookbackStart.setDate(lookbackStart.getDate() - lookbackDays);
+	const effectiveStart = startDate > lookbackStart ? startDate : lookbackStart;
+
+	// Build a set of dates with 'done' logs
+	const doneDates = new Set();
+	const skipDates = new Set();
+	logs.forEach(log => {
+		const d = log.created_at ? log.created_at.split('T')[0] : '';
+		if (log.status === 'done' || log.status === 'completed') doneDates.add(d);
+		if (log.status === 'skip') skipDates.add(d);
+	});
+
+	if (mode === 'once') {
+		if (doneDates.size > 0) return 100;
+		if (task.end_date && new Date(task.end_date) < now) return 0;
+		return 50; // not yet due
+	}
+
+	// Count expected vs fulfilled days
+	let expected = 0;
+	let fulfilled = 0;
+	for (let d = new Date(effectiveStart); d <= now; d.setDate(d.getDate() + 1)) {
+		const dayOfWeek = d.getDay();
+		const dateStr = d.toISOString().split('T')[0];
+		let isExpected = false;
+		if (mode === 'daily') isExpected = true;
+		else if (mode === 'weekly') isExpected = freqDays.includes(dayOfWeek);
+		else if (mode === 'monthly') {
+			// Expect once per month — check if it's the 1st or same day-of-month as start
+			const startDay = startDate.getDate();
+			isExpected = d.getDate() === startDay;
+		}
+		if (isExpected) {
+			expected++;
+			if (doneDates.has(dateStr)) fulfilled++;
+		}
+	}
+
+	if (expected === 0) return 50; // no data yet
+	return Math.round((fulfilled / expected) * 100);
+}
+
+function healthToPlant(score) {
+	if (score >= 80) return { emoji: '🌳', label: 'Thriving', color: 'bg-green-50 border-green-200' };
+	if (score >= 60) return { emoji: '🌿', label: 'Healthy', color: 'bg-emerald-50 border-emerald-200' };
+	if (score >= 40) return { emoji: '🌱', label: 'Growing', color: 'bg-yellow-50 border-yellow-200' };
+	if (score >= 20) return { emoji: '🥀', label: 'Wilting', color: 'bg-orange-50 border-orange-200' };
+	return { emoji: '🍂', label: 'Dying', color: 'bg-red-50 border-red-200' };
+}
+
 // ---- Data Fetching ----
 async function fetchTilesFromSupabase() {
 	const { data: { session } } = await supa.auth.getSession();
@@ -52,12 +111,17 @@ async function fetchTilesFromSupabase() {
 		const logs = task.task_logs || [];
 		const lastLog = logs[0];
 		const lastStatus = lastLog ? lastLog.status : null;
+		const health = calculateHealth(task);
+		const plant = healthToPlant(health);
 		return {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
 			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
-			emoji: task.emoji || '🟦',
+			emoji: plant.emoji,
+			health,
+			healthLabel: plant.label,
+			healthColor: plant.color,
 			count: logs.length,
 			createdAt: task.created_at || null,
 			lastUpdate: lastLog ? lastLog.created_at : null
@@ -97,17 +161,19 @@ function renderGallery(filteredTiles) {
 		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
 		groups[tag].forEach(tile => {
 			const tileDiv = document.createElement("div");
-			tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer";
+			const tileColor = tile.healthColor || 'bg-white';
+			tileDiv.className = `tile ${tileColor} rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			tileDiv.innerHTML = `
-				<div class="text-3xl">${tile.emoji || "🟦"}</div>
+				<div class="text-3xl">${tile.emoji}</div>
 				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
-				<div class="flex gap-2 mt-2">
+				<div class="flex gap-2 mt-1">
 					<span class="text-xs text-slate-500">${tile.status}</span>
 					<span class="text-xs text-slate-500">(${tile.count})</span>
 				</div>
+				<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
 				<div class="flex justify-between w-full mt-1">
 					<span class="text-xs text-slate-400">📌 ${createdAt}</span>
 					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
@@ -415,12 +481,17 @@ async function addNewTile() {
 	}
 
 	rawTiles[data.id] = data;
+	const health = calculateHealth(data);
+	const plant = healthToPlant(health);
 	tiles.push({
 		id: data.id,
 		name: data.name,
 		tags: data.tags || [],
 		status: 'noaction',
-		emoji: data.emoji || '🟦',
+		emoji: plant.emoji,
+		health,
+		healthLabel: plant.label,
+		healthColor: plant.color,
 		count: 0,
 		createdAt: data.created_at || null,
 		lastUpdate: null
@@ -631,12 +702,17 @@ async function resetTodayLogs() {
 		const logs = task.task_logs || [];
 		const lastLog = logs[0];
 		const lastStatus = lastLog ? lastLog.status : null;
+		const health = calculateHealth(task);
+		const plant = healthToPlant(health);
 		return {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
 			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
-			emoji: task.emoji || '🟦',
+			emoji: plant.emoji,
+			health,
+			healthLabel: plant.label,
+			healthColor: plant.color,
 			count: logs.length,
 			createdAt: task.created_at || null,
 			lastUpdate: lastLog ? lastLog.created_at : null
