@@ -135,6 +135,56 @@ async function fetchTilesFromSupabase() {
 }
 
 // ---- Gallery Rendering ----
+function getNextDueLabel(tileId) {
+	const raw = rawTiles[tileId];
+	if (!raw) return '';
+	const mode = raw.frequency_mode || 'daily';
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	if (mode === 'daily') return 'today';
+
+	if (mode === 'once') {
+		if (!raw.end_date) return '—';
+		const d = new Date(raw.end_date + 'T00:00:00');
+		const diff = Math.round((d - today) / 86400000);
+		if (diff < 0) return 'overdue';
+		if (diff === 0) return 'today';
+		if (diff === 1) return 'tomorrow';
+		if (diff <= 7) return `in ${diff} days`;
+		return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+	}
+
+	if (mode === 'weekly') {
+		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
+		if (freqDays.length === 0) return '—';
+		const todayDay = today.getDay();
+		// Find next scheduled day
+		for (let offset = 0; offset < 7; offset++) {
+			if (freqDays.includes((todayDay + offset) % 7)) {
+				if (offset === 0) return 'today';
+				if (offset === 1) return 'tomorrow';
+				return `in ${offset} days`;
+			}
+		}
+		return '—';
+	}
+
+	if (mode === 'monthly') {
+		const startDate = raw.created_at ? new Date(raw.created_at) : today;
+		const targetDay = startDate.getDate();
+		let next = new Date(today.getFullYear(), today.getMonth(), targetDay);
+		if (next < today) next.setMonth(next.getMonth() + 1);
+		const diff = Math.round((next - today) / 86400000);
+		if (diff === 0) return 'today';
+		if (diff === 1) return 'tomorrow';
+		if (diff <= 7) return `in ${diff} days`;
+		return next.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+	}
+
+	return '—';
+}
+
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	gallery.innerHTML = "";
@@ -178,6 +228,8 @@ function renderGallery(filteredTiles) {
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
+			const nextDue = getNextDueLabel(tile.id);
+			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
 				<div class="text-3xl">${tile.emoji}</div>
 				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
@@ -186,8 +238,9 @@ function renderGallery(filteredTiles) {
 					<span class="text-xs text-slate-500">(${tile.count})</span>
 				</div>
 				<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
-				<div class="flex justify-between w-full mt-1">
+				<div class="flex justify-between items-center w-full mt-1">
 					<span class="text-xs text-slate-400">📌 ${createdAt}</span>
+					<span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
 					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
 				</div>
 				<div class="flex gap-2 mt-2 w-full">
