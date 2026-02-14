@@ -59,6 +59,7 @@ async function fetchTilesFromSupabase() {
 			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
 			emoji: task.emoji || '🟦',
 			count: logs.length,
+			createdAt: task.created_at || null,
 			lastUpdate: lastLog ? lastLog.created_at : null
 		};
 	});
@@ -99,15 +100,18 @@ function renderGallery(filteredTiles) {
 			tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer";
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
+			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			tileDiv.innerHTML = `
 				<div class="text-3xl">${tile.emoji || "🟦"}</div>
 				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
-				<div class="flex flex-wrap gap-1 justify-center">${(tile.tags||[]).map(tag => `<span class='px-2 py-0.5 rounded bg-slate-100 text-xs'>${tag}</span>`).join('')}</div>
 				<div class="flex gap-2 mt-2">
 					<span class="text-xs text-slate-500">${tile.status}</span>
 					<span class="text-xs text-slate-500">(${tile.count})</span>
 				</div>
-				<div class="text-xs text-slate-400 mt-1">🕓 ${lastUpd}</div>
+				<div class="flex justify-between w-full mt-1">
+					<span class="text-xs text-slate-400">📌 ${createdAt}</span>
+					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
+				</div>
 			`;
 			tileDiv.addEventListener('click', () => openTilePopup(tile.id));
 			groupGrid.appendChild(tileDiv);
@@ -418,12 +422,13 @@ async function addNewTile() {
 		status: 'noaction',
 		emoji: data.emoji || '🟦',
 		count: 0,
+		createdAt: data.created_at || null,
 		lastUpdate: null
 	});
 
 	buildTagsFromTiles();
-	applyFilters();
 	openTilePopup(data.id);
+	applyFilters();
 }
 
 // ---- Tag Filter ----
@@ -633,6 +638,7 @@ async function resetTodayLogs() {
 			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
 			emoji: task.emoji || '🟦',
 			count: logs.length,
+			createdAt: task.created_at || null,
 			lastUpdate: lastLog ? lastLog.created_at : null
 		};
 	});
