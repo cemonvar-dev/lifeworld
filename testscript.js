@@ -2,22 +2,18 @@ let tiles = [];
 let rawTiles = {}; // full tile objects keyed by id (for popup details)
 let activeTileId = null; // currently open tile
 let activeTagFilter = null; // currently active tag filter
+let ALL_TAGS = []; // dynamically built from tile data
 
-const ALL_TAGS = [
-	{ key: 'arts', label: '🎨 Arts' },
-	{ key: 'cooking', label: '🍳 Cooking' },
-	{ key: 'family', label: '👨‍👩‍👧‍👦 Family' },
-	{ key: 'friends', label: '🤝 Friends' },
-	{ key: 'games', label: '🎮 Games' },
-	{ key: 'habit', label: '🔥 Habit' },
-	{ key: 'health', label: '💚 Health' },
-	{ key: 'hobby', label: '🎯 Hobby' },
-	{ key: 'home', label: '🏡 Home' },
-	{ key: 'learning', label: '📚 Learning' },
-	{ key: 'outdoor', label: '🌲 Outdoor' },
-	{ key: 'spirituality', label: '✨ Spirituality' },
-	{ key: 'work', label: '💼 Work' }
-];
+function buildTagsFromTiles() {
+	const tagSet = new Set();
+	Object.values(rawTiles).forEach(t => {
+		(t.tags || []).forEach(tag => tagSet.add(tag));
+	});
+	ALL_TAGS = Array.from(tagSet).sort().map(key => ({
+		key,
+		label: key.charAt(0).toUpperCase() + key.slice(1)
+	}));
+}
 
 // Try to get user session and fetch tiles from Supabase
 async function fetchTilesFromSupabase() {
@@ -50,6 +46,7 @@ async function fetchTilesFromSupabase() {
 			count: (t.logs && t.logs.length) || 0,
 			lastUpdate: t.lastUpdate || null
 		}));
+	buildTagsFromTiles();
 	renderGallery(tiles);
 }
 
@@ -287,6 +284,8 @@ async function toggleTag(tag) {
 	// Update the display tile array too
 	const displayTile = tiles.find(t => t.id === activeTileId);
 	if (displayTile) displayTile.tags = [...raw.tags];
+	// Rebuild dynamic tags list
+	buildTagsFromTiles();
 	// Re-render popup to reflect change
 	openTilePopup(activeTileId);
 	// Re-render gallery so grouping updates immediately
@@ -378,7 +377,7 @@ function openTagFilterPopup() {
 		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
 			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-		btn.innerHTML = `<span class="text-2xl">${at.label.split(' ')[0]}</span><span class="text-sm font-semibold">${at.label.split(' ').slice(1).join(' ')}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
+		btn.innerHTML = `<span class="text-2xl">\ud83c\udff7\ufe0f</span><span class="text-sm font-semibold">${at.label}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
 		btn.addEventListener('click', () => { setTagFilter(at.key); });
 		grid.appendChild(btn);
 	});
