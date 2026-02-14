@@ -549,10 +549,7 @@ async function addNewTile() {
 		.insert({
 			user_id: currentUserId,
 			name: name.trim(),
-			frequency_mode: 'daily',
-			time_of_day: '',
-			tags: [],
-			emoji: '🟦'
+			frequency_mode: 'daily'
 		})
 		.select('*, task_logs(*), task_frequency_days(*)')
 		.single();
