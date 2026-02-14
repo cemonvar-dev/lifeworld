@@ -488,7 +488,7 @@ async function quickLog(tileId, status) {
 		// Insert new log
 		const { data, error } = await supa
 			.from('task_logs')
-			.insert({ task_id: tileId, status })
+			.insert({ task_id: tileId, status, log_date: today })
 			.select()
 			.single();
 		if (error) { console.error('Quick log error:', error); return; }
