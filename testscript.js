@@ -37,7 +37,7 @@ function calculateHealth(task) {
 	logs.forEach(log => {
 		const d = log.created_at ? log.created_at.split('T')[0] : '';
 		if (log.status === 'done' || log.status === 'completed') doneDates.add(d);
-		if (log.status === 'skip') skipDates.add(d);
+		if (log.status === 'skipped') skipDates.add(d);
 	});
 
 	if (mode === 'once') {
@@ -118,7 +118,7 @@ async function fetchTilesFromSupabase() {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
-			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
+			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction',
 			taskStatus: task.status || 'in progress',
 			emoji: plant.emoji,
 			health,
@@ -195,7 +195,7 @@ function renderGallery(filteredTiles) {
 			});
 			tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
 				e.stopPropagation();
-				quickLog(tile.id, 'skip');
+				quickLog(tile.id, 'skipped');
 			});
 			groupGrid.appendChild(tileDiv);
 		});
@@ -228,7 +228,7 @@ function openTilePopup(tileId) {
 	const logs = raw.task_logs || [];
 	const lastLog = logs[0];
 	const statusLabel = lastLog
-		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skip' ? '😢 Skipped' : '💬 No Action')
+		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skipped' ? '😢 Skipped' : '💬 No Action')
 		: '💬 No Action';
 	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.created_at).toLocaleDateString() : '';
 
@@ -247,7 +247,7 @@ function openTilePopup(tileId) {
 			const d = new Date(log.created_at);
 			const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
 			const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
-			const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skip' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
+			const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			timelineHtml += `
 				<div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
@@ -451,7 +451,7 @@ async function submitLog() {
 		const logs = raw.task_logs || [];
 		const lastLog = logs[0];
 		const lastStatus = lastLog ? lastLog.status : null;
-		displayTile.status = lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction';
+		displayTile.status = lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction';
 		displayTile.count = logs.length;
 		displayTile.lastUpdate = lastLog ? lastLog.created_at : null;
 		const health = calculateHealth(raw);
@@ -578,7 +578,7 @@ async function quickLog(tileId, status) {
 	// Check if there's already a log for today — update it instead of creating duplicate
 	const existingLog = (raw.task_logs || []).find(l => {
 		const logDate = l.created_at ? l.created_at.split('T')[0] : '';
-		return logDate === today && (l.status === 'done' || l.status === 'skip' || l.status === 'completed');
+		return logDate === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed');
 	});
 
 	if (existingLog) {
@@ -603,7 +603,7 @@ async function quickLog(tileId, status) {
 	// Update display tile
 	const displayTile = tiles.find(t => t.id === tileId);
 	if (displayTile) {
-		displayTile.status = status === 'done' ? 'done' : status === 'skip' ? 'skipped' : 'noaction';
+		displayTile.status = status === 'done' ? 'done' : status === 'skipped' ? 'skipped' : 'noaction';
 		displayTile.count = (raw.task_logs || []).length;
 		displayTile.lastUpdate = new Date().toISOString();
 		const health = calculateHealth(raw);
@@ -885,13 +885,13 @@ async function resetTodayLogs() {
 	Object.values(rawTiles).forEach(raw => {
 		(raw.task_logs || []).forEach(log => {
 			const logDate = log.created_at ? log.created_at.split('T')[0] : '';
-			if (logDate === today && (log.status === 'done' || log.status === 'skip' || log.status === 'completed')) {
+			if (logDate === today && (log.status === 'done' || log.status === 'skipped' || log.status === 'completed')) {
 				logIdsToReset.push(log.id);
 			}
 		});
 	});
 	if (logIdsToReset.length === 0) {
-		alert('Nothing to reset — no done/skip logs for today.');
+		alert('Nothing to reset — no done/skipped logs for today.');
 		return;
 	}
 	// Update status to 'reset' in DB
@@ -916,7 +916,7 @@ async function resetTodayLogs() {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
-			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
+			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction',
 			taskStatus: task.status || 'in progress',
 			emoji: plant.emoji,
 			health,
