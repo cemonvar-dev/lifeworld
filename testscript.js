@@ -2,6 +2,7 @@ let tiles = [];
 let rawTiles = {}; // full task objects keyed by uuid
 let activeTileId = null; // currently open tile
 let activeTagFilter = null; // currently active tag filter
+let activeTimelineFilter = null; // 'today' or null
 let ALL_TAGS = []; // dynamically built from tile data
 let currentUserId = null;
 
@@ -518,12 +519,46 @@ function updateFilterBar() {
 	}
 }
 
+function isTileScheduledToday(tileId) {
+	const raw = rawTiles[tileId];
+	if (!raw) return false;
+	const mode = raw.frequency_mode || 'daily';
+	if (mode === 'daily' || mode === 'monthly') return true;
+	if (mode === 'weekly') {
+		const todayDay = new Date().getDay(); // 0=Sun..6=Sat
+		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
+		return freqDays.includes(todayDay);
+	}
+	if (mode === 'once') {
+		if (!raw.end_date) return false;
+		const today = new Date().toISOString().split('T')[0];
+		return raw.end_date === today;
+	}
+	return true;
+}
+
+function toggleTodayFilter() {
+	activeTimelineFilter = activeTimelineFilter === 'today' ? null : 'today';
+	const btn = document.getElementById('todayFilterBtn');
+	if (activeTimelineFilter === 'today') {
+		btn.classList.remove('bg-white');
+		btn.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+	} else {
+		btn.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
+		btn.classList.add('bg-white');
+	}
+	applyFilters();
+}
+
 function applyFilters() {
 	let filtered = [...tiles];
 	if (activeTagFilter === '__untagged__') {
 		filtered = filtered.filter(t => !t.tags || t.tags.length === 0);
 	} else if (activeTagFilter) {
 		filtered = filtered.filter(t => (t.tags || []).includes(activeTagFilter));
+	}
+	if (activeTimelineFilter === 'today') {
+		filtered = filtered.filter(t => isTileScheduledToday(t.id));
 	}
 	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 	if (q) {
@@ -544,5 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
+	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 });
