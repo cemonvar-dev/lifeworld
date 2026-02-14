@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>LifeWorld – Gallery</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+	<script src="supa.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+	<main class="max-w-4xl mx-auto p-4">
+		<header class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+			<div class="flex items-center gap-3">
+				<img src="logo.png" alt="LifeWorld logo" class="h-10 w-10 rounded-lg" />
+				<span class="text-2xl font-bold">LifeWorld</span>
+			</div>
+			<input type="text" id="searchBox" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Search tiles..." />
+		</header>
+		<section>
+			<div id="gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+		</section>
+	</main>
+	<script>
+
+		let tiles = [];
+
+		// Try to get user session and fetch tiles from Supabase
+		async function fetchTilesFromSupabase() {
+			// Get session
+			const { data: { session } } = await supa.auth.getSession();
+			if (!session || !session.user) {
+				renderGallery([]);
+				return;
+			}
+			// Fetch world data for this user
+			const { data, error } = await supa
+				.from("worlds")
+				.select("data")
+				.eq("user_id", session.user.id)
+				.single();
+			if (error || !data || !data.data) {
+				renderGallery([]);
+				return;
+			}
+			// Supabase stores tiles as an object, convert to array and add id
+			tiles = Object.entries(data.data)
+				.filter(([_, t]) => t && t.name && t.name.trim() !== "")
+				.map(([id, t]) => ({
+					id,
+					name: t.name,
+					tags: t.tags || [],
+					status: t.completed ? "completed" : t.done ? "done" : t.skip ? "skipped" : "noaction",
+					emoji: t.emoji || "🟦",
+					count: (t.logs && t.logs.length) || 0
+				}));
+			renderGallery(tiles);
+		}
+
+
+		function renderGallery(filteredTiles) {
+			const gallery = document.getElementById("gallery");
+			gallery.innerHTML = "";
+			if (!filteredTiles.length) {
+				gallery.innerHTML = '<div class="col-span-full text-center text-slate-500 py-8">No tiles found.</div>';
+				return;
+			}
+			filteredTiles.forEach(tile => {
+				const tileDiv = document.createElement("div");
+				tileDiv.className = "tile bg-white rounded-xl shadow p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition";
+				tileDiv.innerHTML = `
+					<div class="text-3xl">${tile.emoji || "🟦"}</div>
+					<div class="font-semibold text-center truncate w-full">${tile.name}</div>
+					<div class="flex flex-wrap gap-1 justify-center">${(tile.tags||[]).map(tag => `<span class='px-2 py-0.5 rounded bg-slate-100 text-xs'>${tag}</span>`).join('')}</div>
+					<div class="flex gap-2 mt-2">
+						<span class="text-xs text-slate-500">${tile.status}</span>
+						<span class="text-xs text-slate-500">(${tile.count})</span>
+					</div>
+				`;
+				gallery.appendChild(tileDiv);
+			});
+		}
+
+
+		// On load, fetch tiles from Supabase
+		fetchTilesFromSupabase();
+
+		// Search filter
+		document.getElementById("searchBox").addEventListener("input", function() {
+			const q = this.value.trim().toLowerCase();
+			const filtered = tiles.filter(tile => tile.name.toLowerCase().includes(q));
+			renderGallery(filtered);
+		});
+	</script>
+</body>
+</html>
