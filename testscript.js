@@ -1,8 +1,9 @@
 let tiles = [];
-let rawTiles = {}; // full tile objects keyed by id (for popup details)
+let rawTiles = {}; // full task objects keyed by uuid
 let activeTileId = null; // currently open tile
 let activeTagFilter = null; // currently active tag filter
 let ALL_TAGS = []; // dynamically built from tile data
+let currentUserId = null;
 
 function buildTagsFromTiles() {
 	const tagSet = new Set();
@@ -15,42 +16,56 @@ function buildTagsFromTiles() {
 	}));
 }
 
-// Try to get user session and fetch tiles from Supabase
+// ---- Data Fetching ----
 async function fetchTilesFromSupabase() {
-	// Get session
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session || !session.user) {
 		renderGallery([]);
 		return;
 	}
-	// Fetch world data for this user
+	currentUserId = session.user.id;
+
+	// Fetch tasks with related logs and frequency days
 	const { data, error } = await supa
-		.from("worlds")
-		.select("data")
-		.eq("user_id", session.user.id)
-		.single();
-	if (error || !data || !data.data) {
+		.from("tasks")
+		.select("*, task_logs(*), task_frequency_days(*)")
+		.eq("user_id", session.user.id);
+
+	if (error || !data) {
+		console.error('Fetch error:', error);
 		renderGallery([]);
 		return;
 	}
-	// Supabase stores tiles as an object, convert to array and add id
-	rawTiles = data.data;
-	tiles = Object.entries(data.data)
-		.filter(([_, t]) => t && t.name && t.name.trim() !== "")
-		.map(([id, t]) => ({
-			id,
-			name: t.name,
-			tags: t.tags || [],
-			status: t.completed ? "completed" : t.done ? "done" : t.skip ? "skipped" : "noaction",
-			emoji: t.emoji || "🟦",
-			count: (t.logs && t.logs.length) || 0,
-			lastUpdate: t.lastUpdate || null
-		}));
+
+	rawTiles = {};
+	data.forEach(task => {
+		// Sort logs newest first
+		if (task.task_logs) {
+			task.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+		}
+		rawTiles[task.id] = task;
+	});
+
+	tiles = data.map(task => {
+		const logs = task.task_logs || [];
+		const lastLog = logs[0];
+		const lastStatus = lastLog ? lastLog.status : null;
+		return {
+			id: task.id,
+			name: task.name,
+			tags: task.tags || [],
+			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction',
+			emoji: task.emoji || '🟦',
+			count: logs.length,
+			lastUpdate: lastLog ? lastLog.created_at : null
+		};
+	});
+
 	buildTagsFromTiles();
 	renderGallery(tiles);
 }
 
-
+// ---- Gallery Rendering ----
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	gallery.innerHTML = "";
@@ -59,7 +74,6 @@ function renderGallery(filteredTiles) {
 		return;
 	}
 
-	// Group tiles by first tag (or 'Untagged')
 	const groups = {};
 	filteredTiles.forEach(tile => {
 		const tag = (tile.tags && tile.tags.length > 0) ? tile.tags[0] : 'Untagged';
@@ -67,19 +81,15 @@ function renderGallery(filteredTiles) {
 		groups[tag].push(tile);
 	});
 
-	// Render each group with a heading
 	Object.keys(groups).sort().forEach(tag => {
-		// Group container
 		const groupSection = document.createElement('section');
 		groupSection.className = 'mb-4';
 
-		// Group heading
 		const heading = document.createElement('div');
 		heading.className = 'text-xl font-bold mb-2 mt-8 pl-1';
 		heading.textContent = tag;
 		groupSection.appendChild(heading);
 
-		// Group grid (left-aligned, no extra margin)
 		const groupGrid = document.createElement('div');
 		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
 		groups[tag].forEach(tile => {
@@ -105,13 +115,12 @@ function renderGallery(filteredTiles) {
 	});
 }
 
-
 // ---- Tile Detail Popup ----
 function initPopup() {
-	const overlay = document.getElementById('tileOverlay');
-	const popupBody = document.getElementById('popupBody');
 	document.getElementById('closePopup').addEventListener('click', closeTilePopup);
-	overlay.addEventListener('click', e => { if (e.target === overlay) closeTilePopup(); });
+	document.getElementById('tileOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('tileOverlay')) closeTilePopup();
+	});
 	document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTilePopup(); });
 }
 
@@ -127,32 +136,36 @@ function openTilePopup(tileId) {
 	const popupBody = document.getElementById('popupBody');
 	const overlay = document.getElementById('tileOverlay');
 
-	const statusLabel = raw.completed ? '✅ Completed' : raw.done ? '💪 Done' : raw.skip ? '😢 Skipped' : '💬 No Action';
-	const freqMode = raw.frequency ? raw.frequency.mode : 'daily';
-	const timeOfDay = (raw.timeOfDay || []).join(', ') || '—';
-	const currentTags = raw.tags || [];
+	const logs = raw.task_logs || [];
+	const lastLog = logs[0];
+	const statusLabel = lastLog
+		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skip' ? '😢 Skipped' : '💬 No Action')
+		: '💬 No Action';
+	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.created_at).toLocaleDateString() : '';
 
-	// Build logs timeline (sorted newest first)
-	const logs = (raw.logs || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+	const freqMode = raw.frequency_mode || 'daily';
+	const timeOfDayArr = raw.time_of_day ? raw.time_of_day.split(',').filter(Boolean) : [];
+	const currentTags = raw.tags || [];
+	const freqDays = (raw.task_frequency_days || []).map(d => String(d.day_of_week));
+
+	// Build logs timeline
 	let timelineHtml = '';
 	if (logs.length === 0) {
 		timelineHtml = '<div class="text-slate-400 text-sm py-4">No logs yet.</div>';
 	} else {
 		timelineHtml = '<div class="relative pl-6 border-l-2 border-slate-200 mt-2">';
-		logs.forEach((log, sortedIdx) => {
-			// Find the original index in raw.logs
-			const origIdx = raw.logs.indexOf(log);
-			const d = new Date(log.date);
+		logs.forEach(log => {
+			const d = new Date(log.created_at);
 			const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
 			const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
-			const actionColor = log.text === 'done' ? 'bg-green-400' : log.text === 'skip' ? 'bg-yellow-400' : log.text === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
+			const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skip' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			timelineHtml += `
 				<div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
 					<div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
 					<div class="flex items-center justify-between">
-						<div class="text-sm font-semibold">${log.text}</div>
-						<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold opacity-0 group-hover:opacity-100 transition px-1" data-log-idx="${origIdx}">&times;</button>
+						<div class="text-sm font-semibold">${log.status}</div>
+						<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold opacity-0 group-hover:opacity-100 transition px-1" data-log-id="${log.id}">&times;</button>
 					</div>
 					<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
 					${noteHtml}
@@ -161,14 +174,14 @@ function openTilePopup(tileId) {
 		timelineHtml += '</div>';
 	}
 
-	// Build tag chips (removable)
+	// Build tag chips
 	const tagChipsHtml = currentTags.map(t => {
 		const info = ALL_TAGS.find(at => at.key === t);
 		const label = info ? info.label : t;
 		return `<span class='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200 text-xs'>${label}<button class='remove-tag ml-1 text-slate-400 hover:text-red-500 font-bold' data-tag='${t}'>&times;</button></span>`;
 	}).join(' ');
 
-	// Build preset tag buttons (highlight active ones)
+	// Build preset tag buttons
 	const presetTagsHtml = ALL_TAGS.map(at => {
 		const active = currentTags.includes(at.key);
 		return `<button class='preset-tag px-2 py-1 rounded-full text-xs border transition ${active ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tag='${at.key}'>${at.label}</button>`;
@@ -180,7 +193,7 @@ function openTilePopup(tileId) {
 			<div>
 				<div class="text-xl font-bold">${raw.name}</div>
 				<div class="text-sm text-slate-500">${statusLabel}</div>
-				<div class="text-xs text-slate-400">${raw.lastUpdate ? 'Last update: ' + new Date(raw.lastUpdate).toLocaleDateString() : ''}</div>
+				<div class="text-xs text-slate-400">${lastUpdateStr}</div>
 			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
@@ -192,15 +205,15 @@ function openTilePopup(tileId) {
 			${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
 		</div>
 		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-			${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${(raw.frequency && raw.frequency.days && raw.frequency.days.includes(String(i))) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+			${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
 		</div>
 		<div id="onceDatePicker" class="mb-8" style="display:${freqMode === 'once' ? 'block' : 'none'}">
 			<label class="text-xs text-slate-500">Date</label>
-			<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${(raw.frequency && raw.frequency.date) || ''}" />
+			<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${raw.end_date || ''}" />
 		</div>
 		<div class="mb-2 text-sm font-semibold">Time of Day</div>
 		<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
-			${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${(raw.timeOfDay || []).includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
+			${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="text-md font-semibold mb-1">Log Timeline</div>
@@ -212,87 +225,65 @@ function openTilePopup(tileId) {
 
 	// Wire up tag interactions
 	document.querySelectorAll('.remove-tag').forEach(btn => {
-		btn.addEventListener('click', e => {
-			e.stopPropagation();
-			toggleTag(btn.dataset.tag);
-		});
+		btn.addEventListener('click', e => { e.stopPropagation(); toggleTag(btn.dataset.tag); });
 	});
 	document.querySelectorAll('.preset-tag').forEach(btn => {
-		btn.addEventListener('click', e => {
-			e.stopPropagation();
-			toggleTag(btn.dataset.tag);
-		});
+		btn.addEventListener('click', e => { e.stopPropagation(); toggleTag(btn.dataset.tag); });
 	});
 
 	// Wire up frequency buttons
 	document.querySelectorAll('.freq-btn').forEach(btn => {
-		btn.addEventListener('click', e => {
-			e.stopPropagation();
-			setFrequency(btn.dataset.freq);
-		});
+		btn.addEventListener('click', e => { e.stopPropagation(); setFrequency(btn.dataset.freq); });
 	});
 
 	// Wire up weekly day buttons
 	document.querySelectorAll('.day-btn').forEach(btn => {
-		btn.addEventListener('click', e => {
-			e.stopPropagation();
-			toggleWeeklyDay(btn.dataset.day);
-		});
+		btn.addEventListener('click', e => { e.stopPropagation(); toggleWeeklyDay(btn.dataset.day); });
 	});
 
 	// Wire up once-date picker
 	const onceDateInput = document.getElementById('onceDateInput');
 	if (onceDateInput) {
 		onceDateInput.addEventListener('change', async e => {
-			if (activeTileId === null) return;
+			if (!activeTileId) return;
 			const raw = rawTiles[activeTileId];
 			if (!raw) return;
-			raw.frequency = raw.frequency || { mode: 'once', days: [], date: null };
-			raw.frequency.date = e.target.value || null;
-			await saveTileToCloud();
+			raw.end_date = e.target.value || null;
+			await updateTask(activeTileId, { end_date: raw.end_date });
 		});
 	}
 
 	// Wire up time-of-day buttons
 	document.querySelectorAll('.tod-btn').forEach(btn => {
-		btn.addEventListener('click', e => {
-			e.stopPropagation();
-			toggleTimeOfDay(btn.dataset.tod);
-		});
+		btn.addEventListener('click', e => { e.stopPropagation(); toggleTimeOfDay(btn.dataset.tod); });
 	});
 
-	// Wire up delete button
-	document.getElementById('deleteTileBtn').addEventListener('click', async () => {
-		if (activeTileId === null) return;
-		delete rawTiles[activeTileId];
-		tiles = tiles.filter(t => t.id !== activeTileId);
-		await saveTileToCloud();
-		closeTilePopup();
-		renderGallery(tiles);
-	});
+	// Wire up delete tile button
+	document.getElementById('deleteTileBtn').addEventListener('click', deleteTile);
 
 	// Wire up log delete buttons
 	document.querySelectorAll('.delete-log').forEach(btn => {
 		btn.addEventListener('click', async e => {
 			e.stopPropagation();
-			const idx = parseInt(btn.dataset.logIdx);
-			if (activeTileId === null || isNaN(idx)) return;
-			const raw = rawTiles[activeTileId];
-			if (!raw || !raw.logs) return;
-			raw.logs.splice(idx, 1);
-			// Update display tile count
-			const displayTile = tiles.find(t => t.id === activeTileId);
-			if (displayTile) displayTile.count = raw.logs.length;
-			openTilePopup(activeTileId);
-			await saveTileToCloud();
+			await deleteLog(btn.dataset.logId);
 		});
 	});
 
 	overlay.classList.remove('hidden');
 }
 
+// ---- Task Update Helper ----
+async function updateTask(taskId, updates) {
+	const { error } = await supa
+		.from('tasks')
+		.update(updates)
+		.eq('id', taskId);
+	if (error) console.error('Update error:', error);
+}
+
+// ---- Tag Operations ----
 async function toggleTag(tag) {
-	if (activeTileId === null) return;
+	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
 	raw.tags = raw.tags || [];
@@ -302,68 +293,133 @@ async function toggleTag(tag) {
 	} else {
 		raw.tags.push(tag);
 	}
-	// Update the display tile array too
 	const displayTile = tiles.find(t => t.id === activeTileId);
 	if (displayTile) displayTile.tags = [...raw.tags];
-	// Rebuild dynamic tags list
 	buildTagsFromTiles();
-	// Re-render popup to reflect change
 	openTilePopup(activeTileId);
-	// Re-render gallery so grouping updates immediately
 	renderGallery(tiles);
-	// Save to Supabase
-	await saveTileToCloud();
+	await updateTask(activeTileId, { tags: raw.tags });
 }
 
+// ---- Frequency Operations ----
 async function setFrequency(mode) {
-	if (activeTileId === null) return;
+	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
-	raw.frequency = raw.frequency || { mode: 'daily', days: [], date: null };
-	raw.frequency.mode = mode;
-	if (mode !== 'weekly') raw.frequency.days = [];
+	raw.frequency_mode = mode;
+	if (mode !== 'weekly') {
+		// Clear frequency days from DB and local
+		await supa.from('task_frequency_days').delete().eq('task_id', activeTileId);
+		raw.task_frequency_days = [];
+	}
 	openTilePopup(activeTileId);
-	await saveTileToCloud();
+	await updateTask(activeTileId, { frequency_mode: mode });
 }
 
 async function toggleWeeklyDay(day) {
-	if (activeTileId === null) return;
+	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
-	raw.frequency = raw.frequency || { mode: 'weekly', days: [], date: null };
-	raw.frequency.days = raw.frequency.days || [];
-	const idx = raw.frequency.days.indexOf(String(day));
-	if (idx >= 0) {
-		raw.frequency.days.splice(idx, 1);
+	raw.task_frequency_days = raw.task_frequency_days || [];
+	const dayInt = parseInt(day);
+	const existing = raw.task_frequency_days.find(d => d.day_of_week === dayInt);
+	if (existing) {
+		// Remove
+		await supa.from('task_frequency_days').delete().eq('id', existing.id);
+		raw.task_frequency_days = raw.task_frequency_days.filter(d => d.id !== existing.id);
 	} else {
-		raw.frequency.days.push(String(day));
+		// Add
+		const { data, error } = await supa
+			.from('task_frequency_days')
+			.insert({ task_id: activeTileId, day_of_week: dayInt })
+			.select()
+			.single();
+		if (data) raw.task_frequency_days.push(data);
+		if (error) console.error('Freq day error:', error);
 	}
 	openTilePopup(activeTileId);
-	await saveTileToCloud();
 }
 
+// ---- Time of Day Operations ----
 async function toggleTimeOfDay(tod) {
-	if (activeTileId === null) return;
+	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
-	raw.timeOfDay = raw.timeOfDay || [];
-	const idx = raw.timeOfDay.indexOf(tod);
+	let todArr = raw.time_of_day ? raw.time_of_day.split(',').filter(Boolean) : [];
+	const idx = todArr.indexOf(tod);
 	if (idx >= 0) {
-		raw.timeOfDay.splice(idx, 1);
+		todArr.splice(idx, 1);
 	} else {
-		raw.timeOfDay.push(tod);
+		todArr.push(tod);
 	}
+	raw.time_of_day = todArr.join(',');
 	openTilePopup(activeTileId);
-	await saveTileToCloud();
+	await updateTask(activeTileId, { time_of_day: raw.time_of_day });
 }
 
-async function saveTileToCloud() {
-	const { data: { session } } = await supa.auth.getSession();
-	if (!session || !session.user) return;
-	const { error } = await supa
-		.from('worlds')
-		.upsert({ user_id: session.user.id, data: rawTiles }, { onConflict: 'user_id' });
-	if (error) console.error('Save error:', error);
+// ---- Log Operations ----
+async function deleteLog(logId) {
+	if (!activeTileId) return;
+	const raw = rawTiles[activeTileId];
+	if (!raw) return;
+	raw.task_logs = (raw.task_logs || []).filter(l => l.id !== logId);
+	const displayTile = tiles.find(t => t.id === activeTileId);
+	if (displayTile) displayTile.count = raw.task_logs.length;
+	openTilePopup(activeTileId);
+	await supa.from('task_logs').delete().eq('id', logId);
+}
+
+// ---- Delete Tile ----
+async function deleteTile() {
+	if (!activeTileId) return;
+	// Delete related records then task
+	await supa.from('task_logs').delete().eq('task_id', activeTileId);
+	await supa.from('task_frequency_days').delete().eq('task_id', activeTileId);
+	await supa.from('tasks').delete().eq('id', activeTileId);
+	delete rawTiles[activeTileId];
+	tiles = tiles.filter(t => t.id !== activeTileId);
+	closeTilePopup();
+	renderGallery(tiles);
+}
+
+// ---- Add New Tile ----
+async function addNewTile() {
+	const name = prompt('Enter tile name:');
+	if (!name || !name.trim()) return;
+	if (!currentUserId) return;
+
+	const { data, error } = await supa
+		.from('tasks')
+		.insert({
+			user_id: currentUserId,
+			name: name.trim(),
+			frequency_mode: 'daily',
+			time_of_day: '',
+			tags: [],
+			emoji: '🟦'
+		})
+		.select('*, task_logs(*), task_frequency_days(*)')
+		.single();
+
+	if (error || !data) {
+		console.error('Add error:', error);
+		return;
+	}
+
+	rawTiles[data.id] = data;
+	tiles.push({
+		id: data.id,
+		name: data.name,
+		tags: data.tags || [],
+		status: 'noaction',
+		emoji: data.emoji || '🟦',
+		count: 0,
+		lastUpdate: null
+	});
+
+	buildTagsFromTiles();
+	applyFilters();
+	openTilePopup(data.id);
 }
 
 // ---- Tag Filter ----
@@ -371,7 +427,6 @@ function openTagFilterPopup() {
 	const overlay = document.getElementById('tagFilterOverlay');
 	const grid = document.getElementById('tagFilterGrid');
 
-	// Collect tags actually in use + count
 	const tagCounts = {};
 	tiles.forEach(tile => {
 		(tile.tags || []).forEach(t => {
@@ -393,12 +448,12 @@ function openTagFilterPopup() {
 	// Tag tiles
 	ALL_TAGS.forEach(at => {
 		const count = tagCounts[at.key] || 0;
-		if (count === 0) return; // hide unused tags
+		if (count === 0) return;
 		const btn = document.createElement('button');
 		btn.className = `flex flex-col items-center justify-center gap-1 p-4 rounded-xl border-2 transition text-center ${
 			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-		btn.innerHTML = `<span class="text-2xl">\ud83c\udff7\ufe0f</span><span class="text-sm font-semibold">${at.label}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
+		btn.innerHTML = `<span class="text-2xl">🏷️</span><span class="text-sm font-semibold">${at.label}</span><span class="text-xs text-slate-400">${count} tiles</span>`;
 		btn.addEventListener('click', () => { setTagFilter(at.key); });
 		grid.appendChild(btn);
 	});
@@ -423,12 +478,10 @@ function openTagFilterPopup() {
 		const newTag = prompt('Enter new tag name:');
 		if (!newTag || !newTag.trim()) return;
 		const key = newTag.trim().toLowerCase().replace(/\s+/g, '-');
-		// Add to ALL_TAGS if not already there
 		if (!ALL_TAGS.find(t => t.key === key)) {
 			ALL_TAGS.push({ key, label: key.charAt(0).toUpperCase() + key.slice(1) });
 			ALL_TAGS.sort((a, b) => a.key.localeCompare(b.key));
 		}
-		// Re-open the filter popup to show the new tag
 		openTagFilterPopup();
 	});
 	grid.appendChild(newBtn);
@@ -465,13 +518,11 @@ function updateFilterBar() {
 
 function applyFilters() {
 	let filtered = [...tiles];
-	// Tag filter
 	if (activeTagFilter === '__untagged__') {
 		filtered = filtered.filter(t => !t.tags || t.tags.length === 0);
 	} else if (activeTagFilter) {
 		filtered = filtered.filter(t => (t.tags || []).includes(activeTagFilter));
 	}
-	// Search filter
 	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 	if (q) {
 		filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
@@ -479,68 +530,17 @@ function applyFilters() {
 	renderGallery(filtered);
 }
 
-// ---- Add New Tile ----
-async function addNewTile() {
-	const name = prompt('Enter tile name:');
-	if (!name || !name.trim()) return;
-
-	// Find the next available numeric key
-	const existingKeys = Object.keys(rawTiles).map(Number).filter(n => !isNaN(n));
-	const nextId = existingKeys.length > 0 ? Math.max(...existingKeys) + 1 : 0;
-	const tileId = String(nextId);
-
-	const newTile = {
-		name: name.trim(),
-		tags: [],
-		logs: [],
-		lastUpdate: null,
-		nextOccurrence: null,
-		frequency: { mode: 'daily', days: [], date: null },
-		done: false,
-		completed: false,
-		skip: false,
-		timeOfDay: [],
-		header: '',
-		emoji: '🟦'
-	};
-
-	rawTiles[tileId] = newTile;
-	tiles.push({
-		id: tileId,
-		name: newTile.name,
-		tags: [],
-		status: 'noaction',
-		emoji: '🟦',
-		count: 0,
-		lastUpdate: null
-	});
-
-	buildTagsFromTiles();
-	applyFilters();
-	await saveTileToCloud();
-
-	// Open tile detail popup so user can set tags, frequency, etc.
-	openTilePopup(tileId);
-}
-
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
 	fetchTilesFromSupabase();
 
-	// Search filter
 	document.getElementById('searchBox').addEventListener('input', () => applyFilters());
-
-	// Tag filter popup
 	document.getElementById('tagFilterBtn').addEventListener('click', openTagFilterPopup);
 	document.getElementById('closeTagFilter').addEventListener('click', closeTagFilterPopup);
 	document.getElementById('tagFilterOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
-
-	// Clear filter
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
-
-	// Add new tile
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 });
