@@ -310,7 +310,10 @@ function openTilePopup(tileId) {
 			${[{key:'planned',label:'📋 Planned',bg:'bg-blue-100 text-blue-700 border-blue-300'},{key:'in progress',label:'🔄 In Progress',bg:'bg-green-100 text-green-700 border-green-300'},{key:'completed',label:'✅ Completed',bg:'bg-emerald-100 text-emerald-700 border-emerald-300'},{key:'failed',label:'❌ Failed',bg:'bg-red-100 text-red-700 border-red-300'},{key:'cancelled',label:'🚫 Cancelled',bg:'bg-slate-100 text-slate-600 border-slate-300'}].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
-		<div class="text-md font-semibold mb-1">Log Timeline</div>
+		<div class="flex items-center justify-between mb-1">
+			<div class="text-md font-semibold">Log Timeline</div>
+			<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition">+</button>
+		</div>
 		<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
 		<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
 		<hr class="my-5 border-slate-200">
@@ -376,7 +379,106 @@ function openTilePopup(tileId) {
 		});
 	});
 
+	// Wire up add log button
+	document.getElementById('addLogBtn').addEventListener('click', () => openAddLogPopup());
+
 	overlay.classList.remove('hidden');
+}
+
+// ---- Add Log Popup ----
+let addLogStatus = 'done';
+
+function openAddLogPopup() {
+	const overlay = document.getElementById('addLogOverlay');
+	const today = new Date().toISOString().split('T')[0];
+	document.getElementById('logDateInput').value = today;
+	document.getElementById('logNoteInput').value = '';
+	addLogStatus = 'done';
+	updateLogStatusBtns();
+	overlay.classList.remove('hidden');
+}
+
+function closeAddLogPopup() {
+	document.getElementById('addLogOverlay').classList.add('hidden');
+}
+
+function updateLogStatusBtns() {
+	document.querySelectorAll('.log-status-btn').forEach(btn => {
+		const s = btn.dataset.status;
+		if (s === addLogStatus) {
+			btn.classList.remove('bg-white', 'border-slate-200');
+			if (s === 'done') {
+				btn.classList.add('bg-green-100', 'border-green-400', 'ring-2', 'ring-green-300');
+			} else {
+				btn.classList.add('bg-yellow-100', 'border-yellow-400', 'ring-2', 'ring-yellow-300');
+			}
+		} else {
+			btn.classList.remove('bg-green-100', 'border-green-400', 'bg-yellow-100', 'border-yellow-400', 'ring-2', 'ring-green-300', 'ring-yellow-300');
+			btn.classList.add('bg-white', 'border-slate-200');
+		}
+	});
+}
+
+async function submitLog() {
+	if (!activeTileId) return;
+	const raw = rawTiles[activeTileId];
+	if (!raw) return;
+
+	const logDate = document.getElementById('logDateInput').value;
+	const note = document.getElementById('logNoteInput').value.trim();
+	if (!logDate) { alert('Please select a date.'); return; }
+
+	const insertObj = { task_id: activeTileId, status: addLogStatus, log_date: logDate };
+	if (note) insertObj.note = note;
+
+	const { data, error } = await supa
+		.from('task_logs')
+		.insert(insertObj)
+		.select()
+		.single();
+
+	if (error) { console.error('Add log error:', error); alert('Failed to add log: ' + error.message); return; }
+
+	if (data) {
+		raw.task_logs = raw.task_logs || [];
+		raw.task_logs.unshift(data);
+		raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+	}
+
+	// Update display tile
+	const displayTile = tiles.find(t => t.id === activeTileId);
+	if (displayTile) {
+		const logs = raw.task_logs || [];
+		const lastLog = logs[0];
+		const lastStatus = lastLog ? lastLog.status : null;
+		displayTile.status = lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skip' ? 'skipped' : 'noaction';
+		displayTile.count = logs.length;
+		displayTile.lastUpdate = lastLog ? lastLog.created_at : null;
+		const health = calculateHealth(raw);
+		const plant = healthToPlant(health);
+		displayTile.emoji = plant.emoji;
+		displayTile.health = health;
+		displayTile.healthLabel = plant.label;
+		displayTile.healthColor = plant.color;
+	}
+
+	closeAddLogPopup();
+	openTilePopup(activeTileId);
+	applyFilters();
+}
+
+function initAddLogPopup() {
+	document.getElementById('closeAddLog').addEventListener('click', closeAddLogPopup);
+	document.getElementById('addLogOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('addLogOverlay')) closeAddLogPopup();
+	});
+	document.querySelectorAll('.log-status-btn').forEach(btn => {
+		btn.addEventListener('click', () => {
+			addLogStatus = btn.dataset.status;
+			updateLogStatusBtns();
+		});
+	});
+	document.getElementById('submitLogBtn').addEventListener('click', submitLog);
 }
 
 // ---- Task Update Helper ----
@@ -831,6 +933,7 @@ async function resetTodayLogs() {
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
+	initAddLogPopup();
 	fetchTilesFromSupabase();
 
 	document.getElementById('searchBox').addEventListener('input', () => applyFilters());
