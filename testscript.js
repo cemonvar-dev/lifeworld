@@ -3,6 +3,7 @@ let rawTiles = {}; // full task objects keyed by uuid
 let activeTileId = null; // currently open tile
 let activeTagFilter = null; // currently active tag filter
 let activeTimelineFilter = null; // 'today' or null
+let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
 let ALL_TAGS = []; // dynamically built from tile data
 let currentUserId = null;
 
@@ -550,6 +551,27 @@ function toggleTodayFilter() {
 	applyFilters();
 }
 
+const STATUS_CYCLE = [
+	{ key: null, label: '⭐ All', bg: 'bg-white' },
+	{ key: 'done', label: '💪 Done', bg: 'bg-green-100' },
+	{ key: 'skipped', label: '😢 Skip', bg: 'bg-yellow-100' },
+	{ key: 'noaction', label: '💬 No Action', bg: 'bg-slate-100' }
+];
+
+function toggleStatusFilter() {
+	const idx = STATUS_CYCLE.findIndex(s => s.key === activeStatusFilter);
+	const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+	activeStatusFilter = next.key;
+	const btn = document.getElementById('statusFilterBtn');
+	btn.classList.remove('bg-white', 'bg-green-100', 'bg-yellow-100', 'bg-slate-100', 'border-slate-800', 'text-slate-800');
+	btn.classList.add(next.bg);
+	if (next.key) {
+		btn.classList.add('border-slate-800', 'text-slate-800');
+	}
+	btn.textContent = next.label;
+	applyFilters();
+}
+
 function applyFilters() {
 	let filtered = [...tiles];
 	if (activeTagFilter === '__untagged__') {
@@ -559,6 +581,9 @@ function applyFilters() {
 	}
 	if (activeTimelineFilter === 'today') {
 		filtered = filtered.filter(t => isTileScheduledToday(t.id));
+	}
+	if (activeStatusFilter) {
+		filtered = filtered.filter(t => t.status === activeStatusFilter);
 	}
 	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 	if (q) {
@@ -580,5 +605,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
 	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
+	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 });
