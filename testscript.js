@@ -151,6 +151,14 @@ function renderGallery(filteredTiles) {
 	});
 
 	Object.keys(groups).sort().forEach(tag => {
+		// Sort tiles within group by sort_order (then name as fallback)
+		groups[tag].sort((a, b) => {
+			const aOrder = (rawTiles[a.id] && rawTiles[a.id].sort_order != null) ? rawTiles[a.id].sort_order : 999999;
+			const bOrder = (rawTiles[b.id] && rawTiles[b.id].sort_order != null) ? rawTiles[b.id].sort_order : 999999;
+			if (aOrder !== bOrder) return aOrder - bOrder;
+			return a.name.localeCompare(b.name);
+		});
+
 		const groupSection = document.createElement('section');
 		groupSection.className = 'mb-4';
 
@@ -161,10 +169,12 @@ function renderGallery(filteredTiles) {
 
 		const groupGrid = document.createElement('div');
 		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+		groupGrid.dataset.tagGroup = tag;
 		groups[tag].forEach(tile => {
 			const tileDiv = document.createElement("div");
 			const tileColor = tile.healthColor || 'bg-white';
 			tileDiv.className = `tile ${tileColor} rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
+			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
@@ -185,6 +195,34 @@ function renderGallery(filteredTiles) {
 					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-yellow-200 text-yellow-800' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				</div>
 			`;
+			// Drag-and-drop events
+			tileDiv.addEventListener('dragstart', (e) => {
+				e.dataTransfer.setData('text/plain', tile.id);
+				e.dataTransfer.effectAllowed = 'move';
+				tileDiv.classList.add('opacity-40', 'scale-95');
+				setTimeout(() => tileDiv.classList.add('ring-2', 'ring-blue-400'), 0);
+			});
+			tileDiv.addEventListener('dragend', () => {
+				tileDiv.classList.remove('opacity-40', 'scale-95', 'ring-2', 'ring-blue-400');
+				document.querySelectorAll('.drag-over-indicator').forEach(el => el.remove());
+			});
+			tileDiv.addEventListener('dragover', (e) => {
+				e.preventDefault();
+				e.dataTransfer.dropEffect = 'move';
+				tileDiv.classList.add('ring-2', 'ring-blue-300');
+			});
+			tileDiv.addEventListener('dragleave', () => {
+				tileDiv.classList.remove('ring-2', 'ring-blue-300');
+			});
+			tileDiv.addEventListener('drop', (e) => {
+				e.preventDefault();
+				tileDiv.classList.remove('ring-2', 'ring-blue-300');
+				const draggedId = e.dataTransfer.getData('text/plain');
+				if (draggedId && draggedId !== tile.id) {
+					handleTileDrop(draggedId, tile.id, tag);
+				}
+			});
+
 			tileDiv.addEventListener('click', (e) => {
 				if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
 				openTilePopup(tile.id);
@@ -202,6 +240,44 @@ function renderGallery(filteredTiles) {
 		groupSection.appendChild(groupGrid);
 		gallery.appendChild(groupSection);
 	});
+}
+
+// ---- Drag-and-Drop Reorder ----
+async function handleTileDrop(draggedId, targetId, tagGroup) {
+	// Get the tiles in this tag group in their current sort order
+	const groupTiles = tiles.filter(t => {
+		const firstTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 'Untagged';
+		return firstTag === tagGroup;
+	}).sort((a, b) => {
+		const aOrder = (rawTiles[a.id] && rawTiles[a.id].sort_order != null) ? rawTiles[a.id].sort_order : 999999;
+		const bOrder = (rawTiles[b.id] && rawTiles[b.id].sort_order != null) ? rawTiles[b.id].sort_order : 999999;
+		if (aOrder !== bOrder) return aOrder - bOrder;
+		return a.name.localeCompare(b.name);
+	});
+
+	const orderedIds = groupTiles.map(t => t.id);
+	const fromIdx = orderedIds.indexOf(draggedId);
+	const toIdx = orderedIds.indexOf(targetId);
+	if (fromIdx < 0 || toIdx < 0) return;
+
+	// Move dragged tile to target position
+	orderedIds.splice(fromIdx, 1);
+	orderedIds.splice(toIdx, 0, draggedId);
+
+	// Assign new sort_order values
+	const updates = [];
+	orderedIds.forEach((id, i) => {
+		if (rawTiles[id]) rawTiles[id].sort_order = i;
+		updates.push({ id, sort_order: i });
+	});
+
+	// Re-render immediately
+	applyFilters();
+
+	// Persist to DB (batch update)
+	for (const u of updates) {
+		await supa.from('tasks').update({ sort_order: u.sort_order }).eq('id', u.id);
+	}
 }
 
 // ---- Tile Detail Popup ----
@@ -254,7 +330,10 @@ function openTilePopup(tileId) {
 					<div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
 					<div class="flex items-center justify-between">
 						<div class="text-sm font-semibold">${log.status}</div>
-						<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold opacity-0 group-hover:opacity-100 transition px-1" data-log-id="${log.id}">&times;</button>
+						<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+							<button class="edit-log text-blue-300 hover:text-blue-500 text-sm font-bold px-1" data-log-id="${log.id}">✏️</button>
+							<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold px-1" data-log-id="${log.id}">&times;</button>
+						</div>
 					</div>
 					<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
 					${noteHtml}
@@ -371,6 +450,16 @@ function openTilePopup(tileId) {
 		});
 	});
 
+	// Wire up log edit buttons
+	document.querySelectorAll('.edit-log').forEach(btn => {
+		btn.addEventListener('click', e => {
+			e.stopPropagation();
+			const logId = btn.dataset.logId;
+			const log = (raw.task_logs || []).find(l => l.id === logId);
+			if (log) openAddLogPopup(log);
+		});
+	});
+
 	// Wire up log delete buttons
 	document.querySelectorAll('.delete-log').forEach(btn => {
 		btn.addEventListener('click', async e => {
@@ -387,18 +476,36 @@ function openTilePopup(tileId) {
 
 // ---- Add Log Popup ----
 let addLogStatus = 'done';
+let editingLogId = null; // null = add mode, logId = edit mode
 
-function openAddLogPopup() {
+function openAddLogPopup(logToEdit) {
 	const overlay = document.getElementById('addLogOverlay');
-	const today = new Date().toISOString().split('T')[0];
-	document.getElementById('logDateInput').value = today;
-	document.getElementById('logNoteInput').value = '';
-	addLogStatus = 'done';
+	const submitBtn = document.getElementById('submitLogBtn');
+	if (logToEdit) {
+		// Edit mode
+		editingLogId = logToEdit.id;
+		const logDate = logToEdit.created_at ? logToEdit.created_at.split('T')[0] : new Date().toISOString().split('T')[0];
+		document.getElementById('logDateInput').value = logDate;
+		document.getElementById('logNoteInput').value = logToEdit.note || '';
+		addLogStatus = logToEdit.status || 'done';
+		document.querySelector('#addLogOverlay .text-lg.font-bold').textContent = 'Edit Log';
+		submitBtn.textContent = '💾 Update Log';
+	} else {
+		// Add mode
+		editingLogId = null;
+		const today = new Date().toISOString().split('T')[0];
+		document.getElementById('logDateInput').value = today;
+		document.getElementById('logNoteInput').value = '';
+		addLogStatus = 'done';
+		document.querySelector('#addLogOverlay .text-lg.font-bold').textContent = 'Add Log';
+		submitBtn.textContent = '➕ Add Log';
+	}
 	updateLogStatusBtns();
 	overlay.classList.remove('hidden');
 }
 
 function closeAddLogPopup() {
+	editingLogId = null;
 	document.getElementById('addLogOverlay').classList.add('hidden');
 }
 
@@ -428,21 +535,40 @@ async function submitLog() {
 	const note = document.getElementById('logNoteInput').value.trim();
 	if (!logDate) { alert('Please select a date.'); return; }
 
-	const insertObj = { task_id: activeTileId, status: addLogStatus, log_date: logDate };
-	if (note) insertObj.note = note;
+	if (editingLogId) {
+		// --- Edit mode ---
+		const updateObj = { status: addLogStatus, log_date: logDate, note: note || null };
+		const { data, error } = await supa
+			.from('task_logs')
+			.update(updateObj)
+			.eq('id', editingLogId)
+			.select()
+			.single();
+		if (error) { console.error('Edit log error:', error); alert('Failed to update log: ' + error.message); return; }
+		if (data) {
+			const idx = (raw.task_logs || []).findIndex(l => l.id === editingLogId);
+			if (idx >= 0) raw.task_logs[idx] = data;
+			raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+		}
+		editingLogId = null;
+	} else {
+		// --- Add mode ---
+		const insertObj = { task_id: activeTileId, status: addLogStatus, log_date: logDate };
+		if (note) insertObj.note = note;
 
-	const { data, error } = await supa
-		.from('task_logs')
-		.insert(insertObj)
-		.select()
-		.single();
+		const { data, error } = await supa
+			.from('task_logs')
+			.insert(insertObj)
+			.select()
+			.single();
 
-	if (error) { console.error('Add log error:', error); alert('Failed to add log: ' + error.message); return; }
+		if (error) { console.error('Add log error:', error); alert('Failed to add log: ' + error.message); return; }
 
-	if (data) {
-		raw.task_logs = raw.task_logs || [];
-		raw.task_logs.unshift(data);
-		raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+		if (data) {
+			raw.task_logs = raw.task_logs || [];
+			raw.task_logs.unshift(data);
+			raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+		}
 	}
 
 	// Update display tile
