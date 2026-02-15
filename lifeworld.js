@@ -935,18 +935,16 @@ function renderTagTree(node, tagCounts, level = 0) {
 		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span>${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
-		// Edit button (only for real tags, not synthetic)
-		if (tag) {
-			const editBtn = document.createElement('button');
-			editBtn.className = 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
-			editBtn.textContent = '✏️';
-			editBtn.title = 'Rename tag';
-			editBtn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				renameTag(tag.key);
-			});
-			wrapper.appendChild(editBtn);
-		}
+		// Edit button (for all nodes, use tagObj.key)
+		const editBtn = document.createElement('button');
+		editBtn.className = 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
+		editBtn.textContent = '✏️';
+		editBtn.title = 'Rename tag';
+		editBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			renameTag(tagObj.key);
+		});
+		wrapper.appendChild(editBtn);
 		fragment.appendChild(wrapper);
 		// Children
 		if (Object.keys(children).length > 0) {
