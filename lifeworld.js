@@ -1009,7 +1009,6 @@ function openTagFilterPopup() {
 
 	overlay.classList.remove('hidden');
 }
-}
 
 function closeTagFilterPopup() {
 	document.getElementById('tagFilterOverlay').classList.add('hidden');
