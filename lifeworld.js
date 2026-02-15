@@ -998,48 +998,75 @@ function openTagFilterPopup() {
 		});
 	});
 
+	// Add search box at the top
 	grid.innerHTML = '';
+	const searchDiv = document.createElement('div');
+	searchDiv.className = 'mb-2';
+	const searchInput = document.createElement('input');
+	searchInput.type = 'text';
+	searchInput.placeholder = 'Search tags...';
+	searchInput.className = 'w-full px-2 py-1 rounded border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200';
+	searchDiv.appendChild(searchInput);
+	grid.appendChild(searchDiv);
 
-	// "+ New Tag" button FIRST
-	const newBtn = document.createElement('button');
-	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center';
-	newBtn.innerHTML = `<span class=\"text-base\">➕</span><span class=\"text-xs font-semibold\">New Tag</span>`;
-	newBtn.addEventListener('click', () => {
-		const newTag = prompt('Enter new tag name:');
-		if (!newTag || !newTag.trim()) return;
-		const key = newTag.trim().toLowerCase().replace(/\s+/g, '-');
-		if (!ALL_TAGS.find(t => t.key === key)) {
-			ALL_TAGS.push({ key, label: key.charAt(0).toUpperCase() + key.slice(1) });
-			ALL_TAGS.sort((a, b) => a.key.localeCompare(b.key));
-		}
-		openTagFilterPopup();
-	});
-	grid.appendChild(newBtn);
+	// Container for tag tree and controls
+	const tagTreeContainer = document.createElement('div');
+	grid.appendChild(tagTreeContainer);
 
-	// "All" tile
-	const allBtn = document.createElement('button');
-	allBtn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
-		activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-	}`;
-	allBtn.innerHTML = `<span class=\"text-base\">🌐</span><span class=\"text-xs font-semibold\">All</span><span class=\"text-[10px] text-slate-400\">${tiles.length}</span>`;
-	allBtn.addEventListener('click', () => { setTagFilter(null); });
-	grid.appendChild(allBtn);
-
-	// Treeview for tags
-	const tagTree = buildTagTree(ALL_TAGS);
-	grid.appendChild(renderTagTree(tagTree, tagCounts));
-
-	// Untagged
-	const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
-	if (untaggedCount > 0) {
-		const btn = document.createElement('button');
-		btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
-			activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-		}`;
-		btn.innerHTML = `<span class=\"text-base\">📦</span><span class=\"text-lg font-bold\">Untagged</span><span class=\"text-[10px] text-slate-400\">${untaggedCount}</span>`;
-		btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
-		grid.appendChild(btn);
+	function filterTags(tags, query) {
+		if (!query) return tags;
+		const q = query.toLowerCase();
+		return tags.filter(t => t.key.toLowerCase().includes(q) || t.label.toLowerCase().includes(q));
 	}
+
+	function renderFilteredTree() {
+		tagTreeContainer.innerHTML = '';
+
+		// "+ New Tag" button FIRST
+		const newBtn = document.createElement('button');
+		newBtn.className = 'flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center';
+		newBtn.innerHTML = `<span class=\"text-base\">➕</span><span class=\"text-xs font-semibold\">New Tag</span>`;
+		newBtn.addEventListener('click', () => {
+			const newTag = prompt('Enter new tag name:');
+			if (!newTag || !newTag.trim()) return;
+			const key = newTag.trim().toLowerCase().replace(/\s+/g, '-');
+			if (!ALL_TAGS.find(t => t.key === key)) {
+				ALL_TAGS.push({ key, label: newTag.trim() });
+			}
+			openTagFilterPopup();
+		});
+		tagTreeContainer.appendChild(newBtn);
+
+		// "All" tile
+		const allBtn = document.createElement('button');
+		allBtn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
+			activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		}`;
+		allBtn.innerHTML = `<span class=\"text-base\">🌐</span><span class=\"text-xs font-semibold\">All</span><span class=\"text-[10px] text-slate-400\">${tiles.length}</span>`;
+		allBtn.addEventListener('click', () => { setTagFilter(null); });
+		tagTreeContainer.appendChild(allBtn);
+
+		// Treeview for tags (filtered)
+		const filteredTags = filterTags(ALL_TAGS, searchInput.value);
+		const tagTree = buildTagTree(filteredTags);
+		tagTreeContainer.appendChild(renderTagTree(tagTree, tagCounts));
+
+		// Untagged
+		const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
+		if (untaggedCount > 0) {
+			const btn = document.createElement('button');
+			btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
+				activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+			}`;
+			btn.innerHTML = `<span class=\"text-base\">📦</span><span class=\"text-lg font-bold\">Untagged</span><span class=\"text-[10px] text-slate-400\">${untaggedCount}</span>`;
+			btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
+			tagTreeContainer.appendChild(btn);
+		}
+	}
+
+	renderFilteredTree();
+
+	searchInput.addEventListener('input', renderFilteredTree);
 
 	overlay.classList.remove('hidden');
 }
