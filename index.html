@@ -724,14 +724,14 @@
             return;
           }
           // Optionally, show a message to check email for confirmation
-          window.location.href = "tracker.html";
+          window.location.href = "lifeworld.html";
         } else {
           const { error } = await supa.auth.signInWithPassword({ email, password });
           if (error) {
             errorDiv.textContent = error.message;
             return;
           }
-          window.location.href = "tracker.html";
+          window.location.href = "lifeworld.html";
         }
       } catch (e) {
         errorDiv.textContent = e.message || e;
@@ -745,7 +745,7 @@
         googleBtn.disabled = true;
         googleBtn.textContent = "Redirecting...";
         try {
-          const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/tracker.html' } });
+          const { error } = await supa.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/lifeworld.html' } });
           if (error) {
             alert("Google login failed: " + error.message);
             googleBtn.disabled = false;
