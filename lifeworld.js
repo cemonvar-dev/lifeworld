@@ -903,38 +903,40 @@ function renderTagTree(node, tagCounts, level = 0) {
 	const fragment = document.createDocumentFragment();
 	for (const key in node) {
 		const { tag, children } = node[key];
-		if (tag) {
-			const wrapper = document.createElement('div');
-			wrapper.style.marginLeft = (level * 18) + 'px';
-			wrapper.className = 'relative group flex items-center';
-			// Expand/collapse if has children
-			let expanded = true;
-			let toggleBtn = null;
-			if (Object.keys(children).length > 0) {
-				toggleBtn = document.createElement('button');
+		// Use tag if present, otherwise synthesize a tag object from the key
+		const tagObj = tag || { key: key, label: key };
+		const wrapper = document.createElement('div');
+		wrapper.style.marginLeft = (level * 18) + 'px';
+		wrapper.className = 'relative group flex items-center';
+		// Expand/collapse if has children
+		let expanded = true;
+		let toggleBtn = null;
+		if (Object.keys(children).length > 0) {
+			toggleBtn = document.createElement('button');
+			toggleBtn.textContent = expanded ? '▼' : '►';
+			toggleBtn.className = 'mr-1 text-xs text-slate-400 hover:text-slate-700 focus:outline-none';
+			toggleBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				expanded = !expanded;
 				toggleBtn.textContent = expanded ? '▼' : '►';
-				toggleBtn.className = 'mr-1 text-xs text-slate-400 hover:text-slate-700 focus:outline-none';
-				toggleBtn.addEventListener('click', (e) => {
-					e.stopPropagation();
-					expanded = !expanded;
-					toggleBtn.textContent = expanded ? '▼' : '►';
-					childContainer.style.display = expanded ? '' : 'none';
-				});
-				wrapper.appendChild(toggleBtn);
-			} else {
-				const spacer = document.createElement('span');
-				spacer.style.display = 'inline-block';
-				spacer.style.width = '18px';
-				wrapper.appendChild(spacer);
-			}
-			const btn = document.createElement('button');
-			btn.className = `flex-1 flex flex-col items-start justify-center gap-0.5 p-2 rounded-lg border-2 transition text-left ${
-				activeTagFilter === tag.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-			}`;
-			btn.innerHTML = `<span class="text-base">🏷️</span><span class="text-lg font-bold">${tag.label}</span><span class="text-[10px] text-slate-400">${tagCounts[tag.key] || 0}</span>`;
-			btn.addEventListener('click', () => { setTagFilter(tag.key); });
-			wrapper.appendChild(btn);
-			// Edit button
+				childContainer.style.display = expanded ? '' : 'none';
+			});
+			wrapper.appendChild(toggleBtn);
+		} else {
+			const spacer = document.createElement('span');
+			spacer.style.display = 'inline-block';
+			spacer.style.width = '18px';
+			wrapper.appendChild(spacer);
+		}
+		const btn = document.createElement('button');
+		btn.className = `flex-1 flex flex-col items-start justify-center gap-0.5 p-2 rounded-lg border-2 transition text-left ${
+			activeTagFilter === tagObj.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		}`;
+		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span class=\"text-lg font-bold\">${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
+		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
+		wrapper.appendChild(btn);
+		// Edit button (only for real tags, not synthetic)
+		if (tag) {
 			const editBtn = document.createElement('button');
 			editBtn.className = 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
 			editBtn.textContent = '✏️';
@@ -944,14 +946,14 @@ function renderTagTree(node, tagCounts, level = 0) {
 				renameTag(tag.key);
 			});
 			wrapper.appendChild(editBtn);
-			fragment.appendChild(wrapper);
-			// Children
-			if (Object.keys(children).length > 0) {
-				const childContainer = document.createElement('div');
-				childContainer.style.marginLeft = '0px';
-				childContainer.appendChild(renderTagTree(children, tagCounts, level + 1));
-				fragment.appendChild(childContainer);
-			}
+		}
+		fragment.appendChild(wrapper);
+		// Children
+		if (Object.keys(children).length > 0) {
+			const childContainer = document.createElement('div');
+			childContainer.style.marginLeft = '0px';
+			childContainer.appendChild(renderTagTree(children, tagCounts, level + 1));
+			fragment.appendChild(childContainer);
 		}
 	}
 	return fragment;
