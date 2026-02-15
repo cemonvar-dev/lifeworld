@@ -879,13 +879,13 @@ function buildTagTree(tags) {
 	// tags: array of {key, label}
 	const root = {};
 	for (const tag of tags) {
-		// Split on both dot and dash, but keep the original key for lookup
-		// e.g. 11.1-home-d13 => [11, 1, home, d13]
-		const parts = tag.key.split(/[-.]/g);
+		// Only split on dot for hierarchy, dashes are part of the label
+		// e.g. 12-hobby (parent), 12.1-akvaryum (child of 12-hobby)
+		const parts = tag.key.split('.');
 		let node = root;
 		let fullKey = '';
 		for (let i = 0; i < parts.length; i++) {
-			if (i > 0) fullKey += '-';
+			if (i > 0) fullKey += '.';
 			fullKey += parts[i];
 			if (!node[fullKey]) {
 				node[fullKey] = { children: {}, tag: null };
