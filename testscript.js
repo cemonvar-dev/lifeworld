@@ -364,6 +364,8 @@ function openTilePopup(tileId) {
 
 	const logs = raw.task_logs || [];
 	const lastLog = logs[0];
+	const health = calculateHealth(raw);
+	const plant = healthToPlant(health);
 	const statusLabel = lastLog
 		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skipped' ? '😢 Skipped' : '💬 No Action')
 		: '💬 No Action';
@@ -418,7 +420,7 @@ function openTilePopup(tileId) {
 
 	popupBody.innerHTML = `
 		<div class="flex items-center gap-3 mb-4">
-			<span class="text-4xl">${raw.emoji || '🟦'}</span>
+			<span class="text-4xl">${plant.emoji}</span>
 			<div>
 				<div class="text-xl font-bold">${raw.name}</div>
 				<div class="text-sm text-slate-500">${statusLabel}</div>
