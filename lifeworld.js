@@ -878,39 +878,41 @@ async function addNewTile() {
 function buildTagTree(tags) {
 	// tags: array of {key, label}
 	const root = {};
-	// Map for quick lookup of top-level tags (e.g., 04-family)
-	const topLevelMap = {};
-	for (const tag of tags) {
-		const match = tag.key.match(/^(\d+)-/);
-		if (match) {
-			topLevelMap[match[1]] = tag.key;
-		}
+
+	// Helper to find the label part (after the first dash)
+	function getLabelPart(key) {
+		const dashIdx = key.indexOf('-');
+		return dashIdx >= 0 ? key.slice(dashIdx + 1) : key;
 	}
+
 	for (const tag of tags) {
-		// If tag is top-level (e.g., 04-family), add as root child
-		const topMatch = tag.key.match(/^(\d+)-/);
-		if (topMatch && !tag.key.includes('.')) {
-			if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
-			else root[tag.key].tag = tag;
-			continue;
-		}
-		// If tag is a child (e.g., 04.1-defne), find its parent (e.g., 04-family)
-		const childMatch = tag.key.match(/^(\d+)\./);
-		if (childMatch) {
-			const parentKey = topLevelMap[childMatch[1]];
-			if (parentKey) {
-				if (!root[parentKey]) root[parentKey] = { children: {}, tag: null };
-				root[parentKey].children[tag.key] = { children: {}, tag: tag };
+		// Split by dot, but keep the label part after the first dash in the last segment
+		// E.g., 14.5.5-work-projeler-css-bd => [14, 5, 5-work-projeler-css-bd]
+		const dashIdx = tag.key.indexOf('-');
+		let pathParts;
+		if (dashIdx === -1) {
+			pathParts = tag.key.split('.');
+		} else {
+			const beforeDash = tag.key.slice(0, dashIdx); // e.g., 14.5.5
+			const afterDash = tag.key.slice(dashIdx + 1); // e.g., work-projeler-css-bd
+			const dotParts = beforeDash.split('.');
+			if (dotParts.length > 0) {
+				dotParts[dotParts.length - 1] = dotParts[dotParts.length - 1] + '-' + afterDash;
+				pathParts = dotParts;
 			} else {
-				// Fallback: treat as root if no parent found
-				if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
-				else root[tag.key].tag = tag;
+				pathParts = [tag.key];
 			}
-			continue;
 		}
-		// Fallback: treat as root if doesn't match above
-		if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
-		else root[tag.key].tag = tag;
+
+		let node = root;
+		for (let i = 0; i < pathParts.length; i++) {
+			const part = pathParts.slice(0, i + 1).join('.');
+			if (!node[part]) node[part] = { children: {}, tag: null };
+			if (i === pathParts.length - 1) {
+				node[part].tag = tag;
+			}
+			node = node[part].children;
+		}
 	}
 	return root;
 }
