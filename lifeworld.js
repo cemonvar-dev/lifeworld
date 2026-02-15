@@ -879,34 +879,36 @@ function buildTagTree(tags) {
 	// tags: array of {key, label}
 	const root = {};
 
-	// Helper to find the label part (after the first dash)
-	function getLabelPart(key) {
-		const dashIdx = key.indexOf('-');
-		return dashIdx >= 0 ? key.slice(dashIdx + 1) : key;
+	// Helper: for a tag like 14.5.1-work-projeler-spring, build the path as:
+	// [14-work, 14.5-work-projeler, 14.5.1-work-projeler-spring]
+	function getPathParts(key) {
+		const parts = [];
+		const regex = /((?:\d+\.?)+)-(.*)/;
+		const match = key.match(regex);
+		if (!match) return [key];
+		const numPart = match[1]; // e.g., 14.5.1
+		const labelPart = match[2]; // e.g., work-projeler-spring
+		const numSegments = numPart.split('.');
+		for (let i = 1; i <= numSegments.length; i++) {
+			const seg = numSegments.slice(0, i).join('.');
+			// Find the tag in ALL_TAGS that starts with seg + '-' (if exists)
+			const prefix = seg + '-';
+			const found = tags.find(t => t.key.startsWith(prefix));
+			if (found) {
+				parts.push(found.key);
+			} else if (i === numSegments.length) {
+				// If not found, use the full key for the last part
+				parts.push(key);
+			}
+		}
+		return parts;
 	}
 
 	for (const tag of tags) {
-		// Split by dot, but keep the label part after the first dash in the last segment
-		// E.g., 14.5.5-work-projeler-css-bd => [14, 5, 5-work-projeler-css-bd]
-		const dashIdx = tag.key.indexOf('-');
-		let pathParts;
-		if (dashIdx === -1) {
-			pathParts = tag.key.split('.');
-		} else {
-			const beforeDash = tag.key.slice(0, dashIdx); // e.g., 14.5.5
-			const afterDash = tag.key.slice(dashIdx + 1); // e.g., work-projeler-css-bd
-			const dotParts = beforeDash.split('.');
-			if (dotParts.length > 0) {
-				dotParts[dotParts.length - 1] = dotParts[dotParts.length - 1] + '-' + afterDash;
-				pathParts = dotParts;
-			} else {
-				pathParts = [tag.key];
-			}
-		}
-
+		const pathParts = getPathParts(tag.key);
 		let node = root;
 		for (let i = 0; i < pathParts.length; i++) {
-			const part = pathParts.slice(0, i + 1).join('.');
+			const part = pathParts[i];
 			if (!node[part]) node[part] = { children: {}, tag: null };
 			if (i === pathParts.length - 1) {
 				node[part].tag = tag;
