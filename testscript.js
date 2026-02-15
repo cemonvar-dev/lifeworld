@@ -1153,10 +1153,160 @@ async function resetTodayLogs() {
 	applyFilters();
 }
 
+// ---- AI Chat ----
+let aiChatHistory = []; // { role: 'user'|'assistant', content: string }
+
+function buildTaskContext() {
+	const taskSummaries = Object.values(rawTiles).map(task => {
+		const logs = task.task_logs || [];
+		const health = calculateHealth(task);
+		const plant = healthToPlant(health);
+		const lastLog = logs[0];
+		const todayStr = new Date().toISOString().split('T')[0];
+		const todayLog = logs.find(l => l.created_at && l.created_at.split('T')[0] === todayStr);
+		const recentLogs = logs.slice(0, 7).map(l => `${l.created_at?.split('T')[0]}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
+
+		return `• "${task.name}" | tags: [${(task.tags || []).join(', ')}] | freq: ${task.frequency_mode} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
+	});
+
+	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
+	const doneToday = tiles.filter(t => t.status === 'done' || t.status === 'completed').length;
+	const skippedToday = tiles.filter(t => t.status === 'skipped').length;
+	const noActionToday = tiles.filter(t => t.status === 'noaction').length;
+
+	return `Date: ${new Date().toLocaleDateString()}
+Total tasks: ${tiles.length}
+Overall avg health: ${overallHealth}%
+Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} pending
+
+TASKS:
+${taskSummaries.join('\n')}`;
+}
+
+function openAiChat() {
+	document.getElementById('aiChatOverlay').classList.remove('hidden');
+	document.getElementById('aiChatInput').focus();
+	if (aiChatHistory.length === 0) {
+		appendAiMessage('assistant', "Hi! I'm your LifeWorld AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!");
+	}
+}
+
+function closeAiChat() {
+	document.getElementById('aiChatOverlay').classList.add('hidden');
+}
+
+function clearAiChat() {
+	aiChatHistory = [];
+	document.getElementById('aiChatMessages').innerHTML = '';
+	appendAiMessage('assistant', "Chat cleared! Ask me anything about your tasks 🤖");
+}
+
+function appendAiMessage(role, content) {
+	const container = document.getElementById('aiChatMessages');
+	const bubble = document.createElement('div');
+	if (role === 'user') {
+		bubble.className = 'flex justify-end';
+		bubble.innerHTML = `<div class="bg-purple-500 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>`;
+	} else if (role === 'assistant') {
+		bubble.className = 'flex justify-start';
+		bubble.innerHTML = `<div class="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${formatAiResponse(content)}</div>`;
+	} else if (role === 'loading') {
+		bubble.className = 'flex justify-start';
+		bubble.id = 'aiLoadingBubble';
+		bubble.innerHTML = `<div class="bg-slate-100 text-slate-400 rounded-2xl rounded-bl-sm px-4 py-2 text-sm animate-pulse">Thinking...</div>`;
+	}
+	container.appendChild(bubble);
+	container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(text) {
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+function formatAiResponse(text) {
+	// Basic markdown-like formatting
+	return escapeHtml(text)
+		.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+		.replace(/\*(.*?)\*/g, '<em>$1</em>')
+		.replace(/`(.*?)`/g, '<code class="bg-slate-200 px-1 rounded text-xs">$1</code>');
+}
+
+async function sendAiMessage(text) {
+	if (!text || !text.trim()) return;
+	const msg = text.trim();
+
+	// Add user message
+	aiChatHistory.push({ role: 'user', content: msg });
+	appendAiMessage('user', msg);
+	document.getElementById('aiChatInput').value = '';
+
+	// Show loading
+	appendAiMessage('loading', '');
+
+	try {
+		const taskContext = buildTaskContext();
+		const response = await fetch('/api/ai', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				messages: aiChatHistory,
+				taskContext
+			})
+		});
+
+		// Remove loading bubble
+		const loading = document.getElementById('aiLoadingBubble');
+		if (loading) loading.remove();
+
+		if (!response.ok) {
+			const err = await response.json().catch(() => ({}));
+			const errMsg = err.error || 'Something went wrong. Please try again.';
+			appendAiMessage('assistant', '⚠️ ' + errMsg);
+			return;
+		}
+
+		const data = await response.json();
+		const reply = data.reply || 'No response.';
+		aiChatHistory.push({ role: 'assistant', content: reply });
+		appendAiMessage('assistant', reply);
+	} catch (err) {
+		const loading = document.getElementById('aiLoadingBubble');
+		if (loading) loading.remove();
+		console.error('AI chat error:', err);
+		appendAiMessage('assistant', '⚠️ Network error. Please check your connection and try again.');
+	}
+}
+
+function initAiChat() {
+	document.getElementById('aiChatBtn').addEventListener('click', openAiChat);
+	document.getElementById('closeAiChat').addEventListener('click', closeAiChat);
+	document.getElementById('clearChatBtn').addEventListener('click', clearAiChat);
+	document.getElementById('aiChatOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('aiChatOverlay')) closeAiChat();
+	});
+	document.getElementById('aiSendBtn').addEventListener('click', () => {
+		sendAiMessage(document.getElementById('aiChatInput').value);
+	});
+	document.getElementById('aiChatInput').addEventListener('keydown', e => {
+		if (e.key === 'Enter' && !e.shiftKey) {
+			e.preventDefault();
+			sendAiMessage(document.getElementById('aiChatInput').value);
+		}
+	});
+	document.querySelectorAll('.ai-quick-prompt').forEach(btn => {
+		btn.addEventListener('click', () => {
+			sendAiMessage(btn.dataset.prompt);
+		});
+	});
+}
+
 // ---- Init ----
 document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
 	initAddLogPopup();
+	initAiChat();
 	fetchTilesFromSupabase();
 
 	document.getElementById('searchBox').addEventListener('input', () => applyFilters());
