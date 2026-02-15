@@ -878,23 +878,39 @@ async function addNewTile() {
 function buildTagTree(tags) {
 	// tags: array of {key, label}
 	const root = {};
+	// Map for quick lookup of top-level tags (e.g., 04-family)
+	const topLevelMap = {};
 	for (const tag of tags) {
-		// Only split on dot for hierarchy, dashes are part of the label
-		// e.g. 12-hobby (parent), 12.1-akvaryum (child of 12-hobby)
-		const parts = tag.key.split('.');
-		let node = root;
-		let fullKey = '';
-		for (let i = 0; i < parts.length; i++) {
-			if (i > 0) fullKey += '.';
-			fullKey += parts[i];
-			if (!node[fullKey]) {
-				node[fullKey] = { children: {}, tag: null };
-			}
-			if (i === parts.length - 1) {
-				node[fullKey].tag = tag;
-			}
-			node = node[fullKey].children;
+		const match = tag.key.match(/^(\d+)-/);
+		if (match) {
+			topLevelMap[match[1]] = tag.key;
 		}
+	}
+	for (const tag of tags) {
+		// If tag is top-level (e.g., 04-family), add as root child
+		const topMatch = tag.key.match(/^(\d+)-/);
+		if (topMatch && !tag.key.includes('.')) {
+			if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
+			else root[tag.key].tag = tag;
+			continue;
+		}
+		// If tag is a child (e.g., 04.1-defne), find its parent (e.g., 04-family)
+		const childMatch = tag.key.match(/^(\d+)\./);
+		if (childMatch) {
+			const parentKey = topLevelMap[childMatch[1]];
+			if (parentKey) {
+				if (!root[parentKey]) root[parentKey] = { children: {}, tag: null };
+				root[parentKey].children[tag.key] = { children: {}, tag: tag };
+			} else {
+				// Fallback: treat as root if no parent found
+				if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
+				else root[tag.key].tag = tag;
+			}
+			continue;
+		}
+		// Fallback: treat as root if doesn't match above
+		if (!root[tag.key]) root[tag.key] = { children: {}, tag: tag };
+		else root[tag.key].tag = tag;
 	}
 	return root;
 }
