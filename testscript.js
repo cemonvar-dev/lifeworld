@@ -79,6 +79,15 @@ function healthToPlant(score) {
 }
 
 // ---- Data Fetching ----
+function getTodayStatus(logs) {
+	const today = new Date().toISOString().split('T')[0];
+	const todayLog = (logs || []).find(l => l.created_at && l.created_at.split('T')[0] === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
+	if (!todayLog) return 'noaction';
+	if (todayLog.status === 'completed' || todayLog.status === 'done') return 'done';
+	if (todayLog.status === 'skipped') return 'skipped';
+	return 'noaction';
+}
+
 async function fetchTilesFromSupabase() {
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session || !session.user) {
@@ -111,14 +120,13 @@ async function fetchTilesFromSupabase() {
 	tiles = data.map(task => {
 		const logs = task.task_logs || [];
 		const lastLog = logs[0];
-		const lastStatus = lastLog ? lastLog.status : null;
 		const health = calculateHealth(task);
 		const plant = healthToPlant(health);
 		return {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
-			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction',
+			status: getTodayStatus(logs),
 			taskStatus: task.status || 'in progress',
 			emoji: plant.emoji,
 			health,
@@ -630,8 +638,7 @@ async function submitLog() {
 	if (displayTile) {
 		const logs = raw.task_logs || [];
 		const lastLog = logs[0];
-		const lastStatus = lastLog ? lastLog.status : null;
-		displayTile.status = lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction';
+		displayTile.status = getTodayStatus(logs);
 		displayTile.count = logs.length;
 		displayTile.lastUpdate = lastLog ? lastLog.created_at : null;
 		const health = calculateHealth(raw);
@@ -1126,14 +1133,13 @@ async function resetTodayLogs() {
 	tiles = Object.values(rawTiles).map(task => {
 		const logs = task.task_logs || [];
 		const lastLog = logs[0];
-		const lastStatus = lastLog ? lastLog.status : null;
 		const health = calculateHealth(task);
 		const plant = healthToPlant(health);
 		return {
 			id: task.id,
 			name: task.name,
 			tags: task.tags || [],
-			status: lastStatus === 'completed' ? 'completed' : lastStatus === 'done' ? 'done' : lastStatus === 'skipped' ? 'skipped' : 'noaction',
+			status: getTodayStatus(logs),
 			taskStatus: task.status || 'in progress',
 			emoji: plant.emoji,
 			health,
