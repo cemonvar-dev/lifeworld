@@ -244,8 +244,8 @@ function renderGallery(filteredTiles) {
 					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
 				</div>
 				<div class="flex gap-2 mt-2 w-full">
-					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-green-200 text-green-800' : 'bg-green-50 text-green-600 hover:bg-green-200'}" data-tile-id="${tile.id}">✅ Done</button>
-					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-yellow-200 text-yellow-800' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-green-200 text-green-800' : tile.status === 'skipped' ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600 hover:bg-green-200'}" data-tile-id="${tile.id}">✅ Done</button>
+					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-yellow-200 text-yellow-800' : (tile.status === 'done' || tile.status === 'completed') ? 'bg-slate-100 text-slate-400' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				</div>
 			`;
 			// Drag-and-drop events
@@ -478,6 +478,7 @@ function openTilePopup(tileId) {
 			const raw = rawTiles[activeTileId];
 			if (!raw) return;
 			raw.end_date = e.target.value || null;
+			applyFilters();
 			await updateTask(activeTileId, { end_date: raw.end_date });
 		});
 	}
@@ -703,6 +704,7 @@ async function setFrequency(mode) {
 		raw.task_frequency_days = [];
 	}
 	openTilePopup(activeTileId);
+	applyFilters();
 	await updateTask(activeTileId, { frequency_mode: mode });
 }
 
@@ -728,6 +730,7 @@ async function toggleWeeklyDay(day) {
 		if (error) console.error('Freq day error:', error);
 	}
 	openTilePopup(activeTileId);
+	applyFilters();
 }
 
 // ---- Time of Day Operations ----
@@ -891,13 +894,27 @@ function openTagFilterPopup() {
 	ALL_TAGS.forEach(at => {
 		const count = tagCounts[at.key] || 0;
 		if (count === 0) return;
+		const wrapper = document.createElement('div');
+		wrapper.className = 'relative group';
 		const btn = document.createElement('button');
-		btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
+		btn.className = `w-full flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
 		btn.innerHTML = `<span class="text-base">🏷️</span><span class="text-xs font-semibold">${at.label}</span><span class="text-[10px] text-slate-400">${count}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(at.key); });
-		grid.appendChild(btn);
+		wrapper.appendChild(btn);
+
+		const editBtn = document.createElement('button');
+		editBtn.className = 'absolute top-1 right-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
+		editBtn.textContent = '✏️';
+		editBtn.title = 'Rename tag';
+		editBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			renameTag(at.key);
+		});
+		wrapper.appendChild(editBtn);
+
+		grid.appendChild(wrapper);
 	});
 
 	// Untagged
@@ -933,6 +950,33 @@ function openTagFilterPopup() {
 
 function closeTagFilterPopup() {
 	document.getElementById('tagFilterOverlay').classList.add('hidden');
+}
+
+async function renameTag(oldKey) {
+	const newName = prompt('Rename tag "' + oldKey + '" to:', oldKey);
+	if (!newName || !newName.trim() || newName.trim().toLowerCase().replace(/\s+/g, '-') === oldKey) return;
+	const newKey = newName.trim().toLowerCase().replace(/\s+/g, '-');
+
+	// Update all tasks that have this tag
+	const tasksToUpdate = Object.values(rawTiles).filter(t => (t.tags || []).includes(oldKey));
+	for (const task of tasksToUpdate) {
+		const idx = task.tags.indexOf(oldKey);
+		if (idx >= 0) task.tags[idx] = newKey;
+		await supa.from('tasks').update({ tags: task.tags }).eq('id', task.id);
+	}
+
+	// Update display tiles
+	tiles.forEach(t => {
+		const idx = (t.tags || []).indexOf(oldKey);
+		if (idx >= 0) t.tags[idx] = newKey;
+	});
+
+	// Update active filter if it was the renamed tag
+	if (activeTagFilter === oldKey) activeTagFilter = newKey;
+
+	buildTagsFromTiles();
+	applyFilters();
+	openTagFilterPopup();
 }
 
 function setTagFilter(tag) {
