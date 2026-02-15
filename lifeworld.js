@@ -879,17 +879,21 @@ function buildTagTree(tags) {
 	// tags: array of {key, label}
 	const root = {};
 	for (const tag of tags) {
-		const parts = tag.key.split('.');
+		// Split on both dot and dash, but keep the original key for lookup
+		// e.g. 11.1-home-d13 => [11, 1, home, d13]
+		const parts = tag.key.split(/[-.]/g);
 		let node = root;
+		let fullKey = '';
 		for (let i = 0; i < parts.length; i++) {
-			const part = parts.slice(0, i + 1).join('.');
-			if (!node[part]) {
-				node[part] = { children: {}, tag: null };
+			if (i > 0) fullKey += '-';
+			fullKey += parts[i];
+			if (!node[fullKey]) {
+				node[fullKey] = { children: {}, tag: null };
 			}
 			if (i === parts.length - 1) {
-				node[part].tag = tag;
+				node[fullKey].tag = tag;
 			}
-			node = node[part].children;
+			node = node[fullKey].children;
 		}
 	}
 	return root;
