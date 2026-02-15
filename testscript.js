@@ -244,8 +244,8 @@ function renderGallery(filteredTiles) {
 					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
 				</div>
 				<div class="flex gap-2 mt-2 w-full">
-					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-green-200 text-green-800' : tile.status === 'skipped' ? 'bg-slate-100 text-slate-400' : 'bg-green-50 text-green-600 hover:bg-green-200'}" data-tile-id="${tile.id}">✅ Done</button>
-					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-yellow-200 text-yellow-800' : (tile.status === 'done' || tile.status === 'completed') ? 'bg-slate-100 text-slate-400' : 'bg-yellow-50 text-yellow-600 hover:bg-yellow-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
+					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				</div>
 			`;
 			// Drag-and-drop events
@@ -685,10 +685,8 @@ async function toggleTag(tag) {
 	const displayTile = tiles.find(t => t.id === activeTileId);
 	if (displayTile) displayTile.tags = [...raw.tags];
 	buildTagsFromTiles();
-	// Close popup so user can quickly tag the next tile
-	document.getElementById('tileOverlay').classList.add('hidden');
-	activeTileId = null;
-	renderGallery(tiles);
+	openTilePopup(activeTileId);
+	applyFilters();
 	await updateTask(raw.id, { tags: raw.tags });
 }
 
@@ -1117,16 +1115,12 @@ async function resetTodayLogs() {
 		alert('Nothing to reset — no done/skipped logs for today.');
 		return;
 	}
-	// Update status to 'reset' in DB
-	const { error } = await supa.from('task_logs').update({ status: 'reset' }).in('id', logIdsToReset);
+	// Delete today's logs from DB
+	const { error } = await supa.from('task_logs').delete().in('id', logIdsToReset);
 	if (error) { console.error('Reset error:', error); return; }
-	// Update local data
+	// Remove from local data
 	Object.values(rawTiles).forEach(raw => {
-		(raw.task_logs || []).forEach(log => {
-			if (logIdsToReset.includes(log.id)) {
-				log.status = 'reset';
-			}
-		});
+		raw.task_logs = (raw.task_logs || []).filter(log => !logIdsToReset.includes(log.id));
 	});
 	// Rebuild display tiles
 	tiles = Object.values(rawTiles).map(task => {
