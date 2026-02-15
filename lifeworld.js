@@ -906,8 +906,8 @@ function renderTagTree(node, tagCounts, level = 0) {
 		// Use tag if present, otherwise synthesize a tag object from the key
 		const tagObj = tag || { key: key, label: key };
 		const wrapper = document.createElement('div');
-		wrapper.style.marginLeft = (level * 18) + 'px';
-		wrapper.className = 'relative group flex items-center';
+		wrapper.style.marginLeft = (level * 22) + 'px';
+		wrapper.className = 'relative group flex items-center py-0.5';
 		// Expand/collapse if has children
 		let expanded = true;
 		let toggleBtn = null;
@@ -929,10 +929,10 @@ function renderTagTree(node, tagCounts, level = 0) {
 			wrapper.appendChild(spacer);
 		}
 		const btn = document.createElement('button');
-		btn.className = `flex-1 flex flex-col items-start justify-center gap-0.5 p-2 rounded-lg border-2 transition text-left ${
-			activeTagFilter === tagObj.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		btn.className = `flex-1 flex items-center gap-2 px-2 py-1 rounded transition text-left ${
+			activeTagFilter === tagObj.key ? 'bg-blue-100 text-blue-900 font-bold' : 'hover:bg-slate-100'
 		}`;
-		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span class=\"text-lg font-bold\">${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
+		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span>${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
 		// Edit button (only for real tags, not synthetic)
