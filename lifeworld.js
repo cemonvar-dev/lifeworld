@@ -875,6 +875,84 @@ async function addNewTile() {
 }
 
 // ---- Tag Filter ----
+function buildTagTree(tags) {
+	// tags: array of {key, label}
+	const root = {};
+	for (const tag of tags) {
+		const parts = tag.key.split('.');
+		let node = root;
+		for (let i = 0; i < parts.length; i++) {
+			const part = parts.slice(0, i + 1).join('.');
+			if (!node[part]) {
+				node[part] = { children: {}, tag: null };
+			}
+			if (i === parts.length - 1) {
+				node[part].tag = tag;
+			}
+			node = node[part].children;
+		}
+	}
+	return root;
+}
+
+function renderTagTree(node, tagCounts, level = 0) {
+	const fragment = document.createDocumentFragment();
+	for (const key in node) {
+		const { tag, children } = node[key];
+		if (tag) {
+			const wrapper = document.createElement('div');
+			wrapper.style.marginLeft = (level * 18) + 'px';
+			wrapper.className = 'relative group flex items-center';
+			// Expand/collapse if has children
+			let expanded = true;
+			let toggleBtn = null;
+			if (Object.keys(children).length > 0) {
+				toggleBtn = document.createElement('button');
+				toggleBtn.textContent = expanded ? '▼' : '►';
+				toggleBtn.className = 'mr-1 text-xs text-slate-400 hover:text-slate-700 focus:outline-none';
+				toggleBtn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					expanded = !expanded;
+					toggleBtn.textContent = expanded ? '▼' : '►';
+					childContainer.style.display = expanded ? '' : 'none';
+				});
+				wrapper.appendChild(toggleBtn);
+			} else {
+				const spacer = document.createElement('span');
+				spacer.style.display = 'inline-block';
+				spacer.style.width = '18px';
+				wrapper.appendChild(spacer);
+			}
+			const btn = document.createElement('button');
+			btn.className = `flex-1 flex flex-col items-start justify-center gap-0.5 p-2 rounded-lg border-2 transition text-left ${
+				activeTagFilter === tag.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+			}`;
+			btn.innerHTML = `<span class="text-base">🏷️</span><span class="text-lg font-bold">${tag.label}</span><span class="text-[10px] text-slate-400">${tagCounts[tag.key] || 0}</span>`;
+			btn.addEventListener('click', () => { setTagFilter(tag.key); });
+			wrapper.appendChild(btn);
+			// Edit button
+			const editBtn = document.createElement('button');
+			editBtn.className = 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
+			editBtn.textContent = '✏️';
+			editBtn.title = 'Rename tag';
+			editBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				renameTag(tag.key);
+			});
+			wrapper.appendChild(editBtn);
+			fragment.appendChild(wrapper);
+			// Children
+			if (Object.keys(children).length > 0) {
+				const childContainer = document.createElement('div');
+				childContainer.style.marginLeft = '0px';
+				childContainer.appendChild(renderTagTree(children, tagCounts, level + 1));
+				fragment.appendChild(childContainer);
+			}
+		}
+	}
+	return fragment;
+}
+
 function openTagFilterPopup() {
 	const overlay = document.getElementById('tagFilterOverlay');
 	const grid = document.getElementById('tagFilterGrid');
@@ -891,7 +969,7 @@ function openTagFilterPopup() {
 	// "+ New Tag" button FIRST
 	const newBtn = document.createElement('button');
 	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center';
-	newBtn.innerHTML = `<span class="text-base">➕</span><span class="text-xs font-semibold">New Tag</span>`;
+	newBtn.innerHTML = `<span class=\"text-base\">➕</span><span class=\"text-xs font-semibold\">New Tag</span>`;
 	newBtn.addEventListener('click', () => {
 		const newTag = prompt('Enter new tag name:');
 		if (!newTag || !newTag.trim()) return;
@@ -909,36 +987,13 @@ function openTagFilterPopup() {
 	allBtn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 		activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 	}`;
-	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tiles.length}</span>`;
+	allBtn.innerHTML = `<span class=\"text-base\">🌐</span><span class=\"text-xs font-semibold\">All</span><span class=\"text-[10px] text-slate-400\">${tiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	grid.appendChild(allBtn);
 
-	// Tag tiles
-	ALL_TAGS.forEach(at => {
-		const count = tagCounts[at.key] || 0;
-		if (count === 0) return;
-		const wrapper = document.createElement('div');
-		wrapper.className = 'relative group';
-		const btn = document.createElement('button');
-		btn.className = `w-full flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
-			activeTagFilter === at.key ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-		}`;
-		btn.innerHTML = `<span class="text-base">🏷️</span><span class="text-lg font-bold">${at.label}</span><span class="text-[10px] text-slate-400">${count}</span>`;
-		btn.addEventListener('click', () => { setTagFilter(at.key); });
-		wrapper.appendChild(btn);
-
-		const editBtn = document.createElement('button');
-		editBtn.className = 'absolute top-1 right-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
-		editBtn.textContent = '✏️';
-		editBtn.title = 'Rename tag';
-		editBtn.addEventListener('click', (e) => {
-			e.stopPropagation();
-			renameTag(at.key);
-		});
-		wrapper.appendChild(editBtn);
-
-		grid.appendChild(wrapper);
-	});
+	// Treeview for tags
+	const tagTree = buildTagTree(ALL_TAGS);
+	grid.appendChild(renderTagTree(tagTree, tagCounts));
 
 	// Untagged
 	const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
@@ -947,12 +1002,13 @@ function openTagFilterPopup() {
 		btn.className = `flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg border-2 transition text-center ${
 			activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-		btn.innerHTML = `<span class="text-base">📦</span><span class="text-lg font-bold">Untagged</span><span class="text-[10px] text-slate-400">${untaggedCount}</span>`;
+		btn.innerHTML = `<span class=\"text-base\">📦</span><span class=\"text-lg font-bold\">Untagged</span><span class=\"text-[10px] text-slate-400\">${untaggedCount}</span>`;
 		btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
 		grid.appendChild(btn);
 	}
 
 	overlay.classList.remove('hidden');
+}
 }
 
 function closeTagFilterPopup() {
