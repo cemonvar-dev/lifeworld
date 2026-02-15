@@ -901,7 +901,17 @@ function buildTagTree(tags) {
 
 function renderTagTree(node, tagCounts, level = 0) {
 	const fragment = document.createDocumentFragment();
-	for (const key in node) {
+	// Sort keys numerically/alphabetically (e.g., 01, 02, 10, 11, 12, ...)
+	const sortedKeys = Object.keys(node).sort((a, b) => {
+		// Extract leading number for numeric sort, fallback to string
+		const numA = a.match(/^\d+/) ? parseInt(a.match(/^\d+/)[0], 10) : NaN;
+		const numB = b.match(/^\d+/) ? parseInt(b.match(/^\d+/)[0], 10) : NaN;
+		if (!isNaN(numA) && !isNaN(numB)) {
+			if (numA !== numB) return numA - numB;
+		}
+		return a.localeCompare(b);
+	});
+	for (const key of sortedKeys) {
 		const { tag, children } = node[key];
 		// Use tag if present, otherwise synthesize a tag object from the key
 		const tagObj = tag || { key: key, label: key };
