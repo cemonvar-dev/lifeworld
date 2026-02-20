@@ -12,13 +12,13 @@
   <link rel="stylesheet" href="styling/grayed.css">
   <style>
     :root{
-      --bg:#0b1020;
-      --panel:rgba(255,255,255,.06);
-      --panel2:rgba(255,255,255,.08);
-      --text:#e9ecf6;
-      --muted:rgba(233,236,246,.75);
-      --line:rgba(255,255,255,.10);
-      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --bg: #f6fff8;
+      --panel: rgba(220,255,220,0.45);
+      --panel2: rgba(240,255,240,0.55);
+      --text: #2a4d2a;
+      --muted: #6fa96f;
+      --line: rgba(120,255,192,0.18);
+      --shadow: 0 18px 60px rgba(120,255,192,0.12);
       --r:18px;
       --r2:24px;
     }
@@ -28,10 +28,10 @@
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
       background:
-        radial-gradient(1200px 700px at 18% 12%, rgba(114, 227, 255, .15), transparent 55%),
-        radial-gradient(1000px 650px at 88% 18%, rgba(180, 124, 255, .14), transparent 55%),
-        radial-gradient(900px 620px at 55% 90%, rgba(120, 255, 192, .10), transparent 55%),
-        linear-gradient(180deg, #060914 0%, #0b1020 40%, #070a14 100%);
+        radial-gradient(1200px 700px at 18% 12%, rgba(120,255,192,0.18), transparent 55%),
+        radial-gradient(1000px 650px at 88% 18%, rgba(180,255,180,0.14), transparent 55%),
+        radial-gradient(900px 620px at 55% 90%, rgba(255,255,255,0.12), transparent 55%),
+        linear-gradient(180deg, #eaffea 0%, #f6fff8 40%, #eaffea 100%);
       min-height:100vh;
     }
     a{color:inherit;text-decoration:none}
@@ -40,7 +40,7 @@
     header{
       position:sticky; top:0; z-index:50;
       backdrop-filter: blur(10px);
-      background: linear-gradient(180deg, rgba(11,16,32,.78), rgba(11,16,32,.55));
+      background: linear-gradient(180deg, rgba(220,255,220,0.85), rgba(240,255,240,0.65));
       border-bottom:1px solid var(--line);
     }
     .hdr{
@@ -74,16 +74,16 @@
       padding:8px 10px;
       border-radius:999px;
       border:1px solid var(--line);
-      background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+      background: linear-gradient(90deg, rgba(220,255,220,0.18), rgba(240,255,240,0.12));
+      box-shadow: inset 0 1px 0 rgba(120,255,192,0.08);
       user-select:none;
     }
     .actions{
       display:flex;justify-content:flex-end;align-items:center;gap:10px;
     }
     .btn{
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
+      border:1px solid rgba(120,255,192,0.22);
+      background: rgba(220,255,220,0.18);
       color:var(--text);
       padding:10px 12px;
       border-radius:12px;
@@ -91,12 +91,12 @@
       font-size:13px;
       cursor:pointer;
       transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.10);
+      box-shadow: inset 0 1px 0 rgba(120,255,192,0.10);
     }
     .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.22)}
     .btn.primary{
       border-color: rgba(120,255,192,.35);
-      background: linear-gradient(135deg, rgba(120,255,192,.20), rgba(114,227,255,.14));
+      background: linear-gradient(135deg, rgba(120,255,192,.22), rgba(255,255,255,.18));
     }
     /* Hero */
     .hero{
@@ -107,7 +107,7 @@
       align-items:stretch;
     }
     .card{
-      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.03));
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.12));
       border:1px solid var(--line);
       border-radius: var(--r2);
       box-shadow: var(--shadow);
@@ -164,12 +164,12 @@
     .illusWrap{
       height:100%;
       border-radius:18px;
-      border:1px solid rgba(255,255,255,.12);
+      border:1px solid rgba(120,255,192,0.18);
       background:
-        radial-gradient(900px 500px at 30% 15%, rgba(114,227,255,.18), transparent 55%),
-        radial-gradient(800px 520px at 88% 20%, rgba(180,124,255,.16), transparent 55%),
-        radial-gradient(700px 500px at 60% 90%, rgba(120,255,192,.14), transparent 55%),
-        rgba(255,255,255,.04);
+        radial-gradient(900px 500px at 30% 15%, rgba(120,255,192,0.18), transparent 55%),
+        radial-gradient(800px 520px at 88% 20%, rgba(180,255,180,0.16), transparent 55%),
+        radial-gradient(700px 500px at 60% 90%, rgba(255,255,255,0.14), transparent 55%),
+        rgba(220,255,220,0.08);
       display:flex;
       align-items:center;
       justify-content:center;
