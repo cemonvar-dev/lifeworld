@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <!-- Supabase JS for client-side Google OAuth -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
+    <script>
+      // Replace with your Supabase project URL and anon key
+      window.supa = window.supabase.createClient('https://YOUR_PROJECT.supabase.co', 'YOUR_ANON_KEY');
+    </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light" />
@@ -335,9 +341,7 @@
         <p>Use your Google account to authenticate.</p>
 
         <div class="actions">
-          <!-- Option A: server-side Google OAuth route -->
-          <a class="btn btn-primary" href="/auth/google" id="googleSignIn">
-            <!-- Google “G” icon (inline SVG) -->
+          <button class="btn btn-primary" type="button" id="googleSignIn">
             <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
               <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.6-6.6C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.9 6.1C12.6 13.4 17.8 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.6c-.6 3-2.4 5.6-5.1 7.3l7.8 6.1c4.6-4.2 7.3-10.4 7.3-17.1z"/>
@@ -345,7 +349,7 @@
               <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.8-6.1c-2.2 1.5-5 2.4-7.4 2.4-6.2 0-11.4-3.9-13.4-9.3l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/>
             </svg>
             Continue with Google
-          </a>
+          </button>
 
           <!-- Option B: client-side popup flow (uncomment if you use it)
           <button class="btn btn-primary" type="button" id="googlePopupBtn">
@@ -378,20 +382,29 @@
     // Set year
     document.getElementById('year').textContent = new Date().getFullYear();
 
-    // If you use a popup-based OAuth flow, you can wire it like this:
-    // const btn = document.getElementById('googlePopupBtn');
-    // if (btn) {
-    //   btn.addEventListener('click', () => {
-    //     const w = 520, h = 620;
-    //     const y = window.top.outerHeight / 2 + window.top.screenY - (h / 2);
-    //     const x = window.top.outerWidth / 2 + window.top.screenX - (w / 2);
-    //     window.open(
-    //       '/auth/google?mode=popup',
-    //       'google_oauth',
-    //       `width=${w},height=${h},left=${x},top=${y},resizable=yes,scrollbars=yes`
-    //     );
-    //   });
-    // }
+    // Supabase Google OAuth client-side
+    const googleBtn = document.getElementById('googleSignIn');
+    if (googleBtn) {
+      googleBtn.addEventListener('click', async () => {
+        googleBtn.disabled = true;
+        googleBtn.textContent = 'Redirecting...';
+        try {
+          const { error } = await window.supa.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin + '/lifeworld.html' }
+          });
+          if (error) {
+            alert('Google login failed: ' + error.message);
+            googleBtn.disabled = false;
+            googleBtn.textContent = 'Continue with Google';
+          }
+        } catch (e) {
+          alert('Google login error: ' + (e.message || e));
+          googleBtn.disabled = false;
+          googleBtn.textContent = 'Continue with Google';
+        }
+      });
+    }
   </script>
 </body>
 </html>
