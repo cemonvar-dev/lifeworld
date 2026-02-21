@@ -430,24 +430,26 @@ function openTilePopup(tileId) {
 				</div>
 
 					// Tile name editing logic
-					const tileNameInput = document.getElementById('tileNameInput');
-					if (tileNameInput) {
-						tileNameInput.addEventListener('keydown', async e => {
-							if (e.key === 'Enter') {
-								e.preventDefault();
-								tileNameInput.blur();
-							}
-						});
-						tileNameInput.addEventListener('blur', async () => {
-							const newName = tileNameInput.value.trim();
-							if (newName && newName !== raw.name) {
-								raw.name = newName;
-								const displayTile = tiles.find(t => t.id === tileId);
-								if (displayTile) displayTile.name = newName;
-								await updateTask(tileId, { name: newName });
-							}
-						});
-					}
+					setTimeout(() => {
+						const tileNameInput = document.getElementById('tileNameInput');
+						if (tileNameInput) {
+							tileNameInput.addEventListener('keydown', async e => {
+								if (e.key === 'Enter') {
+									e.preventDefault();
+									tileNameInput.blur();
+								}
+							});
+							tileNameInput.addEventListener('blur', async () => {
+								const newName = tileNameInput.value.trim();
+								if (newName && newName !== raw.name) {
+									raw.name = newName;
+									const displayTile = tiles.find(t => t.id === tileId);
+									if (displayTile) displayTile.name = newName;
+									await updateTask(tileId, { name: newName });
+								}
+							});
+						}
+					}, 0);
 				<div class="text-sm text-slate-500">${statusLabel}</div>
 				<div class="text-xs text-slate-400">${lastUpdateStr}</div>
 			</div>
