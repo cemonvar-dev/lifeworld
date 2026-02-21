@@ -405,18 +405,21 @@ function openTilePopup(tileId) {
 		timelineHtml += '</div>';
 	}
 
-	// Build tag chips
-	const tagChipsHtml = currentTags.map(t => {
-		const info = ALL_TAGS.find(at => at.key === t);
-		const label = info ? info.label : t;
-		return `<span class='inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200 text-xs'>${label}<button class='remove-tag ml-1 text-slate-400 hover:text-red-500 font-bold' data-tag='${t}'>&times;</button></span>`;
-	}).join(' ');
-
-	// Build preset tag buttons
-	const presetTagsHtml = ALL_TAGS.map(at => {
-		const active = currentTags.includes(at.key);
-		return `<button class='preset-tag px-2 py-1 rounded-full text-xs border transition ${active ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tag='${at.key}'>${at.label}</button>`;
-	}).join('');
+	// Multiselect dropdown for tags
+	const tagDropdownHtml = `
+	<div class="tagDropdown mb-8" style="min-width:220px;">
+		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-sm" tabindex="0">
+			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(t => {
+				const info = ALL_TAGS.find(at => at.key === t);
+				return info ? info.label : t;
+			}).join(', ') : 'Select tags...'}</span>
+			<span class="ml-2">▼</span>
+		</button>
+		<div id="tagDropdownMenu" class="tagDropdownMenu" style="max-height:220px;overflow-y:auto;">
+			<input id="tagDropdownSearch" type="text" placeholder="Search tags..." class="w-full px-3 py-1 mb-2 border-b text-xs focus:outline-none" style="border-radius:8px 8px 0 0;" />
+			<div id="tagDropdownOptions"></div>
+		</div>
+	</div>`;
 
 	popupBody.innerHTML = `
 		<div class="flex items-center gap-3 mb-4">
@@ -429,8 +432,7 @@ function openTilePopup(tileId) {
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Tags</div>
-		<div id="tagChips" class="flex flex-wrap gap-2 mb-3">${tagChipsHtml || '<span class="text-slate-400 text-xs">No tags</span>'}</div>
-		<div id="presetTags" class="flex flex-wrap gap-2 mb-8">${presetTagsHtml}</div>
+		${tagDropdownHtml}
 		<div class="mb-2 text-sm font-semibold">Frequency</div>
 		<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
 			${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
@@ -462,13 +464,63 @@ function openTilePopup(tileId) {
 		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
 
-	// Wire up tag interactions
-	document.querySelectorAll('.remove-tag').forEach(btn => {
-		btn.addEventListener('click', e => { e.stopPropagation(); toggleTag(btn.dataset.tag); });
+	// Multiselect dropdown logic
+	const tagDropdownBtn = document.getElementById('tagDropdownBtn');
+	const tagDropdownMenu = document.getElementById('tagDropdownMenu');
+	const tagDropdownOptions = document.getElementById('tagDropdownOptions');
+	const tagDropdownSelected = document.getElementById('tagDropdownSelected');
+	const tagDropdownSearch = document.getElementById('tagDropdownSearch');
+
+	function renderTagOptions(filter = '') {
+		tagDropdownOptions.innerHTML = '';
+		ALL_TAGS.filter(at => at.label.toLowerCase().includes(filter.toLowerCase())).forEach(at => {
+			const checked = currentTags.includes(at.key);
+			const btn = document.createElement('button');
+			btn.className = 'tagBtn flex items-center gap-2 w-full px-3 py-1 text-left text-sm' + (checked ? ' active' : '');
+			btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${at.label}`;
+			btn.addEventListener('click', async e => {
+				e.preventDefault();
+				await toggleTag(at.key);
+				// Update UI immediately
+				if (currentTags.includes(at.key)) {
+					currentTags.splice(currentTags.indexOf(at.key), 1);
+				} else {
+					currentTags.push(at.key);
+				}
+				tagDropdownSelected.textContent = currentTags.length ? currentTags.map(t => {
+					const info = ALL_TAGS.find(at2 => at2.key === t);
+					return info ? info.label : t;
+				}).join(', ') : 'Select tags...';
+				renderTagOptions(tagDropdownSearch.value);
+			});
+			tagDropdownOptions.appendChild(btn);
+		});
+	}
+
+	tagDropdownBtn.addEventListener('click', e => {
+		e.stopPropagation();
+		tagDropdownMenu.style.display = tagDropdownMenu.style.display === 'block' ? 'none' : 'block';
+		tagDropdownSearch.focus();
 	});
-	document.querySelectorAll('.preset-tag').forEach(btn => {
-		btn.addEventListener('click', e => { e.stopPropagation(); toggleTag(btn.dataset.tag); });
+
+	document.addEventListener('click', e => {
+		if (!tagDropdownBtn.contains(e.target) && !tagDropdownMenu.contains(e.target)) {
+			tagDropdownMenu.style.display = 'none';
+		}
 	});
+
+	tagDropdownSearch.addEventListener('input', e => {
+		renderTagOptions(tagDropdownSearch.value);
+	});
+
+	renderTagOptions();
+
+	// Keyboard navigation: close on Escape
+	tagDropdownSearch.addEventListener('keydown', e => {
+		if (e.key === 'Escape') tagDropdownMenu.style.display = 'none';
+	});
+
+	// End multiselect dropdown logic
 
 	// Wire up frequency buttons
 	document.querySelectorAll('.freq-btn').forEach(btn => {
