@@ -425,7 +425,28 @@ function openTilePopup(tileId) {
 		<div class="flex items-center gap-3 mb-4">
 			<span class="text-4xl">${plant.emoji}</span>
 			<div>
-				<div class="text-xl font-bold">${raw.name}</div>
+				<div class="text-xl font-bold">
+					<input id="tileNameInput" type="text" value="${raw.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')}" class="border-b border-slate-300 focus:border-blue-400 outline-none bg-transparent font-bold text-xl w-full" style="min-width:80px;max-width:100%;" />
+				</div>
+
+					// Tile name editing logic
+					const tileNameInput = document.getElementById('tileNameInput');
+					tileNameInput.addEventListener('keydown', async e => {
+						if (e.key === 'Enter') {
+							e.preventDefault();
+							tileNameInput.blur();
+						}
+					});
+					tileNameInput.addEventListener('blur', async () => {
+						const newName = tileNameInput.value.trim();
+						if (newName && newName !== raw.name) {
+							raw.name = newName;
+							const displayTile = tiles.find(t => t.id === tileId);
+							if (displayTile) displayTile.name = newName;
+							await updateTask(tileId, { name: newName });
+							// Optionally, update popup title immediately
+						}
+					});
 				<div class="text-sm text-slate-500">${statusLabel}</div>
 				<div class="text-xs text-slate-400">${lastUpdateStr}</div>
 			</div>
