@@ -436,7 +436,11 @@ function openTilePopup(tileId) {
 									raw.name = newName;
 									const displayTile = tiles.find(t => t.id === tileId);
 									if (displayTile) displayTile.name = newName;
-									await updateTask(tileId, { name: newName });
+            // Open tile detail on click (except quick buttons)
+            tileDiv.addEventListener('click', (e) => {
+                if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
+                openTilePopup(tile.id);
+            });
 								}
 							});
 						}
