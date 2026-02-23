@@ -274,16 +274,17 @@ function renderGallery(filteredTiles) {
 				e.dataTransfer.dropEffect = 'move';
 				tileDiv.classList.add('ring-2', 'ring-blue-300');
 			});
+
+			tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
+				e.stopPropagation();
+				quickLog(tile.id, 'done');
+			});
+			tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
+				e.stopPropagation();
+				quickLog(tile.id, 'skipped');
+			});
+			groupGrid.appendChild(tileDiv);
 		});
-		tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
-			e.stopPropagation();
-			quickLog(tile.id, 'done');
-		});
-		tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
-			e.stopPropagation();
-			quickLog(tile.id, 'skipped');
-		});
-		groupGrid.appendChild(tileDiv);
 	});
 	groupSection.appendChild(groupGrid);
 	gallery.appendChild(groupSection);
