@@ -428,27 +428,7 @@ function openTilePopup(tileId) {
 					<input id="tileNameInput" type="text" value="${String(raw.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')}" class="border-b border-slate-300 focus:border-blue-400 outline-none bg-transparent font-bold text-xl w-full" style="min-width:80px;max-width:100%;" autocomplete="off" />
 				</div>
 
-					// Tile name editing logic
-					setTimeout(() => {
-						const tileNameInput = document.getElementById('tileNameInput');
-						if (tileNameInput) {
-							tileNameInput.addEventListener('keydown', async e => {
-								if (e.key === 'Enter') {
-									e.preventDefault();
-									tileNameInput.blur();
-								}
-							});
-							tileNameInput.addEventListener('blur', async () => {
-								const newName = tileNameInput.value.trim();
-								if (newName && newName !== raw.name) {
-									raw.name = newName;
-									const displayTile = tiles.find(t => t.id === tileId);
-									if (displayTile) displayTile.name = newName;
-         
-								}
-							});
-						}
-					}, 0);
+					
 				<div class="text-sm text-slate-500">${statusLabel}</div>
 				<div class="text-xs text-slate-400">${lastUpdateStr}</div>
 			</div>
