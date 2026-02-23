@@ -302,7 +302,7 @@ function renderGallery(filteredTiles) {
 		});
 		groupSection.appendChild(groupGrid);
 		gallery.appendChild(groupSection);
-	});
+	}
 }
 
 // ---- Drag-and-Drop Reorder ----
