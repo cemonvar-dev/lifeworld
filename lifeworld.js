@@ -482,7 +482,7 @@ function openTilePopup(tileId) {
 				raw.name = newName;
 				const displayTile = tiles.find(t => t.id === tileId);
 				if (displayTile) displayTile.name = newName;
-
+				await supa.from('tasks').update({ name: newName }).eq('id', tileId);
 			}
 		});
 	}
