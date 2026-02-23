@@ -285,9 +285,10 @@ function renderGallery(filteredTiles) {
 			});
 			groupGrid.appendChild(tileDiv);
 		});
+		groupSection.appendChild(groupGrid);
+		gallery.appendChild(groupSection);
 	});
-	groupSection.appendChild(groupGrid);
-	gallery.appendChild(groupSection);
+
 
 }
 
