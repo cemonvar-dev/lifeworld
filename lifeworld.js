@@ -260,12 +260,12 @@ function renderGallery(filteredTiles) {
 			   `;
 
 			// Open tile detail on click (except quick buttons)
-            tileDiv.addEventListener('click', (e) => {
-                if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
-                openTilePopup(tile.id);
-            });
-			
-			
+			tileDiv.addEventListener('click', (e) => {
+				if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
+				openTilePopup(tile.id);
+			});
+
+
 			// Drag-and-drop events
 			tileDiv.addEventListener('dragstart', (e) => {
 				e.dataTransfer.setData('text/plain', tile.id);
@@ -466,6 +466,27 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
+
+	// Tile name editing logic
+	const tileNameInput = document.getElementById('tileNameInput');
+	if (tileNameInput) {
+		tileNameInput.addEventListener('keydown', async e => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				tileNameInput.blur();
+			}
+		});
+		tileNameInput.addEventListener('blur', async () => {
+			const newName = tileNameInput.value.trim();
+			if (newName && newName !== raw.name) {
+				raw.name = newName;
+				const displayTile = tiles.find(t => t.id === tileId);
+				if (displayTile) displayTile.name = newName;
+
+			}
+		});
+	}
+
 
 	// Multiselect dropdown logic
 	const tagDropdownBtn = document.getElementById('tagDropdownBtn');
