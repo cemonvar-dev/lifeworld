@@ -272,24 +272,26 @@ function renderGallery(filteredTiles) {
 				e.dataTransfer.dropEffect = 'move';
 				tileDiv.classList.add('ring-2', 'ring-blue-300');
 			});
-			tileDiv.addEventListener('dragleave', () => {
-				tileDiv.classList.remove('ring-2', 'ring-blue-300');
-			});
-			tileDiv.addEventListener('drop', (e) => {
-				e.preventDefault();
-				tileDiv.classList.remove('ring-2', 'ring-blue-300');
-				const draggedId = e.dataTransfer.getData('text/plain');
-				if (draggedId && draggedId !== tile.id) {
-					handleTileDrop(draggedId, tile.id, tag);
-				}
-			});
-
-			tileDiv.addEventListener('click', (e) => {
-				if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
-				openTilePopup(tile.id);
-			});
-			tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
-				e.stopPropagation();
+					tileDiv.innerHTML = `
+						<div class="flex w-full justify-between items-start mb-2">
+							<div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
+							<div class="text-3xl text-right w-1/4">${tile.emoji}</div>
+						</div>
+						<div class="flex gap-2 mt-1">
+							<span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
+							<span class="text-xs text-slate-500">(${tile.count})</span>
+						</div>
+						<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
+						<div class="flex justify-between items-center w-full mt-1">
+							<span class="text-xs text-slate-400">📌 ${createdAt}</span>
+							<span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
+							<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
+						</div>
+						<div class="flex gap-2 mt-2 w-full">
+							<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
+							<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+						</div>
+					`;
 				quickLog(tile.id, 'done');
 			});
 			tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
