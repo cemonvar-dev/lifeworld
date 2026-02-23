@@ -239,23 +239,25 @@ function renderGallery(filteredTiles) {
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
-				<div class="text-3xl">${tile.emoji}</div>
-				<div class="font-semibold text-center truncate w-full">${tile.name}</div>
-				<div class="flex gap-2 mt-1">
-					<span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
-					<span class="text-xs text-slate-500">(${tile.count})</span>
-				</div>
-				<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
-				<div class="flex justify-between items-center w-full mt-1">
-					<span class="text-xs text-slate-400">📌 ${createdAt}</span>
-					<span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
-					<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
-				</div>
-				<div class="flex gap-2 mt-2 w-full">
-					<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
-					<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
-				</div>
-			`;
+				   <div class="flex w-full justify-between items-start mb-2">
+					   <div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
+					   <div class="text-3xl text-right w-1/4">${tile.emoji}</div>
+				   </div>
+				   <div class="flex gap-2 mt-1">
+					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
+					   <span class="text-xs text-slate-500">(${tile.count})</span>
+				   </div>
+				   <div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
+				   <div class="flex justify-between items-center w-full mt-1">
+					   <span class="text-xs text-slate-400">📌 ${createdAt}</span>
+					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
+					   <span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
+				   </div>
+				   <div class="flex gap-2 mt-2 w-full">
+					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
+					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+				   </div>
+			   `;
 			// Drag-and-drop events
 			tileDiv.addEventListener('dragstart', (e) => {
 				e.dataTransfer.setData('text/plain', tile.id);
@@ -272,26 +274,9 @@ function renderGallery(filteredTiles) {
 				e.dataTransfer.dropEffect = 'move';
 				tileDiv.classList.add('ring-2', 'ring-blue-300');
 			});
-			tileDiv.innerHTML = `
-						<div class="flex w-full justify-between items-start mb-2">
-							<div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
-							<div class="text-3xl text-right w-1/4">${tile.emoji}</div>
-						</div>
-						<div class="flex gap-2 mt-1">
-							<span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
-							<span class="text-xs text-slate-500">(${tile.count})</span>
-						</div>
-						<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
-						<div class="flex justify-between items-center w-full mt-1">
-							<span class="text-xs text-slate-400">📌 ${createdAt}</span>
-							<span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
-							<span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
-						</div>
-						<div class="flex gap-2 mt-2 w-full">
-							<button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
-							<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
-						</div>
-					`;
+		});
+		tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
+			e.stopPropagation();
 			quickLog(tile.id, 'done');
 		});
 		tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
