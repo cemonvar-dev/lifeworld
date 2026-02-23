@@ -234,8 +234,8 @@ function renderGallery(filteredTiles) {
 			tileDiv.className = `tile ${tileColor} rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
-			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
-			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
+			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
+			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
@@ -272,7 +272,7 @@ function renderGallery(filteredTiles) {
 				e.dataTransfer.dropEffect = 'move';
 				tileDiv.classList.add('ring-2', 'ring-blue-300');
 			});
-					tileDiv.innerHTML = `
+			tileDiv.innerHTML = `
 						<div class="flex w-full justify-between items-start mb-2">
 							<div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
 							<div class="text-3xl text-right w-1/4">${tile.emoji}</div>
@@ -292,18 +292,20 @@ function renderGallery(filteredTiles) {
 							<button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 						</div>
 					`;
-				quickLog(tile.id, 'done');
-			});
-			tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
-				e.stopPropagation();
-				quickLog(tile.id, 'skipped');
-			});
-			groupGrid.appendChild(tileDiv);
+			quickLog(tile.id, 'done');
 		});
-		groupSection.appendChild(groupGrid);
-		gallery.appendChild(groupSection);
-	}
+		tileDiv.querySelector('.quick-skip').addEventListener('click', (e) => {
+			e.stopPropagation();
+			quickLog(tile.id, 'skipped');
+		});
+		groupGrid.appendChild(tileDiv);
+	});
+	groupSection.appendChild(groupGrid);
+	gallery.appendChild(groupSection);
+
 }
+
+
 
 // ---- Drag-and-Drop Reorder ----
 async function handleTileDrop(draggedId, targetId, tagGroup) {
@@ -386,8 +388,8 @@ function openTilePopup(tileId) {
 		timelineHtml = '<div class="relative pl-6 border-l-2 border-slate-200 mt-2">';
 		logs.forEach(log => {
 			const d = new Date(log.created_at);
-			const dateStr = d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
-			const timeStr = d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+			const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+			const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 			const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			timelineHtml += `
@@ -412,9 +414,9 @@ function openTilePopup(tileId) {
 	<div class="tagDropdown mb-8" style="min-width:220px;">
 		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-sm" tabindex="0">
 			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(t => {
-				const info = ALL_TAGS.find(at => at.key === t);
-				return info ? info.label : t;
-			}).join(', ') : 'Select tags...'}</span>
+		const info = ALL_TAGS.find(at => at.key === t);
+		return info ? info.label : t;
+	}).join(', ') : 'Select tags...'}</span>
 			<span class="ml-2">▼</span>
 		</button>
 		<div id="tagDropdownMenu" class="tagDropdownMenu" style="max-height:220px;overflow-y:auto;">
@@ -461,10 +463,10 @@ function openTilePopup(tileId) {
 		${tagDropdownHtml}
 		<div class="mb-2 text-sm font-semibold">Frequency</div>
 		<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
-			${['daily','weekly','once','monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
+			${['daily', 'weekly', 'once', 'monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
 		</div>
 		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-			${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d,i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+			${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
 		</div>
 		<div id="onceDatePicker" class="mb-8" style="display:${freqMode === 'once' ? 'block' : 'none'}">
 			<label class="text-xs text-slate-500">Date</label>
@@ -472,12 +474,12 @@ function openTilePopup(tileId) {
 		</div>
 		<div class="mb-2 text-sm font-semibold">Time of Day</div>
 		<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
-			${[{key:'morning',label:'🌅 Morning'},{key:'afternoon',label:'☀️ Afternoon'},{key:'evening',label:'🌇 Evening'},{key:'night',label:'🌙 Night'}].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
+			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Lifecycle Status</div>
 		<div id="lifecycleBtns" class="flex flex-wrap gap-2 mb-8">
-			${[{key:'planned',label:'📋 Planned',bg:'bg-blue-100 text-blue-700 border-blue-300'},{key:'in progress',label:'🔄 In Progress',bg:'bg-green-100 text-green-700 border-green-300'},{key:'completed',label:'✅ Completed',bg:'bg-emerald-100 text-emerald-700 border-emerald-300'},{key:'failed',label:'❌ Failed',bg:'bg-red-100 text-red-700 border-red-300'},{key:'cancelled',label:'🚫 Cancelled',bg:'bg-slate-100 text-slate-600 border-slate-300'}].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
+			${[{ key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' }, { key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' }, { key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' }, { key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' }, { key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-1">
@@ -1037,9 +1039,8 @@ function renderTagTree(node, tagCounts, level = 0) {
 			wrapper.appendChild(spacer);
 		}
 		const btn = document.createElement('button');
-		btn.className = `flex-1 flex items-center gap-2 px-2 py-1 rounded transition text-left ${
-			activeTagFilter === tagObj.key ? 'bg-blue-100 text-blue-900 font-bold' : 'hover:bg-slate-100'
-		}`;
+		btn.className = `flex-1 flex items-center gap-2 px-2 py-1 rounded transition text-left ${activeTagFilter === tagObj.key ? 'bg-blue-100 text-blue-900 font-bold' : 'hover:bg-slate-100'
+			}`;
 		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span>${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
@@ -1108,9 +1109,8 @@ function openTagFilterPopup() {
 
 	// "All" tile
 	const allBtn = document.createElement('button');
-	allBtn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${
-		activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-	}`;
+	allBtn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+		}`;
 	allBtn.innerHTML = `<span class=\"text-base\">🌐</span><span class=\"text-xs font-semibold\">All</span><span class=\"text-[10px] text-slate-400\">${tiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	controlsRow.appendChild(allBtn);
@@ -1139,9 +1139,8 @@ function openTagFilterPopup() {
 		const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
 		if (untaggedCount > 0) {
 			const btn = document.createElement('button');
-			btn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${
-				activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
-			}`;
+			btn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
+				}`;
 			btn.innerHTML = `<span class=\"text-base\">📦</span><span class=\"text-xs font-semibold\">Untagged</span><span class=\"text-[10px] text-slate-400\">${untaggedCount}</span>`;
 			btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
 			tagTreeContainer.appendChild(btn);
