@@ -258,6 +258,14 @@ function renderGallery(filteredTiles) {
 					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				   </div>
 			   `;
+
+			// Open tile detail on click (except quick buttons)
+            tileDiv.addEventListener('click', (e) => {
+                if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
+                openTilePopup(tile.id);
+            });
+			
+			
 			// Drag-and-drop events
 			tileDiv.addEventListener('dragstart', (e) => {
 				e.dataTransfer.setData('text/plain', tile.id);
@@ -436,11 +444,7 @@ function openTilePopup(tileId) {
 									raw.name = newName;
 									const displayTile = tiles.find(t => t.id === tileId);
 									if (displayTile) displayTile.name = newName;
-            // Open tile detail on click (except quick buttons)
-            tileDiv.addEventListener('click', (e) => {
-                if (e.target.closest('.quick-done') || e.target.closest('.quick-skip')) return;
-                openTilePopup(tile.id);
-            });
+         
 								}
 							});
 						}
