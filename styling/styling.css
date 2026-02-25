@@ -39,7 +39,7 @@ body {
   position: relative;
   padding: 8px;
   border-radius: 8px;
-  background: #f6f6f2;
+  background: linear-gradient(to bottom, #fff 0%, var(--tile-color, #f6f6f2) 100%);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -48,6 +48,35 @@ body {
   touch-action: pan-x pan-y;
   transition: box-shadow 0.18s ease, transform 0.18s ease, filter 0.18s ease;
 }
+
+/* Gradient color mapping for tile health colors */
+.tile[data-tilecolor="bg-green-50"] { --tile-color: #ecfdf5; }
+.tile[data-tilecolor="bg-emerald-50"] { --tile-color: #d1fae5; }
+.tile[data-tilecolor="bg-yellow-50"] { --tile-color: #fef9c3; }
+.tile[data-tilecolor="bg-orange-50"] { --tile-color: #ffedd5; }
+.tile[data-tilecolor="bg-red-50"] { --tile-color: #fef2f2; }
+.tile[data-tilecolor="bg-white"] { --tile-color: #fff; }
+.tile[data-tilecolor="bg-slate-100"] { --tile-color: #f1f5f9; }
+.tile[data-tilecolor="bg-blue-100"] { --tile-color: #dbeafe; }
+.tile[data-tilecolor="bg-emerald-100"] { --tile-color: #a7f3d0; }
+.tile[data-tilecolor="bg-green-100"] { --tile-color: #dcfce7; }
+.tile[data-tilecolor="bg-yellow-100"] { --tile-color: #fef08a; }
+.tile[data-tilecolor="bg-orange-100"] { --tile-color: #ffedd5; }
+.tile[data-tilecolor="bg-red-100"] { --tile-color: #fee2e2; }
+.tile[data-tilecolor="bg-slate-200"] { --tile-color: #e2e8f0; }
+.tile[data-tilecolor="bg-blue-200"] { --tile-color: #bfdbfe; }
+.tile[data-tilecolor="bg-emerald-200"] { --tile-color: #6ee7b7; }
+.tile[data-tilecolor="bg-green-200"] { --tile-color: #bbf7d0; }
+.tile[data-tilecolor="bg-yellow-200"] { --tile-color: #fde68a; }
+.tile[data-tilecolor="bg-orange-200"] { --tile-color: #fed7aa; }
+.tile[data-tilecolor="bg-red-200"] { --tile-color: #fecaca; }
+.tile[data-tilecolor="bg-slate-300"] { --tile-color: #cbd5e1; }
+.tile[data-tilecolor="bg-blue-300"] { --tile-color: #93c5fd; }
+.tile[data-tilecolor="bg-emerald-300"] { --tile-color: #34d399; }
+.tile[data-tilecolor="bg-green-300"] { --tile-color: #86efac; }
+.tile[data-tilecolor="bg-yellow-300"] { --tile-color: #fde047; }
+.tile[data-tilecolor="bg-orange-300"] { --tile-color: #fdba74; }
+.tile[data-tilecolor="bg-red-300"] { --tile-color: #fca5a5; }
 
 #tileTitle[contenteditable="true"]:empty:before {
     content: attr(data-placeholder);

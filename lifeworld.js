@@ -231,7 +231,9 @@ function renderGallery(filteredTiles) {
 		groups[tag].forEach(tile => {
 			const tileDiv = document.createElement("div");
 			const tileColor = tile.healthColor || 'bg-white';
-			tileDiv.className = `tile ${tileColor} rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
+			// Remove color class from tile, use data attribute for gradient
+			tileDiv.className = `tile rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
+			tileDiv.setAttribute('data-tilecolor', tileColor);
 			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
