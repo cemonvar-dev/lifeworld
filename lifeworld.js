@@ -1558,20 +1558,23 @@ function renderOnceTasksCalendar() {
 	// Get all unique dates, sorted
 	const allDates = Object.keys(dateMap).sort();
 	// Render a simple table calendar (list style for now)
-	let html = '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tasks</th></tr></thead><tbody>';
+	let html = '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
 	allDates.forEach(date => {
-		html += `<tr><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">`;
-		html += dateMap[date].map(t => {
-			let tag = (t.tags && t.tags.length > 0) ? t.tags[0] : null;
+		dateMap[date].forEach(t => {
+			let tag = (t.tags && t.tags.length > 0) ? t.tags[0] : '';
 			let tagLabel = tag;
 			if (tag) {
 				const tagObj = (typeof ALL_TAGS !== 'undefined' ? ALL_TAGS.find(at => at.key === tag) : null);
 				if (tagObj && tagObj.label) tagLabel = tagObj.label;
+				// Take right part after first '-' if present
+				const dashIdx = tagLabel.indexOf('-');
+				if (dashIdx !== -1 && dashIdx < tagLabel.length - 1) {
+					tagLabel = tagLabel.substring(dashIdx + 1);
+				}
 			}
-			const desc = tag ? `${escapeHtml(tagLabel)}: ${escapeHtml(t.name)}` : escapeHtml(t.name);
-			return `<span class=\"inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mr-2 mb-1\">${desc}</span>`;
-		}).join('');
-		html += '</td></tr>';
+			const desc = escapeHtml(t.name);
+			html += `<tr><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+		});
 	});
 	html += '</tbody></table></div>';
 	return html;
