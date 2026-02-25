@@ -1641,7 +1641,7 @@ function renderOnceTasksCalendar() {
 	// Get all unique dates, sorted
 	const allDates = Object.keys(dateMap).sort();
 	// Render a simple table calendar (list style for now)
-	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
+	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
 	allDates.forEach(date => {
 		dateMap[date].forEach(t => {
 			let tag = (t.tags && t.tags.length > 0) ? t.tags[0] : '';
@@ -1658,7 +1658,12 @@ function renderOnceTasksCalendar() {
 			const desc = escapeHtml(t.name);
 			// Add all tags for multi-select filter
 			const allTags = (t.tags || []).join(',');
-			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+			// Compute weekday name
+			const dayName = (() => {
+				const d = new Date(date + 'T00:00:00');
+				return d.toLocaleDateString(undefined, { weekday: 'long' });
+			})();
+			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
