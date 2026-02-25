@@ -1271,12 +1271,12 @@ function toggleStatusFilter() {
 }
 
 const LIFECYCLE_CYCLE = [
-	{ key: 'active', label: '📊 Active', bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700' },
-	{ key: 'all', label: '📊 All', bg: 'bg-white', border: '', text: '' },
-	{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-50', border: 'border-emerald-300', text: 'text-emerald-700' },
-	{ key: 'failed', label: '❌ Failed', bg: 'bg-red-50', border: 'border-red-300', text: 'text-red-700' },
-	{ key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100', border: 'border-slate-400', text: 'text-slate-600' },
-	{ key: 'planned', label: '📋 Planned', bg: 'bg-indigo-50', border: 'border-indigo-300', text: 'text-indigo-700' }
+	{ key: 'all', label: '📊 All', bg: 'bg-white text-slate-700 border-slate-300' },
+	{ key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' },
+	{ key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' },
+	{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+	{ key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' },
+	{ key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }
 ];
 
 function toggleLifecycleFilter() {
@@ -1284,7 +1284,7 @@ function toggleLifecycleFilter() {
 	const next = LIFECYCLE_CYCLE[(idx + 1) % LIFECYCLE_CYCLE.length];
 	activeLifecycleFilter = next.key;
 	const btn = document.getElementById('lifecycleFilterBtn');
-	btn.className = `flex items-center gap-1 px-3 py-2 rounded-xl border transition text-sm font-medium whitespace-nowrap ${next.bg} ${next.border} ${next.text}`;
+	btn.className = `flex items-center gap-1 px-3 py-2 rounded-xl border transition text-sm font-medium whitespace-nowrap ${next.bg}`;
 	btn.textContent = next.label;
 	applyFilters();
 }
@@ -1302,12 +1302,10 @@ function applyFilters() {
 	if (activeStatusFilter) {
 		filtered = filtered.filter(t => t.status === activeStatusFilter);
 	}
-	// Lifecycle filter
-	if (activeLifecycleFilter === 'active') {
-		filtered = filtered.filter(t => t.taskStatus === 'planned' || t.taskStatus === 'in progress');
-	} else if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
-		filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
-	}
+	   // Lifecycle filter
+	   if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
+		   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
+	   }
 	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 	if (q) {
 		filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
