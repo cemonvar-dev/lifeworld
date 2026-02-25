@@ -1659,11 +1659,13 @@ function renderOnceTasksCalendar() {
 			// Add all tags for multi-select filter
 			const allTags = (t.tags || []).join(',');
 			// Compute weekday name
-			const dayName = (() => {
-				const d = new Date(date + 'T00:00:00');
-				return d.toLocaleDateString(undefined, { weekday: 'long' });
-			})();
-			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+			const d = new Date(date + 'T00:00:00');
+			const dayName = d.toLocaleDateString(undefined, { weekday: 'long' });
+			// Format date as DD-MM
+			const day = String(d.getDate()).padStart(2, '0');
+			const month = String(d.getMonth() + 1).padStart(2, '0');
+			const shortDate = `${day}-${month}`;
+			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
