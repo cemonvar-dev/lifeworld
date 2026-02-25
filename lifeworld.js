@@ -1519,7 +1519,51 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('lifecycleFilterBtn').addEventListener('click', toggleLifecycleFilter);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 
+	// Calendar button logic
+	document.getElementById('calendarBtn').addEventListener('click', openCalendarPopup);
+	document.getElementById('closeCalendar').addEventListener('click', closeCalendarPopup);
+	document.getElementById('calendarOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('calendarOverlay')) closeCalendarPopup();
+	});
+
 	// Set filter and click the Today button on load
 	activeTimelineFilter = 'today';
 	document.getElementById('todayFilterBtn').click();
 });
+
+// ---- Calendar Popup ----
+function openCalendarPopup() {
+	const overlay = document.getElementById('calendarOverlay');
+	const container = document.getElementById('calendarContainer');
+	container.innerHTML = renderOnceTasksCalendar();
+	overlay.classList.remove('hidden');
+}
+
+function closeCalendarPopup() {
+	document.getElementById('calendarOverlay').classList.add('hidden');
+}
+
+function renderOnceTasksCalendar() {
+	// Gather all once-frequency tasks with end_date
+	const onceTasks = Object.values(rawTiles).filter(t => t.frequency_mode === 'once' && t.end_date);
+	if (onceTasks.length === 0) {
+		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
+	}
+	// Build a map: date string -> array of tasks
+	const dateMap = {};
+	onceTasks.forEach(task => {
+		if (!dateMap[task.end_date]) dateMap[task.end_date] = [];
+		dateMap[task.end_date].push(task);
+	});
+	// Get all unique dates, sorted
+	const allDates = Object.keys(dateMap).sort();
+	// Render a simple table calendar (list style for now)
+	let html = '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tasks</th></tr></thead><tbody>';
+	allDates.forEach(date => {
+		html += `<tr><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">`;
+		html += dateMap[date].map(t => `<span class="inline-block bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mr-2 mb-1">${escapeHtml(t.name)}</span>`).join('');
+		html += '</td></tr>';
+	});
+	html += '</tbody></table></div>';
+	return html;
+}
