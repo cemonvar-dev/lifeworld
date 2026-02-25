@@ -1550,26 +1550,42 @@ function openCalendarPopup() {
 	container.innerHTML = renderOnceTasksCalendar();
 	overlay.classList.remove('hidden');
 
-	// Add filtering logic
+	// Tag filter logic
+	const tagFilterSelect = document.getElementById('calendarTagFilter');
+	let selectedTags = [];
+	if (tagFilterSelect) {
+		tagFilterSelect.addEventListener('change', function() {
+			selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
+			filterCalendarRows();
+		});
+	}
+
+	// Text filter logic
 	const filterInput = document.getElementById('calendarFilterInput');
 	if (filterInput) {
-		filterInput.addEventListener('input', function() {
-			const filter = this.value.trim().toLowerCase();
-			const rows = container.querySelectorAll('tbody tr');
-			rows.forEach(row => {
-				const date = row.getAttribute('data-date') || '';
-				const tag = row.getAttribute('data-tag') || '';
-				const task = row.getAttribute('data-task') || '';
-				if (
-					date.toLowerCase().includes(filter) ||
-					tag.includes(filter) ||
-					task.includes(filter)
-				) {
-					row.style.display = '';
-				} else {
-					row.style.display = 'none';
-				}
-			});
+		filterInput.addEventListener('input', filterCalendarRows);
+	}
+
+	function filterCalendarRows() {
+		const filter = (filterInput ? filterInput.value.trim().toLowerCase() : '');
+		const rows = container.querySelectorAll('tbody tr');
+		rows.forEach(row => {
+			const date = row.getAttribute('data-date') || '';
+			const tag = row.getAttribute('data-tag') || '';
+			const task = row.getAttribute('data-task') || '';
+			const rowTags = (row.getAttribute('data-tags') || '').split(',');
+			// Tag filter: if any selected tag matches row tags
+			const tagMatch = !selectedTags.length || selectedTags.some(t => rowTags.includes(t));
+			const textMatch = (
+				date.toLowerCase().includes(filter) ||
+				tag.includes(filter) ||
+				task.includes(filter)
+			);
+			if (tagMatch && textMatch) {
+				row.style.display = '';
+			} else {
+				row.style.display = 'none';
+			}
 		});
 	}
 }
@@ -1585,8 +1601,17 @@ function renderOnceTasksCalendar() {
 		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
 	}
 
-	// Filtering UI
-	let html = `<div class="mb-4 flex items-center gap-2">
+
+	// Gather all unique tags from once-tasks
+	const tagSet = new Set();
+	onceTasks.forEach(t => (t.tags || []).forEach(tag => tagSet.add(tag)));
+	const tagList = Array.from(tagSet).sort();
+
+	// Filtering UI: tag multi-select and text input
+	let html = `<div class="mb-4 flex flex-col sm:flex-row items-center gap-2">
+		<select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length)}">
+			${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
+		</select>
 		<input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
 	</div>`;
 
@@ -1614,7 +1639,9 @@ function renderOnceTasksCalendar() {
 				}
 			}
 			const desc = escapeHtml(t.name);
-			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+			// Add all tags for multi-select filter
+			const allTags = (t.tags || []).join(',');
+			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
