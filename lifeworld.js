@@ -1519,6 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('lifecycleFilterBtn').addEventListener('click', toggleLifecycleFilter);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 
-	// Click the Today button on load
+	// Set filter and click the Today button on load
+	activeTimelineFilter = 'today';
 	document.getElementById('todayFilterBtn').click();
 });
