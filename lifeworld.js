@@ -1037,7 +1037,7 @@ function renderTagTree(node, tagCounts, level = 0) {
 		const btn = document.createElement('button');
 		btn.className = `flex-1 flex items-center gap-2 px-2 py-1 rounded transition text-left ${activeTagFilter === tagObj.key ? 'bg-blue-100 text-blue-900 font-bold' : 'hover:bg-slate-100'
 			}`;
-		btn.innerHTML = `<span class=\"text-base\">🏷️</span><span>${tagObj.label}</span><span class=\"text-[10px] text-slate-400\">${tagCounts[tagObj.key] || 0}</span>`;
+		btn.innerHTML = `<span class="text-base">🏷️</span><span>${tagObj.label}</span><span class="text-[10px] text-slate-400">${tagCounts[tagObj.key] || 0}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
 		// Edit button (for all nodes, use tagObj.key)
@@ -1091,7 +1091,7 @@ function openTagFilterPopup() {
 	// "+ New Tag" button
 	const newBtn = document.createElement('button');
 	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center min-w-[70px]';
-	newBtn.innerHTML = `<span class=\"text-base\">➕</span><span class=\"text-xs font-semibold\">New Tag</span>`;
+	newBtn.innerHTML = `<span class="text-base">➕</span><span class="text-xs font-semibold">New Tag</span>`;
 	newBtn.addEventListener('click', () => {
 		const newTag = prompt('Enter new tag name:');
 		if (!newTag || !newTag.trim()) return;
@@ -1107,7 +1107,7 @@ function openTagFilterPopup() {
 	const allBtn = document.createElement('button');
 	allBtn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-	allBtn.innerHTML = `<span class=\"text-base\">🌐</span><span class=\"text-xs font-semibold\">All</span><span class=\"text-[10px] text-slate-400\">${tiles.length}</span>`;
+	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	controlsRow.appendChild(allBtn);
 
@@ -1137,7 +1137,7 @@ function openTagFilterPopup() {
 			const btn = document.createElement('button');
 			btn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 				}`;
-			btn.innerHTML = `<span class=\"text-base\">📦</span><span class=\"text-xs font-semibold\">Untagged</span><span class=\"text-[10px] text-slate-400\">${untaggedCount}</span>`;
+			btn.innerHTML = `<span class="text-base">📦</span><span class="text-xs font-semibold">Untagged</span><span class="text-[10px] text-slate-400">${untaggedCount}</span>`;
 			btn.addEventListener('click', () => { setTagFilter('__untagged__'); });
 			tagTreeContainer.appendChild(btn);
 		}
@@ -1537,6 +1537,29 @@ function openCalendarPopup() {
 	const container = document.getElementById('calendarContainer');
 	container.innerHTML = renderOnceTasksCalendar();
 	overlay.classList.remove('hidden');
+
+	// Add filtering logic
+	const filterInput = document.getElementById('calendarFilterInput');
+	if (filterInput) {
+		filterInput.addEventListener('input', function() {
+			const filter = this.value.trim().toLowerCase();
+			const rows = container.querySelectorAll('tbody tr');
+			rows.forEach(row => {
+				const date = row.getAttribute('data-date') || '';
+				const tag = row.getAttribute('data-tag') || '';
+				const task = row.getAttribute('data-task') || '';
+				if (
+					date.toLowerCase().includes(filter) ||
+					tag.includes(filter) ||
+					task.includes(filter)
+				) {
+					row.style.display = '';
+				} else {
+					row.style.display = 'none';
+				}
+			});
+		});
+	}
 }
 
 function closeCalendarPopup() {
@@ -1549,6 +1572,12 @@ function renderOnceTasksCalendar() {
 	if (onceTasks.length === 0) {
 		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
 	}
+
+	// Filtering UI
+	let html = `<div class="mb-4 flex items-center gap-2">
+		<input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
+	</div>`;
+
 	// Build a map: date string -> array of tasks
 	const dateMap = {};
 	onceTasks.forEach(task => {
@@ -1558,7 +1587,7 @@ function renderOnceTasksCalendar() {
 	// Get all unique dates, sorted
 	const allDates = Object.keys(dateMap).sort();
 	// Render a simple table calendar (list style for now)
-	let html = '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
+	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
 	allDates.forEach(date => {
 		dateMap[date].forEach(t => {
 			let tag = (t.tags && t.tags.length > 0) ? t.tags[0] : '';
@@ -1573,7 +1602,7 @@ function renderOnceTasksCalendar() {
 				}
 			}
 			const desc = escapeHtml(t.name);
-			html += `<tr><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${date}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
