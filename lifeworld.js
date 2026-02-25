@@ -1556,6 +1556,11 @@ function openCalendarPopup() {
 	if (tagFilterSelect) {
 		tagFilterSelect.addEventListener('change', function() {
 			selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
+			// If 'all' is selected, deselect others and show all
+			if (selectedTags.includes('__all__')) {
+				for (const opt of tagFilterSelect.options) opt.selected = (opt.value === '__all__');
+				selectedTags = ['__all__'];
+			}
 			filterCalendarRows();
 		});
 	}
@@ -1574,8 +1579,8 @@ function openCalendarPopup() {
 			const tag = row.getAttribute('data-tag') || '';
 			const task = row.getAttribute('data-task') || '';
 			const rowTags = (row.getAttribute('data-tags') || '').split(',');
-			// Tag filter: if any selected tag matches row tags
-			const tagMatch = !selectedTags.length || selectedTags.some(t => rowTags.includes(t));
+			// Tag filter: if 'all' is selected or nothing is selected, show all
+			const tagMatch = (!selectedTags.length || selectedTags.includes('__all__')) || selectedTags.some(t => rowTags.includes(t));
 			const textMatch = (
 				date.toLowerCase().includes(filter) ||
 				tag.includes(filter) ||
@@ -1609,7 +1614,8 @@ function renderOnceTasksCalendar() {
 
 	// Filtering UI: tag multi-select and text input
 	let html = `<div class="mb-4 flex flex-col sm:flex-row items-center gap-2">
-		<select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length)}">
+		<select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length + 1)}">
+			<option value="__all__" selected>All</option>
 			${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
 		</select>
 		<input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
