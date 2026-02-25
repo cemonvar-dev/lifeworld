@@ -1518,4 +1518,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('resetBtn').addEventListener('click', resetTodayLogs);
 	document.getElementById('lifecycleFilterBtn').addEventListener('click', toggleLifecycleFilter);
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
+
+	// Click the Today button on load
+	document.getElementById('todayFilterBtn').click();
 });
