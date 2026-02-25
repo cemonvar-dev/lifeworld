@@ -1553,6 +1553,17 @@ function openCalendarPopup() {
 	// Tag filter logic
 	const tagFilterSelect = document.getElementById('calendarTagFilter');
 	let selectedTags = [];
+	// Initialize Choices.js for modern multi-select UI
+	if (tagFilterSelect && !tagFilterSelect.classList.contains('choices-initialized')) {
+		new Choices(tagFilterSelect, {
+			removeItemButton: true,
+			shouldSort: false,
+			placeholder: true,
+			placeholderValue: 'Select tags...',
+			searchEnabled: true
+		});
+		tagFilterSelect.classList.add('choices-initialized');
+	}
 	if (tagFilterSelect) {
 		tagFilterSelect.addEventListener('change', function() {
 			selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
