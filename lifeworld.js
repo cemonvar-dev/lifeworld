@@ -381,26 +381,38 @@ function openTilePopup(tileId) {
 		timelineHtml = '<div class="text-slate-400 text-sm py-4">No logs yet.</div>';
 	} else {
 		timelineHtml = '<div class="relative pl-6 border-l-2 border-slate-200 mt-2">';
-		logs.forEach(log => {
-			const d = new Date(log.created_at);
-			const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-			const timeStr = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-			const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
-			const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
-			timelineHtml += `
-				<div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
-					<div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
-					<div class="flex items-center justify-between">
-						<div class="text-sm font-semibold">${log.status}</div>
-						<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-							<button class="edit-log text-blue-300 hover:text-blue-500 text-sm font-bold px-1" data-log-id="${log.id}">✏️</button>
-							<button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold px-1" data-log-id="${log.id}">&times;</button>
-						</div>
-					</div>
-					<div class="text-xs text-slate-400">${dateStr} · ${timeStr}</div>
-					${noteHtml}
-				</div>`;
-		});
+		   logs.forEach(log => {
+			   // Use log_date for the log date display
+			   const logDate = log.log_date || log.created_at;
+			   let d;
+			   if (logDate) {
+				   d = new Date(logDate);
+			   } else {
+				   d = new Date();
+			   }
+			   const dateStr = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+			   // Only show time if created_at exists
+			   let timeStr = '';
+			   if (log.created_at) {
+				   const createdAtDate = new Date(log.created_at);
+				   timeStr = createdAtDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+			   }
+			   const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
+			   const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
+			   timelineHtml += `
+				   <div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
+					   <div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
+					   <div class="flex items-center justify-between">
+						   <div class="text-sm font-semibold">${log.status}</div>
+						   <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+							   <button class="edit-log text-blue-300 hover:text-blue-500 text-sm font-bold px-1" data-log-id="${log.id}">✏️</button>
+							   <button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold px-1" data-log-id="${log.id}">&times;</button>
+						   </div>
+					   </div>
+					   <div class="text-xs text-slate-400">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
+					   ${noteHtml}
+				   </div>`;
+		   });
 		timelineHtml += '</div>';
 	}
 
