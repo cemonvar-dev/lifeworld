@@ -468,7 +468,14 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Lifecycle Status</div>
 		<div id="lifecycleBtns" class="flex flex-wrap gap-2 mb-8">
-			${[{ key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' }, { key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' }, { key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' }, { key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' }, { key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
+			   ${[
+				   { key: 'active', label: '🔥 Active', bg: 'bg-orange-100 text-orange-700 border-orange-300' },
+				   { key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' },
+				   { key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' },
+				   { key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+				   { key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' },
+				   { key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }
+			   ].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-1">
@@ -1271,13 +1278,14 @@ function toggleStatusFilter() {
 }
 
 const LIFECYCLE_CYCLE = [
-	{ key: 'all', label: '📊 All', bg: 'bg-white text-slate-700 border-slate-300' },
-	{ key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' },
-	{ key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' },
-	{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
-	{ key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' },
-	{ key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }
-];
+		{ key: 'active', label: '🔥 Active', bg: 'bg-orange-100 text-orange-700 border-orange-300' },
+		{ key: 'all', label: '📊 All', bg: 'bg-white text-slate-700 border-slate-300' },
+		{ key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' },
+		{ key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' },
+		{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+		{ key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' },
+		{ key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }
+	];
 
 function toggleLifecycleFilter() {
 	const idx = LIFECYCLE_CYCLE.findIndex(s => s.key === activeLifecycleFilter);
@@ -1304,7 +1312,11 @@ function applyFilters() {
 	}
 	   // Lifecycle filter
 	   if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
-		   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
+		   if (activeLifecycleFilter === 'active') {
+			   filtered = filtered.filter(t => t.taskStatus === 'planned' || t.taskStatus === 'in progress');
+		   } else {
+			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
+		   }
 	   }
 	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 	if (q) {
