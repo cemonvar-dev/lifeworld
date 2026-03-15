@@ -1700,8 +1700,13 @@ function closeCalendarPopup() {
 }
 
 function renderOnceTasksCalendar() {
-	// Gather all once-frequency tasks with end_date
-	const onceTasks = Object.values(rawTiles).filter(t => t.frequency_mode === 'once' && t.end_date);
+	// Gather all once-frequency tasks with end_date, EXCLUDING completed (done/completed) tasks
+	const onceTasks = Object.values(rawTiles).filter(t => {
+		if (t.frequency_mode !== 'once' || !t.end_date) return false;
+		const logs = t.task_logs || [];
+		// Exclude if any log is 'done' or 'completed'
+		return !logs.some(l => l.status === 'done' || l.status === 'completed');
+	});
 	if (onceTasks.length === 0) {
 		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
 	}
