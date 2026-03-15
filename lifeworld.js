@@ -1356,10 +1356,18 @@ function applyFilters() {
 			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
 		   }
 	   }
-	       const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+		       const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 		       if (q) {
 			       if (q === 'overdue') {
 				       filtered = filtered.filter(t => getNextDueLabel(t.id) === 'overdue');
+			       } else if (["january","february","march","april","may","june","july","august","september","october","november","december"].includes(q)) {
+				       // Filter by month name on lastUpdate
+				       filtered = filtered.filter(t => {
+					       if (!t.lastUpdate) return false;
+					       const d = new Date(t.lastUpdate);
+					       const month = d.toLocaleString('default', { month: 'long' }).toLowerCase();
+					       return month === q;
+				       });
 			       } else {
 				       // Search by name or tag (partial, case-insensitive)
 				       filtered = filtered.filter(t => {
