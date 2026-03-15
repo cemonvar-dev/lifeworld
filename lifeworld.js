@@ -143,13 +143,17 @@ async function fetchTilesFromSupabase() {
 	}
 
 	rawTiles = {};
-	data.forEach(task => {
-		// Sort logs newest first
-		if (task.task_logs) {
-			task.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-		}
-		rawTiles[task.id] = task;
-	});
+	       data.forEach(task => {
+		       // Sort logs newest first by log_date (fallback to created_at)
+		       if (task.task_logs) {
+			       task.task_logs.sort((a, b) => {
+				       const dateA = new Date(b.log_date || b.created_at);
+				       const dateB = new Date(a.log_date || a.created_at);
+				       return dateA - dateB;
+			       });
+		       }
+		       rawTiles[task.id] = task;
+	       });
 
 	       tiles = data.map(task => {
 		       const logs = task.task_logs || [];
