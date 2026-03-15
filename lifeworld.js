@@ -1,3 +1,37 @@
+// Create a tile by name (no prompt)
+async function createTileByName(name) {
+	if (!name || !name.trim() || !currentUserId) return;
+	const { data, error } = await supa
+		.from('tasks')
+		.insert({
+			user_id: currentUserId,
+			name: name.trim(),
+			frequency_mode: 'daily'
+		})
+		.select('*, task_logs(*), task_frequency_days(*)')
+		.single();
+	if (error || !data) return;
+	rawTiles[data.id] = data;
+	const health = calculateHealth(data);
+	const plant = healthToPlant(health);
+	tiles.push({
+		id: data.id,
+		name: data.name,
+		tags: data.tags || [],
+		status: 'noaction',
+		taskStatus: data.status || 'in progress',
+		emoji: plant.emoji,
+		health,
+		healthLabel: plant.label,
+		healthColor: plant.color,
+		count: 0,
+		createdAt: data.created_at || null,
+		lastUpdate: null
+	});
+	buildTagsFromTiles();
+	applyFilters();
+	openTilePopup(data.id);
+}
 let tiles = [];
 let rawTiles = {}; // full task objects keyed by uuid
 let activeTileId = null; // currently open tile
@@ -1499,10 +1533,21 @@ async function sendAiMessage(text) {
 			return;
 		}
 
-		const data = await response.json();
-		const reply = data.reply || 'No response.';
-		aiChatHistory.push({ role: 'assistant', content: reply });
-		appendAiMessage('assistant', reply);
+		   const data = await response.json();
+		   const reply = data.reply || 'No response.';
+		   // Try to parse as a command from the AI
+		   let handled = false;
+		   try {
+			   const cmd = JSON.parse(reply);
+			   if (cmd.action === 'create_tile' && cmd.name) {
+				   await createTileByName(cmd.name);
+				   handled = true;
+			   }
+		   } catch (e) {}
+		   if (!handled) {
+			   aiChatHistory.push({ role: 'assistant', content: reply });
+			   appendAiMessage('assistant', reply);
+		   }
 	} catch (err) {
 		const loading = document.getElementById('aiLoadingBubble');
 		if (loading) loading.remove();
