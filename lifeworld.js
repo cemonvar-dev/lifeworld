@@ -134,7 +134,7 @@ async function fetchTilesFromSupabase() {
 			healthColor: plant.color,
 			count: logs.length,
 			createdAt: task.created_at || null,
-			lastUpdate: lastLog ? lastLog.created_at : null
+			   lastUpdate: lastLog ? (lastLog.log_date || lastLog.created_at) : null
 		};
 	});
 
@@ -739,7 +739,7 @@ async function submitLog() {
 		const lastLog = logs[0];
 		displayTile.status = getTodayStatus(logs);
 		displayTile.count = logs.length;
-		displayTile.lastUpdate = lastLog ? lastLog.created_at : null;
+		displayTile.lastUpdate = lastLog ? (lastLog.log_date || lastLog.created_at) : null;
 		const health = calculateHealth(raw);
 		const plant = healthToPlant(health);
 		displayTile.emoji = plant.emoji;
@@ -891,7 +891,9 @@ async function quickLog(tileId, status) {
 	if (displayTile) {
 		displayTile.status = status === 'done' ? 'done' : status === 'skipped' ? 'skipped' : 'noaction';
 		displayTile.count = (raw.task_logs || []).length;
-		displayTile.lastUpdate = new Date().toISOString();
+		// Use the latest log's log_date if available, else fallback to created_at, else now
+		const latestLog = (raw.task_logs || [])[0];
+		displayTile.lastUpdate = latestLog ? (latestLog.log_date || latestLog.created_at) : new Date().toISOString();
 		const health = calculateHealth(raw);
 		const plant = healthToPlant(health);
 		displayTile.emoji = plant.emoji;
@@ -1318,10 +1320,19 @@ function applyFilters() {
 			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
 		   }
 	   }
-	const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
-	if (q) {
-		filtered = filtered.filter(t => t.name.toLowerCase().includes(q));
-	}
+	       const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+		       if (q) {
+			       if (q === 'overdue') {
+				       filtered = filtered.filter(t => getNextDueLabel(t.id) === 'overdue');
+			       } else {
+				       // Search by name or tag (partial, case-insensitive)
+				       filtered = filtered.filter(t => {
+					       const nameMatch = t.name.toLowerCase().includes(q);
+					       const tagMatch = (t.tags || []).some(tag => tag.toLowerCase().includes(q));
+					       return nameMatch || tagMatch;
+				       });
+			       }
+		       }
 	renderGallery(filtered);
 }
 
@@ -1368,7 +1379,7 @@ async function resetTodayLogs() {
 			healthColor: plant.color,
 			count: logs.length,
 			createdAt: task.created_at || null,
-			lastUpdate: lastLog ? lastLog.created_at : null
+			   lastUpdate: lastLog ? (lastLog.log_date || lastLog.created_at) : null
 		};
 	});
 	applyFilters();
