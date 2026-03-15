@@ -1702,13 +1702,15 @@ function renderOnceTasksCalendar() {
 	const tagList = Array.from(tagSet).sort();
 
 	// Filtering UI: tag multi-select and text input
-	let html = `<div class="mb-4 flex flex-col sm:flex-row items-center gap-2">
-		<select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length + 1)}">
-			<option value="__all__" selected>All</option>
-			${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
-		</select>
-		<input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
-	</div>`;
+	       let html = `<div class="mb-4 flex flex-wrap items-center gap-2">
+		       <div class="flex items-center gap-2 w-full sm:w-auto">
+			       <select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length + 1)}">
+				       <option value="__all__" selected>All</option>
+				       ${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
+			       </select>
+			       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
+		       </div>
+	       </div>`;
 
 	// Build a map: date string -> array of tasks
 	const dateMap = {};
@@ -1743,7 +1745,7 @@ function renderOnceTasksCalendar() {
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-			   html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link" data-tile-id="${t.id}">${desc}</a></td></tr>`;
+			   html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td></tr>`;
 			// Add click handler for tile links after rendering
 			setTimeout(() => {
 				container.querySelectorAll('.calendar-tile-link').forEach(link => {
