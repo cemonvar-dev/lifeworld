@@ -1743,7 +1743,17 @@ function renderOnceTasksCalendar() {
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-			html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2">${desc}</td></tr>`;
+			   html += `<tr data-date="${date}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link" data-tile-id="${t.id}">${desc}</a></td></tr>`;
+			// Add click handler for tile links after rendering
+			setTimeout(() => {
+				container.querySelectorAll('.calendar-tile-link').forEach(link => {
+					link.addEventListener('click', function(e) {
+						e.preventDefault();
+						const tileId = this.getAttribute('data-tile-id');
+						openTilePopup(tileId);
+					});
+				});
+			}, 0);
 		});
 	});
 	html += '</tbody></table></div>';
