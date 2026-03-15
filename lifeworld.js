@@ -151,26 +151,28 @@ async function fetchTilesFromSupabase() {
 		rawTiles[task.id] = task;
 	});
 
-	tiles = data.map(task => {
-		const logs = task.task_logs || [];
-		const lastLog = logs[0];
-		const health = calculateHealth(task);
-		const plant = healthToPlant(health);
-		return {
-			id: task.id,
-			name: task.name,
-			tags: task.tags || [],
-			status: getTodayStatus(logs),
-			taskStatus: task.status || 'in progress',
-			emoji: plant.emoji,
-			health,
-			healthLabel: plant.label,
-			healthColor: plant.color,
-			count: logs.length,
-			createdAt: task.created_at || null,
-			   lastUpdate: lastLog ? (lastLog.log_date || lastLog.created_at) : null
-		};
-	});
+	       tiles = data.map(task => {
+		       const logs = task.task_logs || [];
+		       // Find the most recent 'done' log
+		       const lastDoneLog = logs.find(l => l.status === 'done');
+		       const lastLog = logs[0];
+		       const health = calculateHealth(task);
+		       const plant = healthToPlant(health);
+		       return {
+			       id: task.id,
+			       name: task.name,
+			       tags: task.tags || [],
+			       status: getTodayStatus(logs),
+			       taskStatus: task.status || 'in progress',
+			       emoji: plant.emoji,
+			       health,
+			       healthLabel: plant.label,
+			       healthColor: plant.color,
+			       count: logs.length,
+			       createdAt: task.created_at || null,
+			       lastUpdate: lastDoneLog ? (lastDoneLog.log_date || lastDoneLog.created_at) : (lastLog ? (lastLog.log_date || lastLog.created_at) : null)
+		       };
+	       });
 
 	buildTagsFromTiles();
 	renderGallery(tiles);
