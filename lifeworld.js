@@ -145,13 +145,13 @@ async function fetchTilesFromSupabase() {
 	rawTiles = {};
 	       data.forEach(task => {
 		       // Sort logs newest first by log_date (fallback to created_at)
-		       if (task.task_logs) {
-			       task.task_logs.sort((a, b) => {
-				       const dateA = new Date(b.log_date || b.created_at);
-				       const dateB = new Date(a.log_date || a.created_at);
-				       return dateA - dateB;
-			       });
-		       }
+			       if (task.task_logs) {
+				       task.task_logs.sort((a, b) => {
+					       const dateA = new Date(a.log_date || a.created_at);
+					       const dateB = new Date(b.log_date || b.created_at);
+					       return dateB - dateA; // newest to oldest
+				       });
+			       }
 		       rawTiles[task.id] = task;
 	       });
 
@@ -1704,12 +1704,11 @@ function closeCalendarPopup() {
 }
 
 function renderOnceTasksCalendar() {
-	// Gather all once-frequency tasks with end_date, EXCLUDING completed (done/completed) tasks
+	// Gather all once-frequency tasks with end_date, EXCLUDING those with status completed, failed, or cancelled
 	const onceTasks = Object.values(rawTiles).filter(t => {
 		if (t.frequency_mode !== 'once' || !t.end_date) return false;
-		const logs = t.task_logs || [];
-		// Exclude if any log is 'done' or 'completed'
-		return !logs.some(l => l.status === 'done' || l.status === 'completed');
+		const status = (t.status || '').toLowerCase();
+		return status !== 'completed' && status !== 'failed' && status !== 'cancelled';
 	});
 	if (onceTasks.length === 0) {
 		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
