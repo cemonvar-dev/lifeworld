@@ -1643,60 +1643,92 @@ function openCalendarPopup() {
 		});
 	}, 0);
 
-	// Tag filter logic
-	const tagFilterSelect = document.getElementById('calendarTagFilter');
-	let selectedTags = [];
-	// Initialize Choices.js for modern multi-select UI
-	if (tagFilterSelect && !tagFilterSelect.classList.contains('choices-initialized')) {
-		new Choices(tagFilterSelect, {
-			removeItemButton: true,
-			shouldSort: false,
-			placeholder: true,
-			placeholderValue: 'Select tags...',
-			searchEnabled: true
-		});
-		tagFilterSelect.classList.add('choices-initialized');
-	}
-	if (tagFilterSelect) {
-		tagFilterSelect.addEventListener('change', function() {
-			selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
-			// If 'all' is selected, deselect others and show all
-			if (selectedTags.includes('__all__')) {
-				for (const opt of tagFilterSelect.options) opt.selected = (opt.value === '__all__');
-				selectedTags = ['__all__'];
-			}
-			filterCalendarRows();
-		});
-	}
+	       // Tag filter logic
+	       const tagFilterSelect = document.getElementById('calendarTagFilter');
+	       let selectedTags = [];
+	       // Initialize Choices.js for modern multi-select UI
+	       if (tagFilterSelect && !tagFilterSelect.classList.contains('choices-initialized')) {
+		       new Choices(tagFilterSelect, {
+			       removeItemButton: true,
+			       shouldSort: false,
+			       placeholder: true,
+			       placeholderValue: 'Select tags...',
+			       searchEnabled: true
+		       });
+		       tagFilterSelect.classList.add('choices-initialized');
+	       }
+	       if (tagFilterSelect) {
+		       tagFilterSelect.addEventListener('change', function() {
+			       selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
+			       // If 'all' is selected, deselect others and show all
+			       if (selectedTags.includes('__all__')) {
+				       for (const opt of tagFilterSelect.options) opt.selected = (opt.value === '__all__');
+				       selectedTags = ['__all__'];
+			       }
+			       filterCalendarRows();
+		       });
+	       }
 
-	// Text filter logic
-	const filterInput = document.getElementById('calendarFilterInput');
-	if (filterInput) {
-		filterInput.addEventListener('input', filterCalendarRows);
-	}
+	       // Multi-term filter logic (chips)
+	       const filterInput = document.getElementById('calendarFilterInput');
+	       const filterChipsContainer = document.getElementById('calendarFilterChips');
+	       let filterTerms = [];
 
-	function filterCalendarRows() {
-		const filter = (filterInput ? filterInput.value.trim().toLowerCase() : '');
-		const rows = container.querySelectorAll('tbody tr');
-		rows.forEach(row => {
-			const date = row.getAttribute('data-date') || '';
-			const tag = row.getAttribute('data-tag') || '';
-			const task = row.getAttribute('data-task') || '';
-			const rowTags = (row.getAttribute('data-tags') || '').split(',');
-			// Tag filter: if 'all' is selected or nothing is selected, show all
-			const tagMatch = (!selectedTags.length || selectedTags.includes('__all__')) || selectedTags.some(t => rowTags.includes(t));
-			const textMatch = (
-				date.toLowerCase().includes(filter) ||
-				tag.includes(filter) ||
-				task.includes(filter)
-			);
-			if (tagMatch && textMatch) {
-				row.style.display = '';
-			} else {
-				row.style.display = 'none';
-			}
-		});
-	}
+	       function renderFilterChips() {
+		       filterChipsContainer.innerHTML = '';
+		       filterTerms.forEach((term, idx) => {
+			       const chip = document.createElement('button');
+			       chip.className = 'bg-blue-100 text-blue-700 rounded-full px-3 py-1 text-xs font-semibold mr-1 mb-1 flex items-center';
+			       chip.innerHTML = `${term} <span class="ml-1 text-blue-500 cursor-pointer">&times;</span>`;
+			       chip.addEventListener('click', () => {
+				       filterTerms.splice(idx, 1);
+				       renderFilterChips();
+				       filterCalendarRows();
+			       });
+			       filterChipsContainer.appendChild(chip);
+		       });
+	       }
+
+	       if (filterInput) {
+		       filterInput.addEventListener('keydown', function(e) {
+			       if (e.key === 'Enter' && filterInput.value.trim()) {
+				       const val = filterInput.value.trim().toLowerCase();
+				       if (!filterTerms.includes(val)) {
+					       filterTerms.push(val);
+					       renderFilterChips();
+					       filterCalendarRows();
+				       }
+				       filterInput.value = '';
+				       e.preventDefault();
+			       }
+		       });
+	       }
+
+	       function filterCalendarRows() {
+		       const rows = container.querySelectorAll('tbody tr');
+		       rows.forEach(row => {
+			       const date = row.getAttribute('data-date') || '';
+			       const tag = row.getAttribute('data-tag') || '';
+			       const task = row.getAttribute('data-task') || '';
+			       const rowTags = (row.getAttribute('data-tags') || '').split(',');
+			       // Tag filter: if 'all' is selected or nothing is selected, show all
+			       const tagMatch = (!selectedTags.length || selectedTags.includes('__all__')) || selectedTags.some(t => rowTags.includes(t));
+			       // Multi-term AND logic: all filterTerms must match date, tag, or task
+			       const textMatch = filterTerms.length === 0 || filterTerms.every(term =>
+				       date.toLowerCase().includes(term) ||
+				       tag.includes(term) ||
+				       task.includes(term)
+			       );
+			       if (tagMatch && textMatch) {
+				       row.style.display = '';
+			       } else {
+				       row.style.display = 'none';
+			       }
+		       });
+	       }
+
+	       // Initial render of chips (empty)
+	       renderFilterChips();
 }
 
 function closeCalendarPopup() {
