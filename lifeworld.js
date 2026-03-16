@@ -1760,7 +1760,8 @@ function renderOnceTasksCalendar() {
 				       ${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
 			       </select>
 				<div id="calendarFilterChips" class="flex flex-wrap gap-1"></div>
-			       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" placeholder="Filter by task, tag, or date..." />
+			       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" style="margin-bottom:24px;" 
+				   placeholder="Filter by task, tag, or date..." />
 		       </div>
 	       </div>`;
 
