@@ -1643,31 +1643,8 @@ function openCalendarPopup() {
 		});
 	}, 0);
 
-	       // Tag filter logic
-	       const tagFilterSelect = document.getElementById('calendarTagFilter');
-	       let selectedTags = [];
-	       // Initialize Choices.js for modern multi-select UI
-	       if (tagFilterSelect && !tagFilterSelect.classList.contains('choices-initialized')) {
-		       new Choices(tagFilterSelect, {
-			       removeItemButton: true,
-			       shouldSort: false,
-			       placeholder: true,
-			       placeholderValue: 'Select tags...',
-			       searchEnabled: true
-		       });
-		       tagFilterSelect.classList.add('choices-initialized');
-	       }
-	       if (tagFilterSelect) {
-		       tagFilterSelect.addEventListener('change', function() {
-			       selectedTags = Array.from(this.selectedOptions).map(opt => opt.value);
-			       // If 'all' is selected, deselect others and show all
-			       if (selectedTags.includes('__all__')) {
-				       for (const opt of tagFilterSelect.options) opt.selected = (opt.value === '__all__');
-				       selectedTags = ['__all__'];
-			       }
-			       filterCalendarRows();
-		       });
-	       }
+		       // Tag filter removed; only text filter and chips remain
+		       let selectedTags = []; // Keep for compatibility in filterCalendarRows, but will always be empty
 
 	       // Multi-term filter logic (chips)
 	       const filterInput = document.getElementById('calendarFilterInput');
@@ -1755,19 +1732,13 @@ function renderOnceTasksCalendar() {
 	const tagList = Array.from(tagSet).sort();
 
 	// Filtering UI: tag multi-select and text input
-		       let html = `<div class="mb-4 flex flex-wrap items-center gap-2">
-			       <div class="flex items-center gap-2 w-full sm:w-auto">
-				       <select id="calendarTagFilter" multiple class="rounded-xl border p-2 min-w-[120px] max-w-xs text-sm" style="height:2.5em;" size="${Math.min(6, tagList.length + 1)}">
-					       <option value="__all__" selected>All</option>
-					       ${tagList.map(tag => `<option value="${tag}">${tag.charAt(0).toUpperCase() + tag.slice(1)}</option>`).join('')}
-				       </select>
-			       </div>
+			let html = `<div class="mb-4 flex flex-wrap items-center gap-2">
 			       <div id="calendarFilterChips" class="flex flex-wrap gap-1 w-full"></div>
 			       <div class="flex items-center gap-2 w-full sm:w-auto">
 				       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64" style="margin-bottom:24px;" 
 				   placeholder="Filter by task, tag, or date..." />
 			       </div>
-		       </div>`;
+			</div>`;
 
 	// Build a map: date string -> array of tasks
 	const dateMap = {};
