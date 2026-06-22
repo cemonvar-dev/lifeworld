@@ -1334,7 +1334,7 @@ function toggleLifecycleFilter() {
 	const next = LIFECYCLE_CYCLE[(idx + 1) % LIFECYCLE_CYCLE.length];
 	activeLifecycleFilter = next.key;
 	const btn = document.getElementById('lifecycleFilterBtn');
-	btn.className = `flex items-center gap-1 px-3 py-2 rounded-xl border transition text-sm font-medium whitespace-nowrap ${next.bg}`;
+	btn.className = `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 ${next.bg}`;
 	btn.textContent = next.label;
 	applyFilters();
 }
