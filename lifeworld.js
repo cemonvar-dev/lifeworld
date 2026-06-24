@@ -1520,6 +1520,39 @@ const API_BASE = (/^(capacitor|ionic|file):/i.test(location.protocol) || locatio
 	? 'https://lifeworld.vercel.app'
 	: '';
 
+// Lemon Squeezy hosted checkout for the premium subscription.
+// TODO: replace STORE + VARIANT_ID with your real store subdomain and variant id,
+// e.g. https://lifeworld.lemonsqueezy.com/checkout/buy/123456
+const LEMONSQUEEZY_CHECKOUT_URL = 'https://STORE.lemonsqueezy.com/checkout/buy/VARIANT_ID';
+
+// Open LS checkout, passing the Supabase user id so the webhook can grant premium.
+async function openUpgradeCheckout() {
+	if (LEMONSQUEEZY_CHECKOUT_URL.includes('STORE') || LEMONSQUEEZY_CHECKOUT_URL.includes('VARIANT_ID')) {
+		appendAiMessage('assistant', '⚠️ Upgrades are not configured yet. Please check back soon.');
+		return;
+	}
+	const { data: { session } } = await supa.auth.getSession();
+	if (!session) {
+		appendAiMessage('assistant', '⚠️ Please sign in to upgrade.');
+		return;
+	}
+	const params = `checkout[custom][user_id]=${encodeURIComponent(session.user.id)}`
+		+ (session.user.email ? `&checkout[email]=${encodeURIComponent(session.user.email)}` : '');
+	const sep = LEMONSQUEEZY_CHECKOUT_URL.includes('?') ? '&' : '?';
+	window.open(`${LEMONSQUEEZY_CHECKOUT_URL}${sep}${params}`, '_blank');
+}
+
+// Render an "Upgrade to Premium" button as a chat bubble.
+function appendUpgradeButton() {
+	const container = document.getElementById('aiChatMessages');
+	const wrap = document.createElement('div');
+	wrap.className = 'flex justify-start';
+	wrap.innerHTML = `<button class="px-4 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-md shadow-purple-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200">✨ Upgrade to Premium</button>`;
+	wrap.querySelector('button').addEventListener('click', openUpgradeCheckout);
+	container.appendChild(wrap);
+	container.scrollTop = container.scrollHeight;
+}
+
 async function sendAiMessage(text) {
 	if (!text || !text.trim()) return;
 	const msg = text.trim();
@@ -1561,6 +1594,7 @@ async function sendAiMessage(text) {
 			const err = await response.json().catch(() => ({}));
 			if (response.status === 429 || err.code === 'quota_exceeded') {
 				appendAiMessage('assistant', '🔒 ' + (err.error || "You've hit today's free AI limit. Upgrade to Premium for unlimited coaching."));
+				appendUpgradeButton();
 				return;
 			}
 			const errMsg = err.error || 'Something went wrong. Please try again.';
