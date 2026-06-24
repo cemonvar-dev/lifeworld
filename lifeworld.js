@@ -1521,9 +1521,7 @@ const API_BASE = (/^(capacitor|ionic|file):/i.test(location.protocol) || locatio
 	: '';
 
 // Lemon Squeezy hosted checkout for the premium subscription.
-// TODO: replace STORE + VARIANT_ID with your real store subdomain and variant id,
-// e.g. https://lifeworld.lemonsqueezy.com/checkout/buy/123456
-const LEMONSQUEEZY_CHECKOUT_URL = 'https://STORE.lemonsqueezy.com/checkout/buy/VARIANT_ID';
+const LEMONSQUEEZY_CHECKOUT_URL = 'https://lifeworld.lemonsqueezy.com/checkout/buy/e914f905-4cbb-44f6-b905-74e5478dd592';
 
 // Open LS checkout, passing the Supabase user id so the webhook can grant premium.
 async function openUpgradeCheckout() {
