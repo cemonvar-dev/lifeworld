@@ -380,18 +380,35 @@
     // Deep-link redirect used by the native app's OAuth flow.
     const NATIVE_REDIRECT = 'com.lifeworld.app://login-callback';
 
+    // Native: if a session already exists (e.g. we returned from OAuth but landed
+    // back here), go straight into the app instead of showing the login again.
+    if (IS_NATIVE) {
+      window.supa.auth.getSession().then(({ data }) => {
+        if (data && data.session) window.location.replace('/lifeworld.html');
+      });
+    }
+
     // Native only: when the OAuth browser tab redirects back to our deep link,
-    // exchange the code for a session and continue into the app.
+    // exchange the code for a session and continue into the app — but only once
+    // the session is actually established, so we don't bounce back to login.
     if (IS_NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
       window.Capacitor.Plugins.App.addListener('appUrlOpen', async ({ url }) => {
         if (!url || url.indexOf('login-callback') === -1) return;
+        let session = null, error = null;
         try {
-          await window.supa.auth.exchangeCodeForSession(url);
+          const res = await window.supa.auth.exchangeCodeForSession(url);
+          session = res.data && res.data.session;
+          error = res.error;
         } catch (e) {
-          console.error('Code exchange failed:', e);
+          error = e;
         }
         try { await window.Capacitor.Plugins.Browser.close(); } catch (e) {}
-        window.location.href = '/lifeworld.html';
+        if (error || !session) {
+          console.error('Code exchange failed:', error);
+          alert('Sign-in could not be completed. Please try again.');
+          return;
+        }
+        window.location.replace('/lifeworld.html');
       });
     }
 
