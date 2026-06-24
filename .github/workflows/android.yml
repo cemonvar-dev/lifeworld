@@ -42,6 +42,9 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Add deep-link intent filter (for OAuth redirect)
+        run: node scripts/patch-android-manifest.mjs
+
       - name: Build debug APK
         run: |
           cd android

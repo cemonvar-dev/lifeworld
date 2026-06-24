@@ -4,8 +4,16 @@
     <!-- Supabase JS for client-side Google OAuth -->
     <script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
     <script>
-      // Replace with your Supabase project URL and anon key
-      window.supa = window.supabase.createClient('https://baswgycuhblyppvvdpay.supabase.co', 'YOUR_ANON_KEY');
+      const SUPABASE_URL = 'https://baswgycuhblyppvvdpay.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhc3dneWN1aGJseXBwdnZkcGF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MjEwMjEsImV4cCI6MjA3OTQ5NzAyMX0.ca23kyoMFHDcTvYRGEd8Dh32Y_3AoHj22-OFVxJZTMY';
+      // In the native (Capacitor) app, OAuth can't complete in the WebView, so we
+      // use the PKCE flow + a deep-link redirect and handle the session manually.
+      const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      window.supa = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
+        IS_NATIVE ? { auth: { flowType: 'pkce', detectSessionInUrl: false } } : {}
+      );
     </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -369,6 +377,24 @@
     // Set year
     document.getElementById('year').textContent = new Date().getFullYear();
 
+    // Deep-link redirect used by the native app's OAuth flow.
+    const NATIVE_REDIRECT = 'com.lifeworld.app://login-callback';
+
+    // Native only: when the OAuth browser tab redirects back to our deep link,
+    // exchange the code for a session and continue into the app.
+    if (IS_NATIVE && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.addListener('appUrlOpen', async ({ url }) => {
+        if (!url || url.indexOf('login-callback') === -1) return;
+        try {
+          await window.supa.auth.exchangeCodeForSession(url);
+        } catch (e) {
+          console.error('Code exchange failed:', e);
+        }
+        try { await window.Capacitor.Plugins.Browser.close(); } catch (e) {}
+        window.location.href = '/lifeworld.html';
+      });
+    }
+
     // Supabase Google OAuth client-side
     const googleBtn = document.getElementById('googleSignIn');
     if (googleBtn) {
@@ -376,6 +402,18 @@
         googleBtn.disabled = true;
         googleBtn.textContent = 'Redirecting...';
         try {
+          if (IS_NATIVE) {
+            // Open the OAuth URL in a system browser tab; the deep link brings us back.
+            const { data, error } = await window.supa.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true }
+            });
+            if (error) throw error;
+            await window.Capacitor.Plugins.Browser.open({ url: data.url });
+            googleBtn.disabled = false;
+            googleBtn.textContent = 'Continue with Google';
+            return;
+          }
           const { error } = await window.supa.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: window.location.origin + '/lifeworld.html' }
