@@ -1513,6 +1513,13 @@ function formatAiResponse(text) {
 		.replace(/`(.*?)`/g, '<code class="bg-slate-200 px-1 rounded text-xs">$1</code>');
 }
 
+// Backend base URL. Same-origin on the web; absolute when the app runs from a
+// bundled/native context (capacitor://, file://, or localhost) so /api calls
+// still reach the deployed backend.
+const API_BASE = (/^(capacitor|ionic|file):/i.test(location.protocol) || location.hostname === 'localhost')
+	? 'https://lifeworld.vercel.app'
+	: '';
+
 async function sendAiMessage(text) {
 	if (!text || !text.trim()) return;
 	const msg = text.trim();
@@ -1534,7 +1541,7 @@ async function sendAiMessage(text) {
 			appendAiMessage('assistant', '⚠️ Please sign in to use the AI assistant.');
 			return;
 		}
-		const response = await fetch('/api/ai', {
+		const response = await fetch(`${API_BASE}/api/ai`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
