@@ -1527,9 +1527,19 @@ async function sendAiMessage(text) {
 
 	try {
 		const taskContext = buildTaskContext();
+		const { data: { session } } = await supa.auth.getSession();
+		if (!session) {
+			const loading = document.getElementById('aiLoadingBubble');
+			if (loading) loading.remove();
+			appendAiMessage('assistant', '⚠️ Please sign in to use the AI assistant.');
+			return;
+		}
 		const response = await fetch('/api/ai', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${session.access_token}`
+			},
 			body: JSON.stringify({
 				messages: aiChatHistory,
 				taskContext
@@ -1542,6 +1552,10 @@ async function sendAiMessage(text) {
 
 		if (!response.ok) {
 			const err = await response.json().catch(() => ({}));
+			if (response.status === 429 || err.code === 'quota_exceeded') {
+				appendAiMessage('assistant', '🔒 ' + (err.error || "You've hit today's free AI limit. Upgrade to Premium for unlimited coaching."));
+				return;
+			}
 			const errMsg = err.error || 'Something went wrong. Please try again.';
 			appendAiMessage('assistant', '⚠️ ' + errMsg);
 			return;
