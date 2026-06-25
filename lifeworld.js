@@ -30,6 +30,7 @@ async function createTileByName(name) {
 	});
 	applyFilters();
 	openTilePopup(data.id);
+	scheduleReminders();
 }
 let tiles = [];
 let rawTiles = {}; // full task objects keyed by uuid
@@ -206,6 +207,7 @@ async function fetchTilesFromSupabase() {
 
 	await loadTags();
 	renderGallery(tiles);
+	scheduleReminders();
 }
 
 // ---- Gallery Rendering ----
@@ -894,6 +896,71 @@ async function updateTask(taskId, updates) {
 	if (error) console.error('Update error:', error);
 }
 
+// ---- Local notifications / reminders (native app only) ----
+const REMINDER_TIMES = {
+	morning: { hour: 8, minute: 0 },
+	afternoon: { hour: 13, minute: 0 },
+	evening: { hour: 18, minute: 0 },
+	night: { hour: 21, minute: 0 }
+};
+
+// Rebuild all device reminders from the current cards. The OS fires them even
+// when the app is closed; we re-sync on app open and after schedule edits.
+async function scheduleReminders() {
+	const cap = window.Capacitor;
+	const LN = cap && cap.Plugins && cap.Plugins.LocalNotifications;
+	if (!LN || !(cap.isNativePlatform && cap.isNativePlatform())) return; // native only
+	try {
+		let perm = await LN.checkPermissions();
+		if (perm.display !== 'granted') perm = await LN.requestPermissions();
+		if (perm.display !== 'granted') return;
+
+		try { await LN.createChannel({ id: 'reminders', name: 'Reminders', importance: 4, visibility: 1 }); } catch (e) {}
+
+		// Clear what we previously scheduled, then rebuild.
+		const pending = await LN.getPending();
+		if (pending && pending.notifications && pending.notifications.length) {
+			await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+		}
+
+		const now = new Date();
+		const notifications = [];
+		let id = 1;
+
+		Object.values(rawTiles).forEach(task => {
+			const status = (task.status || '').toLowerCase();
+			if (status === 'completed' || status === 'cancelled' || status === 'failed') return;
+			const mode = task.frequency_mode || 'daily';
+			const buckets = (typeof task.time_of_day === 'string' && task.time_of_day)
+				? task.time_of_day.split(',').map(s => s.trim()).filter(Boolean)
+				: ['morning']; // no time set -> morning
+			const base = { title: `⏰ ${task.name}`, body: 'Time to take action.', channelId: 'reminders' };
+
+			buckets.forEach(bucket => {
+				const t = REMINDER_TIMES[bucket] || REMINDER_TIMES.morning;
+				if (mode === 'daily') {
+					notifications.push({ id: id++, ...base, schedule: { on: { hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
+				} else if (mode === 'weekly') {
+					(task.task_frequency_days || []).forEach(d => {
+						notifications.push({ id: id++, ...base, schedule: { on: { weekday: d.day_of_week + 1, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
+					});
+				} else if (mode === 'monthly') {
+					const dom = task.created_at ? new Date(task.created_at).getDate() : 1;
+					notifications.push({ id: id++, ...base, schedule: { on: { day: dom, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
+				} else if (mode === 'once' && task.end_date) {
+					const when = new Date(task.end_date + 'T00:00:00');
+					when.setHours(t.hour, t.minute, 0, 0);
+					if (when > now) notifications.push({ id: id++, ...base, schedule: { at: when, allowWhileIdle: true } });
+				}
+			});
+		});
+
+		if (notifications.length) await LN.schedule({ notifications });
+	} catch (e) {
+		console.error('scheduleReminders error:', e);
+	}
+}
+
 // ---- Tag Operations ----
 async function toggleTag(tagId) {
 	if (!activeTileId) return;
@@ -926,6 +993,7 @@ async function setFrequency(mode) {
 	openTilePopup(activeTileId);
 	applyFilters();
 	await updateTask(activeTileId, { frequency_mode: mode });
+	scheduleReminders();
 }
 
 async function toggleWeeklyDay(day) {
@@ -951,6 +1019,7 @@ async function toggleWeeklyDay(day) {
 	}
 	openTilePopup(activeTileId);
 	applyFilters();
+	scheduleReminders();
 }
 
 // ---- Time of Day Operations ----
@@ -968,6 +1037,7 @@ async function toggleTimeOfDay(tod) {
 	raw.time_of_day = todArr.join(',');
 	openTilePopup(activeTileId);
 	await updateTask(activeTileId, { time_of_day: raw.time_of_day });
+	scheduleReminders();
 }
 
 // ---- Log Operations ----
@@ -1042,6 +1112,7 @@ async function deleteTile() {
 	tiles = tiles.filter(t => t.id !== activeTileId);
 	closeTilePopup();
 	renderGallery(tiles);
+	scheduleReminders();
 }
 
 // ---- Add New Tile ----
@@ -1086,6 +1157,7 @@ async function addNewTile() {
 
 	applyFilters();
 	openTilePopup(data.id);
+	scheduleReminders();
 }
 
 // ---- Tag Filter ----
@@ -2042,6 +2114,7 @@ async function completeTaskFromCalendar(tileId) {
 	if (dt) dt.taskStatus = 'completed';
 	await updateTask(tileId, { status: 'completed' });
 	applyFilters();
+	scheduleReminders();
 	openCalendarPopup(); // re-render; completed tasks drop out of the calendar
 }
 
@@ -2086,6 +2159,7 @@ async function applyReschedule(tileId, dateStr) {
 	raw.end_date = dateStr;
 	await updateTask(tileId, { end_date: dateStr });
 	applyFilters();
+	scheduleReminders();
 	openCalendarPopup(); // re-render at the new date
 }
 

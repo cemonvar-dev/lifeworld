@@ -9,6 +9,7 @@
     "@capacitor/browser": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
     "@capacitor/core": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
     "@capgo/capacitor-social-login": "^7.20.0",
     "typescript": "^5.4.0"
   }
