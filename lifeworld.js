@@ -1180,7 +1180,7 @@ function openTagFilterPopup() {
 	const grid = document.getElementById('tagFilterGrid');
 
 	// Exclude completed cards from all tag tallies (their health is irrelevant).
-	const tagTiles = tiles.filter(t => t.taskStatus !== 'completed');
+	const tagTiles = tiles.filter(t => !['completed', 'cancelled', 'failed'].includes(t.taskStatus));
 	const tagCounts = {};
 	const tagMoods = {}; // tagKey -> { Thriving: n, Dying: n, ... }
 	tagTiles.forEach(tile => {
@@ -1426,7 +1426,7 @@ function openMoodFilterPopup() {
 	grid.innerHTML = '';
 
 	// Count tiles per mood — exclude completed cards (their health is irrelevant).
-	const countable = tiles.filter(t => t.taskStatus !== 'completed');
+	const countable = tiles.filter(t => !['completed', 'cancelled', 'failed'].includes(t.taskStatus));
 	const counts = {};
 	MOODS.forEach(m => { counts[m.label] = 0; });
 	countable.forEach(t => { if (counts[t.healthLabel] != null) counts[t.healthLabel]++; });
