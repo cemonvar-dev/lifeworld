@@ -31,6 +31,11 @@
 		*::-webkit-scrollbar-thumb { background: rgba(100,116,139,.30); border-radius: 9999px; }
 		*::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.5); }
 		*::-webkit-scrollbar-track { background: transparent; }
+		/* Add-log calendar: tint days that already have a log (selection still wins) */
+		.flatpickr-day.lw-day-done:not(.selected) { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.30); color: #166534; font-weight: 600; }
+		.flatpickr-day.lw-day-done:not(.selected):hover { background: rgba(34,197,94,.30); }
+		.flatpickr-day.lw-day-skip:not(.selected) { background: rgba(234,179,8,.20); border-color: rgba(234,179,8,.35); color: #854d0e; font-weight: 600; }
+		.flatpickr-day.lw-day-skip:not(.selected):hover { background: rgba(234,179,8,.32); }
 	</style>
 </head>
 <body class="min-h-screen text-slate-900 antialiased bg-gradient-to-b from-indigo-50/50 via-slate-50 to-slate-100">

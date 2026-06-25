@@ -696,6 +696,20 @@ function openAddLogPopup(logToEdit) {
 	// Tear down any previous picker so add/edit modes don't collide.
 	if (logDatePicker) { logDatePicker.destroy(); logDatePicker = null; }
 
+	// Map existing logged dates -> status (newest log per day wins) so the
+	// calendar can tint days that already have a done/skip log.
+	const raw = rawTiles[activeTileId] || {};
+	const loggedByDate = {};
+	(raw.task_logs || []).forEach(l => {
+		const day = logDay(l);
+		if (day && !(day in loggedByDate)) loggedByDate[day] = l.status;
+	});
+	const markLoggedDay = (dObj, dStr, fp, dayElem) => {
+		const st = loggedByDate[fp.formatDate(dayElem.dateObj, 'Y-m-d')];
+		if (st === 'done' || st === 'completed') dayElem.classList.add('lw-day-done');
+		else if (st === 'skipped') dayElem.classList.add('lw-day-skip');
+	};
+
 	if (logToEdit) {
 		// Edit mode — single date, status toggle + Update button.
 		editingLogId = logToEdit.id;
@@ -708,7 +722,7 @@ function openAddLogPopup(logToEdit) {
 		submitBtn.classList.remove('hidden');
 		updateLogStatusBtns();
 		if (window.flatpickr) {
-			logDatePicker = flatpickr(dateInput, { dateFormat: 'Y-m-d', defaultDate: logDate, disableMobile: true });
+			logDatePicker = flatpickr(dateInput, { dateFormat: 'Y-m-d', defaultDate: logDate, disableMobile: true, onDayCreate: markLoggedDay });
 		}
 	} else {
 		// Add mode — pick multiple dates; Done/Skip each submit one log per date.
@@ -720,7 +734,7 @@ function openAddLogPopup(logToEdit) {
 		submitBtn.classList.add('hidden');
 		resetLogStatusBtns();
 		if (window.flatpickr) {
-			logDatePicker = flatpickr(dateInput, { mode: 'multiple', dateFormat: 'Y-m-d', defaultDate: [today], disableMobile: true });
+			logDatePicker = flatpickr(dateInput, { mode: 'multiple', dateFormat: 'Y-m-d', defaultDate: [today], disableMobile: true, onDayCreate: markLoggedDay });
 		} else {
 			dateInput.value = today; // graceful fallback if flatpickr fails to load
 		}
