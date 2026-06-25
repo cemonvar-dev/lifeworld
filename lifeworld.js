@@ -1104,7 +1104,7 @@ function buildTagTree(tags) {
 	return root;
 }
 
-function renderTagTree(node, tagCounts, level = 0) {
+function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 	const fragment = document.createDocumentFragment();
 	// Sort keys numerically/alphabetically (e.g., 01, 02, 10, 11, 12, ...)
 	const sortedKeys = Object.keys(node).sort((a, b) => {
@@ -1146,7 +1146,11 @@ function renderTagTree(node, tagCounts, level = 0) {
 		const btn = document.createElement('button');
 		btn.className = `flex-1 flex items-center gap-2 px-2 py-1 rounded transition text-left ${activeTagFilter === tagObj.key ? 'bg-blue-100 text-blue-900 font-bold' : 'hover:bg-slate-100'
 			}`;
-		btn.innerHTML = `<span class="text-base">🏷️</span><span>${tagObj.label}</span><span class="text-[10px] text-slate-400">${tagCounts[tagObj.key] || 0}</span>`;
+		btn.innerHTML =
+			`<span class="text-base shrink-0">🏷️</span>` +
+			`<span class="flex-1 truncate">${tagObj.label}</span>` +
+			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>` +
+			`<span class="text-[11px] font-semibold text-slate-400 tabular-nums w-7 text-right shrink-0">${tagCounts[tagObj.key] || 0}</span>`;
 		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
 		// Edit button (for all nodes, use tagObj.key)
@@ -1164,7 +1168,7 @@ function renderTagTree(node, tagCounts, level = 0) {
 		if (Object.keys(children).length > 0) {
 			const childContainer = document.createElement('div');
 			childContainer.style.marginLeft = '0px';
-			childContainer.appendChild(renderTagTree(children, tagCounts, level + 1));
+			childContainer.appendChild(renderTagTree(children, tagCounts, level + 1, tagMoods));
 			fragment.appendChild(childContainer);
 		}
 	}
@@ -1176,9 +1180,12 @@ function openTagFilterPopup() {
 	const grid = document.getElementById('tagFilterGrid');
 
 	const tagCounts = {};
+	const tagMoods = {}; // tagKey -> { Thriving: n, Dying: n, ... }
 	tiles.forEach(tile => {
 		(tile.tags || []).forEach(t => {
 			tagCounts[t] = (tagCounts[t] || 0) + 1;
+			if (!tagMoods[t]) tagMoods[t] = {};
+			if (tile.healthLabel) tagMoods[t][tile.healthLabel] = (tagMoods[t][tile.healthLabel] || 0) + 1;
 		});
 	});
 
@@ -1238,7 +1245,7 @@ function openTagFilterPopup() {
 		// Treeview for tags (filtered)
 		const filteredTags = filterTags(ALL_TAGS, searchInput.value);
 		const tagTree = buildTagTree(filteredTags);
-		tagTreeContainer.appendChild(renderTagTree(tagTree, tagCounts));
+		tagTreeContainer.appendChild(renderTagTree(tagTree, tagCounts, 0, tagMoods));
 
 		// Untagged
 		const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
@@ -1394,6 +1401,23 @@ const MOODS = [
 	{ label: 'Wilting', emoji: '🌧️' },
 	{ label: 'Dying', emoji: '⚡' }
 ];
+
+// Subtle tinted pill styles per mood, for the breakdown chips.
+const MOOD_CHIP = {
+	Thriving: 'bg-green-100 text-green-700',
+	Healthy: 'bg-emerald-100 text-emerald-700',
+	Growing: 'bg-amber-100 text-amber-700',
+	Wilting: 'bg-orange-100 text-orange-700',
+	Dying: 'bg-red-100 text-red-700'
+};
+
+// Compact colored chips for a mood-count map, e.g. { Thriving: 2, Dying: 1 }.
+function moodChipsHtml(counts) {
+	return MOODS
+		.filter(m => (counts[m.label] || 0) > 0)
+		.map(m => `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${MOOD_CHIP[m.label]}" title="${m.label}">${m.emoji}<span class="tabular-nums">${counts[m.label]}</span></span>`)
+		.join('');
+}
 
 function openMoodFilterPopup() {
 	const grid = document.getElementById('moodFilterGrid');
