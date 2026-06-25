@@ -43,6 +43,7 @@ let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
 let TAGS = [];            // rows from public.tags: { id, name, parent_id, sort_order }
 let TAGS_BY_ID = {};      // id -> tag row
 let tagManageMode = false; // tag filter popup: manage (reorder/parent/delete) vs filter
+let refreshTagTree = null; // re-renders just the tag tree in place (preserves scroll/search)
 let currentUserId = null;
 
 // Load the user's tags from the tags table.
@@ -273,7 +274,8 @@ function renderGallery(filteredTiles) {
 		groups[tag].push(tile);
 	});
 
-	Object.keys(groups).sort().forEach(tag => {
+	const groupLabel = tag => tag === 'Untagged' ? 'Untagged' : tagPath(tag);
+	Object.keys(groups).sort((a, b) => groupLabel(a).localeCompare(groupLabel(b))).forEach(tag => {
 		// Sort tiles within group by sort_order (then name as fallback)
 		groups[tag].sort((a, b) => {
 			const aOrder = (rawTiles[a.id] && rawTiles[a.id].sort_order != null) ? rawTiles[a.id].sort_order : 999999;
@@ -287,7 +289,7 @@ function renderGallery(filteredTiles) {
 
 		const heading = document.createElement('div');
 		heading.className = 'text-xl font-bold mb-2 mt-8 pl-1';
-		heading.textContent = tag;
+		heading.textContent = groupLabel(tag);
 		groupSection.appendChild(heading);
 
 		const groupGrid = document.createElement('div');
@@ -1243,7 +1245,7 @@ async function moveTag(id, dir) {
 		}
 	}
 	rebuildTagIndex();
-	openTagFilterPopup();
+	if (refreshTagTree) refreshTagTree(); else openTagFilterPopup();
 }
 
 async function setTagParent(id, newParentId) {
@@ -1261,7 +1263,7 @@ async function setTagParent(id, newParentId) {
 	cur.parent_id = newParentId;
 	cur.sort_order = nextOrder;
 	rebuildTagIndex();
-	openTagFilterPopup();
+	if (refreshTagTree) refreshTagTree(); else openTagFilterPopup();
 }
 
 async function deleteTagFull(id) {
@@ -1385,6 +1387,7 @@ function openTagFilterPopup() {
 	}
 
 	renderFilteredTree();
+	refreshTagTree = renderFilteredTree; // lets manage actions re-render in place
 
 	searchInput.addEventListener('input', renderFilteredTree);
 
@@ -1405,7 +1408,7 @@ async function renameTag(id) {
 	if (error) { alert('Rename failed: ' + error.message); return; }
 	cur.name = name;            // task assignments are unaffected (they use the id)
 	rebuildTagIndex();
-	openTagFilterPopup();
+	if (refreshTagTree) refreshTagTree(); else openTagFilterPopup();
 }
 
 function setTagFilter(tag) {
