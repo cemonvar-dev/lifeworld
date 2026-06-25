@@ -400,7 +400,7 @@
             // Native Google Sign-In (no browser): get an ID token and hand it to Supabase.
             const SL = window.Capacitor.Plugins.SocialLogin;
             await SL.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID } });
-            const res = await SL.login({ provider: 'google', options: { scopes: ['email', 'profile'] } });
+            const res = await SL.login({ provider: 'google', options: {} });
             const idToken = res && res.result && res.result.idToken;
             if (!idToken) throw new Error('No Google ID token returned');
             const { error } = await window.supa.auth.signInWithIdToken({ provider: 'google', token: idToken });
