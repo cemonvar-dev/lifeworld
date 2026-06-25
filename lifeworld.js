@@ -39,6 +39,7 @@ let activeTagFilter = null; // currently active tag filter
 let activeTimelineFilter = null; // 'today' or null
 let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
 let activeLifecycleFilter = 'active'; // 'active' (planned+in progress), 'all', 'completed', 'failed', 'cancelled'
+let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
 let ALL_TAGS = []; // dynamically built from tile data
 let currentUserId = null;
 
@@ -1384,6 +1385,71 @@ function toggleLifecycleFilter() {
 	applyFilters();
 }
 
+// ---- Mood (health state) filter ----
+// Order/emoji mirror healthToPlant().
+const MOODS = [
+	{ label: 'Thriving', emoji: '⭐' },
+	{ label: 'Healthy', emoji: '☀️' },
+	{ label: 'Growing', emoji: '⛅' },
+	{ label: 'Wilting', emoji: '🌧️' },
+	{ label: 'Dying', emoji: '⚡' }
+];
+
+function openMoodFilterPopup() {
+	const grid = document.getElementById('moodFilterGrid');
+	grid.innerHTML = '';
+
+	// Count tiles per mood across the whole world.
+	const counts = {};
+	MOODS.forEach(m => { counts[m.label] = 0; });
+	tiles.forEach(t => { if (counts[t.healthLabel] != null) counts[t.healthLabel]++; });
+
+	const rowClass = active => `flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl border transition text-left ${active ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'}`;
+
+	// "All moods" row
+	const allBtn = document.createElement('button');
+	allBtn.className = rowClass(activeMoodFilter === null);
+	allBtn.innerHTML = `<span class="font-semibold">🌈 All moods</span><span class="text-xs font-semibold text-slate-400">${tiles.length}</span>`;
+	allBtn.addEventListener('click', () => setMoodFilter(null));
+	grid.appendChild(allBtn);
+
+	MOODS.forEach(m => {
+		const btn = document.createElement('button');
+		btn.className = rowClass(activeMoodFilter === m.label);
+		btn.innerHTML = `<span class="font-medium"><span class="text-lg mr-1.5">${m.emoji}</span>${m.label}</span><span class="text-xs font-semibold text-slate-500">${counts[m.label]}</span>`;
+		btn.addEventListener('click', () => setMoodFilter(m.label));
+		grid.appendChild(btn);
+	});
+
+	document.getElementById('moodFilterOverlay').classList.remove('hidden');
+}
+
+function closeMoodFilterPopup() {
+	document.getElementById('moodFilterOverlay').classList.add('hidden');
+}
+
+function setMoodFilter(label) {
+	activeMoodFilter = label;
+	closeMoodFilterPopup();
+	updateMoodFilterBtn();
+	applyFilters();
+}
+
+function updateMoodFilterBtn() {
+	const btn = document.getElementById('moodFilterBtn');
+	if (!btn) return;
+	if (activeMoodFilter) {
+		const m = MOODS.find(x => x.label === activeMoodFilter);
+		btn.textContent = `${m ? m.emoji : '🌦️'} ${activeMoodFilter}`;
+		btn.classList.remove('bg-white');
+		btn.classList.add('bg-sky-100', 'border-sky-300', 'text-sky-700');
+	} else {
+		btn.textContent = '🌦️ Mood';
+		btn.classList.remove('bg-sky-100', 'border-sky-300', 'text-sky-700');
+		btn.classList.add('bg-white');
+	}
+}
+
 function applyFilters() {
 	let filtered = [...tiles];
 	if (activeTagFilter === '__untagged__') {
@@ -1405,7 +1471,10 @@ function applyFilters() {
 			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter);
 		   }
 	   }
-		       const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
+		       if (activeMoodFilter) {
+			filtered = filtered.filter(t => t.healthLabel === activeMoodFilter);
+		}
+		const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 		       if (q) {
 			       if (q === 'overdue') {
 				       filtered = filtered.filter(t => getNextDueLabel(t.id) === 'overdue');
@@ -1709,6 +1778,11 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('resetBtn').addEventListener('click', resetTodayLogs);
 	document.getElementById('lifecycleFilterBtn').addEventListener('click', toggleLifecycleFilter);
+	document.getElementById('moodFilterBtn').addEventListener('click', openMoodFilterPopup);
+	document.getElementById('closeMoodFilter').addEventListener('click', closeMoodFilterPopup);
+	document.getElementById('moodFilterOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('moodFilterOverlay')) closeMoodFilterPopup();
+	});
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 
 	// Calendar button logic
