@@ -273,7 +273,7 @@ function renderGallery(filteredTiles) {
 		groupSection.appendChild(heading);
 
 		const groupGrid = document.createElement('div');
-		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4';
+		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4';
 		groupGrid.dataset.tagGroup = tag;
 		groups[tag].forEach(tile => {
 			const tileDiv = document.createElement("div");
