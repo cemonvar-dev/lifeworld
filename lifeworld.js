@@ -17,7 +17,7 @@ async function createTileByName(name) {
 	tiles.push({
 		id: data.id,
 		name: data.name,
-		tags: data.tags || [],
+		tags: data.tag_ids || [],
 		status: 'noaction',
 		taskStatus: data.status || 'in progress',
 		emoji: plant.emoji,
@@ -28,7 +28,6 @@ async function createTileByName(name) {
 		createdAt: data.created_at || null,
 		lastUpdate: null
 	});
-	buildTagsFromTiles();
 	applyFilters();
 	openTilePopup(data.id);
 }
@@ -40,18 +39,36 @@ let activeTimelineFilter = null; // 'today' or null
 let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
 let activeLifecycleFilter = 'active'; // 'active' (planned+in progress), 'all', 'completed', 'failed', 'cancelled'
 let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
-let ALL_TAGS = []; // dynamically built from tile data
+let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
+let TAGS = [];            // rows from public.tags: { id, name, parent_id, sort_order }
+let TAGS_BY_ID = {};      // id -> tag row
 let currentUserId = null;
 
-function buildTagsFromTiles() {
-	const tagSet = new Set();
-	Object.values(rawTiles).forEach(t => {
-		(t.tags || []).forEach(tag => tagSet.add(tag));
-	});
-	ALL_TAGS = Array.from(tagSet).sort().map(key => ({
-		key,
-		label: key.charAt(0).toUpperCase() + key.slice(1)
-	}));
+// Load the user's tags from the tags table.
+async function loadTags() {
+	const { data, error } = await supa.from('tags').select('id,name,parent_id,sort_order');
+	TAGS = (!error && data) ? data : [];
+	rebuildTagIndex();
+}
+
+// Rebuild lookup structures from the in-memory TAGS array (after a local change).
+function rebuildTagIndex() {
+	TAGS_BY_ID = {};
+	TAGS.forEach(t => { TAGS_BY_ID[t.id] = t; });
+	ALL_TAGS = TAGS.map(t => ({ key: t.id, label: t.name }));
+}
+
+// Breadcrumb path for a tag id, e.g. "family › defne › hobby".
+function tagPath(id) {
+	const parts = [];
+	let cur = TAGS_BY_ID[id], guard = 0;
+	while (cur && guard++ < 30) { parts.unshift(cur.name); cur = cur.parent_id ? TAGS_BY_ID[cur.parent_id] : null; }
+	return parts.join(' › ');
+}
+
+// Display name for a tag id (falls back to the id if unknown).
+function tagName(id) {
+	return TAGS_BY_ID[id] ? TAGS_BY_ID[id].name : id;
 }
 
 // ---- Health Score ----
@@ -172,7 +189,7 @@ async function fetchTilesFromSupabase() {
 		       return {
 			       id: task.id,
 			       name: task.name,
-			       tags: task.tags || [],
+			       tags: task.tag_ids || [],
 			       status: getTodayStatus(logs),
 			       taskStatus: task.status || 'in progress',
 			       emoji: plant.emoji,
@@ -185,7 +202,7 @@ async function fetchTilesFromSupabase() {
 		       };
 	       });
 
-	buildTagsFromTiles();
+	await loadTags();
 	renderGallery(tiles);
 }
 
@@ -421,7 +438,7 @@ function openTilePopup(tileId) {
 
 	const freqMode = raw.frequency_mode || 'daily';
 	const timeOfDayArr = (typeof raw.time_of_day === 'string' && raw.time_of_day) ? raw.time_of_day.split(',').filter(Boolean) : [];
-	const currentTags = raw.tags || [];
+	const currentTags = raw.tag_ids || [];
 	const freqDays = (raw.task_frequency_days || []).map(d => String(d.day_of_week));
 
 	// Build logs timeline
@@ -469,10 +486,7 @@ function openTilePopup(tileId) {
 	const tagDropdownHtml = `
 	<div class="tagDropdown mb-8" style="min-width:220px;">
 		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-sm" tabindex="0">
-			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(t => {
-		const info = ALL_TAGS.find(at => at.key === t);
-		return info ? info.label : t;
-	}).join(', ') : 'Select tags...'}</span>
+			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(tagName).join(', ') : 'Select tags...'}</span>
 			<span class="ml-2">▼</span>
 		</button>
 		<div id="tagDropdownMenu" class="tagDropdownMenu" style="max-height:220px;overflow-y:auto;">
@@ -563,30 +577,31 @@ function openTilePopup(tileId) {
 	const tagDropdownSelected = document.getElementById('tagDropdownSelected');
 	const tagDropdownSearch = document.getElementById('tagDropdownSearch');
 
+	function updateTagSummary() {
+		const sel = (rawTiles[activeTileId] && rawTiles[activeTileId].tag_ids) || [];
+		tagDropdownSelected.textContent = sel.length ? sel.map(tagName).join(', ') : 'Select tags...';
+	}
+
 	function renderTagOptions(filter = '') {
 		tagDropdownOptions.innerHTML = '';
-		ALL_TAGS.filter(at => at.label.toLowerCase().includes(filter.toLowerCase())).forEach(at => {
-			const checked = currentTags.includes(at.key);
-			const btn = document.createElement('button');
-			btn.className = 'tagBtn flex items-center gap-2 w-full px-3 py-1 text-left text-sm' + (checked ? ' active' : '');
-			btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${at.label}`;
-			btn.addEventListener('click', async e => {
-				e.preventDefault();
-				await toggleTag(at.key);
-				// Update UI immediately
-				if (currentTags.includes(at.key)) {
-					currentTags.splice(currentTags.indexOf(at.key), 1);
-				} else {
-					currentTags.push(at.key);
-				}
-				tagDropdownSelected.textContent = currentTags.length ? currentTags.map(t => {
-					const info = ALL_TAGS.find(at2 => at2.key === t);
-					return info ? info.label : t;
-				}).join(', ') : 'Select tags...';
-				renderTagOptions(tagDropdownSearch.value);
+		const sel = (rawTiles[activeTileId] && rawTiles[activeTileId].tag_ids) || [];
+		const q = filter.toLowerCase();
+		ALL_TAGS
+			.filter(at => at.label.toLowerCase().includes(q) || tagPath(at.key).toLowerCase().includes(q))
+			.sort((a, b) => tagPath(a.key).localeCompare(tagPath(b.key)))
+			.forEach(at => {
+				const checked = sel.includes(at.key);
+				const btn = document.createElement('button');
+				btn.className = 'tagBtn flex items-center gap-2 w-full px-3 py-1 text-left text-sm' + (checked ? ' active' : '');
+				btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${tagPath(at.key)}`;
+				btn.addEventListener('click', async e => {
+					e.preventDefault();
+					await toggleTag(at.key);
+					updateTagSummary();
+					renderTagOptions(tagDropdownSearch.value);
+				});
+				tagDropdownOptions.appendChild(btn);
 			});
-			tagDropdownOptions.appendChild(btn);
-		});
 	}
 
 	tagDropdownBtn.addEventListener('click', e => {
@@ -877,23 +892,21 @@ async function updateTask(taskId, updates) {
 }
 
 // ---- Tag Operations ----
-async function toggleTag(tag) {
+async function toggleTag(tagId) {
 	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
-	raw.tags = raw.tags || [];
-	const idx = raw.tags.indexOf(tag);
+	raw.tag_ids = raw.tag_ids || [];
+	const idx = raw.tag_ids.indexOf(tagId);
 	if (idx >= 0) {
-		raw.tags.splice(idx, 1);
+		raw.tag_ids.splice(idx, 1);
 	} else {
-		raw.tags.push(tag);
+		raw.tag_ids.push(tagId);
 	}
 	const displayTile = tiles.find(t => t.id === activeTileId);
-	if (displayTile) displayTile.tags = [...raw.tags];
-	buildTagsFromTiles();
-	openTilePopup(activeTileId);
+	if (displayTile) displayTile.tags = [...raw.tag_ids];
 	applyFilters();
-	await updateTask(raw.id, { tags: raw.tags });
+	await updateTask(raw.id, { tag_ids: raw.tag_ids });
 }
 
 // ---- Frequency Operations ----
@@ -1056,7 +1069,7 @@ async function addNewTile() {
 	tiles.push({
 		id: data.id,
 		name: data.name,
-		tags: data.tags || [],
+		tags: data.tag_ids || [],
 		status: 'noaction',
 		taskStatus: data.status || 'in progress',
 		emoji: plant.emoji,
@@ -1068,67 +1081,36 @@ async function addNewTile() {
 		lastUpdate: null
 	});
 
-	buildTagsFromTiles();
 	applyFilters();
 	openTilePopup(data.id);
 }
 
 // ---- Tag Filter ----
 function buildTagTree(tags) {
-	// tags: array of {key, label}
+	// tags: array of { key: tagId, label }. Build a nested tree from parent_id.
+	const nodeFor = {};
+	tags.forEach(t => { nodeFor[t.key] = { tag: t, children: {} }; });
 	const root = {};
-
-	// Helper: for a tag like 14.5.1-work-projeler-spring, build the path as:
-	// [14-work, 14.5-work-projeler, 14.5.1-work-projeler-spring]
-	function getPathParts(key) {
-		const parts = [];
-		const regex = /((?:\d+\.?)+)-(.*)/;
-		const match = key.match(regex);
-		if (!match) return [key];
-		const numPart = match[1]; // e.g., 14.5.1
-		const labelPart = match[2]; // e.g., work-projeler-spring
-		const numSegments = numPart.split('.');
-		for (let i = 1; i <= numSegments.length; i++) {
-			const seg = numSegments.slice(0, i).join('.');
-			// Find the tag in ALL_TAGS that starts with seg + '-' (if exists)
-			const prefix = seg + '-';
-			const found = tags.find(t => t.key.startsWith(prefix));
-			if (found) {
-				parts.push(found.key);
-			} else if (i === numSegments.length) {
-				// If not found, use the full key for the last part
-				parts.push(key);
-			}
+	tags.forEach(t => {
+		const full = TAGS_BY_ID[t.key];
+		const parentId = full ? full.parent_id : null;
+		if (parentId && nodeFor[parentId]) {
+			nodeFor[parentId].children[t.key] = nodeFor[t.key];
+		} else {
+			root[t.key] = nodeFor[t.key]; // root, or parent filtered out by search
 		}
-		return parts;
-	}
-
-	for (const tag of tags) {
-		const pathParts = getPathParts(tag.key);
-		let node = root;
-		for (let i = 0; i < pathParts.length; i++) {
-			const part = pathParts[i];
-			if (!node[part]) node[part] = { children: {}, tag: null };
-			if (i === pathParts.length - 1) {
-				node[part].tag = tag;
-			}
-			node = node[part].children;
-		}
-	}
+	});
 	return root;
 }
 
 function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 	const fragment = document.createDocumentFragment();
-	// Sort keys numerically/alphabetically (e.g., 01, 02, 10, 11, 12, ...)
+	// Sort siblings by their stored sort_order, then name.
 	const sortedKeys = Object.keys(node).sort((a, b) => {
-		// Extract leading number for numeric sort, fallback to string
-		const numA = a.match(/^\d+/) ? parseInt(a.match(/^\d+/)[0], 10) : NaN;
-		const numB = b.match(/^\d+/) ? parseInt(b.match(/^\d+/)[0], 10) : NaN;
-		if (!isNaN(numA) && !isNaN(numB)) {
-			if (numA !== numB) return numA - numB;
-		}
-		return a.localeCompare(b);
+		const ta = TAGS_BY_ID[a], tb = TAGS_BY_ID[b];
+		const soA = ta ? ta.sort_order : 0, soB = tb ? tb.sort_order : 0;
+		if (soA !== soB) return soA - soB;
+		return (ta ? ta.name : a).localeCompare(tb ? tb.name : b);
 	});
 	for (const key of sortedKeys) {
 		const { tag, children } = node[key];
@@ -1224,13 +1206,14 @@ function openTagFilterPopup() {
 	const newBtn = document.createElement('button');
 	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center min-w-[70px]';
 	newBtn.innerHTML = `<span class="text-base">➕</span><span class="text-xs font-semibold">New Tag</span>`;
-	newBtn.addEventListener('click', () => {
-		const newTag = prompt('Enter new tag name:');
-		if (!newTag || !newTag.trim()) return;
-		const key = newTag.trim().toLowerCase().replace(/\s+/g, '-');
-		if (!ALL_TAGS.find(t => t.key === key)) {
-			ALL_TAGS.push({ key, label: newTag.trim() });
-		}
+	newBtn.addEventListener('click', async () => {
+		const name = prompt('New tag name:');
+		if (!name || !name.trim()) return;
+		const { data, error } = await supa.from('tags')
+			.insert({ user_id: currentUserId, name: name.trim() })
+			.select().single();
+		if (error) { alert('Create tag failed: ' + error.message); return; }
+		if (data) { TAGS.push(data); rebuildTagIndex(); }
 		openTagFilterPopup();
 	});
 	controlsRow.appendChild(newBtn);
@@ -1286,30 +1269,16 @@ function closeTagFilterPopup() {
 	document.getElementById('tagFilterOverlay').classList.add('hidden');
 }
 
-async function renameTag(oldKey) {
-	const newName = prompt('Rename tag "' + oldKey + '" to:', oldKey);
-	if (!newName || !newName.trim() || newName.trim().toLowerCase().replace(/\s+/g, '-') === oldKey) return;
-	const newKey = newName.trim().toLowerCase().replace(/\s+/g, '-');
-
-	// Update all tasks that have this tag
-	const tasksToUpdate = Object.values(rawTiles).filter(t => (t.tags || []).includes(oldKey));
-	for (const task of tasksToUpdate) {
-		const idx = task.tags.indexOf(oldKey);
-		if (idx >= 0) task.tags[idx] = newKey;
-		await supa.from('tasks').update({ tags: task.tags }).eq('id', task.id);
-	}
-
-	// Update display tiles
-	tiles.forEach(t => {
-		const idx = (t.tags || []).indexOf(oldKey);
-		if (idx >= 0) t.tags[idx] = newKey;
-	});
-
-	// Update active filter if it was the renamed tag
-	if (activeTagFilter === oldKey) activeTagFilter = newKey;
-
-	buildTagsFromTiles();
-	applyFilters();
+async function renameTag(id) {
+	const cur = TAGS_BY_ID[id];
+	if (!cur) return;
+	const newName = prompt('Rename tag:', cur.name);
+	if (!newName || !newName.trim() || newName.trim() === cur.name) return;
+	const name = newName.trim();
+	const { error } = await supa.from('tags').update({ name }).eq('id', id);
+	if (error) { alert('Rename failed: ' + error.message); return; }
+	cur.name = name;            // task assignments are unaffected (they use the id)
+	rebuildTagIndex();
 	openTagFilterPopup();
 }
 
@@ -1330,8 +1299,7 @@ function updateFilterBar() {
 		if (activeTagFilter === '__untagged__') {
 			label.textContent = '📦 Untagged';
 		} else {
-			const info = ALL_TAGS.find(t => t.key === activeTagFilter);
-			label.textContent = info ? info.label : activeTagFilter;
+			label.textContent = '🏷️ ' + tagPath(activeTagFilter);
 		}
 	}
 }
@@ -1531,7 +1499,7 @@ function applyFilters() {
 				       // Search by name or tag (partial, case-insensitive)
 				       filtered = filtered.filter(t => {
 					       const nameMatch = t.name.toLowerCase().includes(q);
-					       const tagMatch = (t.tags || []).some(tag => tag.toLowerCase().includes(q));
+					       const tagMatch = (t.tags || []).some(id => tagName(id).toLowerCase().includes(q));
 					       return nameMatch || tagMatch;
 				       });
 			       }
@@ -1573,7 +1541,7 @@ async function resetTodayLogs() {
 		return {
 			id: task.id,
 			name: task.name,
-			tags: task.tags || [],
+			tags: task.tag_ids || [],
 			status: getTodayStatus(logs),
 			taskStatus: task.status || 'in progress',
 			emoji: plant.emoji,
@@ -1601,7 +1569,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• "${task.name}" | tags: [${(task.tags || []).join(', ')}] | freq: ${task.frequency_mode} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
+		return `• "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
@@ -1941,7 +1909,7 @@ function renderOnceTasksCalendar() {
 
 	// Gather all unique tags from once-tasks
 	const tagSet = new Set();
-	onceTasks.forEach(t => (t.tags || []).forEach(tag => tagSet.add(tag)));
+	onceTasks.forEach(t => (t.tag_ids || []).forEach(id => tagSet.add(tagName(id))));
 	const tagList = Array.from(tagSet).sort();
 
 	// Filtering UI: tag multi-select and text input
@@ -1965,20 +1933,11 @@ function renderOnceTasksCalendar() {
 	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
 	allDates.forEach(date => {
 		dateMap[date].forEach(t => {
-			let tag = (t.tags && t.tags.length > 0) ? t.tags[0] : '';
-			let tagLabel = tag;
-			if (tag) {
-				const tagObj = (typeof ALL_TAGS !== 'undefined' ? ALL_TAGS.find(at => at.key === tag) : null);
-				if (tagObj && tagObj.label) tagLabel = tagObj.label;
-				// Take right part after first '-' if present
-				const dashIdx = tagLabel.indexOf('-');
-				if (dashIdx !== -1 && dashIdx < tagLabel.length - 1) {
-					tagLabel = tagLabel.substring(dashIdx + 1);
-				}
-			}
+			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
+			const tagLabel = tagId ? tagName(tagId) : '';
 			const desc = escapeHtml(t.name);
 			// Add all tags for multi-select filter
-			const allTags = (t.tags || []).join(',');
+			const allTags = (t.tag_ids || []).map(tagName).join(',');
 			// Compute weekday name
 			const d = new Date(date + 'T00:00:00');
 			const dayName = d.toLocaleDateString(undefined, { weekday: 'long' });
