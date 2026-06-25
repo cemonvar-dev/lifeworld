@@ -54,6 +54,12 @@ function buildTagsFromTiles() {
 }
 
 // ---- Health Score ----
+// The day a log applies to (the user-chosen date), NOT when the row was inserted.
+// created_at is only a fallback for legacy rows without log_date.
+function logDay(log) {
+	return log.log_date || (log.created_at ? log.created_at.split('T')[0] : '');
+}
+
 function calculateHealth(task) {
 	const logs = task.task_logs || [];
 	const mode = task.frequency_mode || 'daily';
@@ -69,7 +75,7 @@ function calculateHealth(task) {
 	const doneDates = new Set();
 	const skipDates = new Set();
 	logs.forEach(log => {
-		const d = log.created_at ? log.created_at.split('T')[0] : '';
+		const d = logDay(log);
 		if (log.status === 'done' || log.status === 'completed') doneDates.add(d);
 		if (log.status === 'skipped') skipDates.add(d);
 	});
@@ -115,7 +121,7 @@ function healthToPlant(score) {
 // ---- Data Fetching ----
 function getTodayStatus(logs) {
 	const today = new Date().toISOString().split('T')[0];
-	const todayLog = (logs || []).find(l => l.created_at && l.created_at.split('T')[0] === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
+	const todayLog = (logs || []).find(l => logDay(l) === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
 	if (!todayLog) return 'noaction';
 	if (todayLog.status === 'completed' || todayLog.status === 'done') return 'done';
 	if (todayLog.status === 'skipped') return 'skipped';
@@ -410,7 +416,7 @@ function openTilePopup(tileId) {
 	const statusLabel = lastLog
 		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skipped' ? '😢 Skipped' : '💬 No Action')
 		: '💬 No Action';
-	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.created_at).toLocaleDateString() : '';
+	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.log_date || lastLog.created_at).toLocaleDateString() : '';
 
 	const freqMode = raw.frequency_mode || 'daily';
 	const timeOfDayArr = (typeof raw.time_of_day === 'string' && raw.time_of_day) ? raw.time_of_day.split(',').filter(Boolean) : [];
@@ -692,7 +698,7 @@ function openAddLogPopup(logToEdit) {
 	if (logToEdit) {
 		// Edit mode — single date, status toggle + Update button.
 		editingLogId = logToEdit.id;
-		const logDate = logToEdit.created_at ? logToEdit.created_at.split('T')[0] : today;
+		const logDate = logDay(logToEdit) || today;
 		dateInput.value = logDate;
 		document.getElementById('logNoteInput').value = logToEdit.note || '';
 		addLogStatus = logToEdit.status || 'done';
@@ -784,7 +790,7 @@ async function submitLog(statusArg) {
 		if (data) {
 			const idx = (raw.task_logs || []).findIndex(l => l.id === editingLogId);
 			if (idx >= 0) raw.task_logs[idx] = data;
-			raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+			raw.task_logs.sort((a, b) => new Date(b.log_date || b.created_at) - new Date(a.log_date || a.created_at));
 		}
 		editingLogId = null;
 	} else {
@@ -801,7 +807,7 @@ async function submitLog(statusArg) {
 
 		if (data) {
 			raw.task_logs = (raw.task_logs || []).concat(data);
-			raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+			raw.task_logs.sort((a, b) => new Date(b.log_date || b.created_at) - new Date(a.log_date || a.created_at));
 		}
 	}
 
@@ -942,7 +948,7 @@ async function quickLog(tileId, status) {
 
 	// Check if there's already a log for today — update it instead of creating duplicate
 	const existingLog = (raw.task_logs || []).find(l => {
-		const logDate = l.created_at ? l.created_at.split('T')[0] : '';
+		const logDate = logDay(l);
 		return logDate === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed');
 	});
 
@@ -1431,7 +1437,7 @@ async function resetTodayLogs() {
 	const logIdsToReset = [];
 	Object.values(rawTiles).forEach(raw => {
 		(raw.task_logs || []).forEach(log => {
-			const logDate = log.created_at ? log.created_at.split('T')[0] : '';
+			const logDate = logDay(log);
 			if (logDate === today && (log.status === 'done' || log.status === 'skipped' || log.status === 'completed')) {
 				logIdsToReset.push(log.id);
 			}
@@ -1482,8 +1488,8 @@ function buildTaskContext() {
 		const plant = healthToPlant(health);
 		const lastLog = logs[0];
 		const todayStr = new Date().toISOString().split('T')[0];
-		const todayLog = logs.find(l => l.created_at && l.created_at.split('T')[0] === todayStr);
-		const recentLogs = logs.slice(0, 7).map(l => `${l.created_at?.split('T')[0]}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
+		const todayLog = logs.find(l => logDay(l) === todayStr);
+		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
 		return `• "${task.name}" | tags: [${(task.tags || []).join(', ')}] | freq: ${task.frequency_mode} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
 	});
