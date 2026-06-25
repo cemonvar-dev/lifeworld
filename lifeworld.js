@@ -1954,6 +1954,12 @@ function openCalendarPopup() {
 				openTilePopup(tileId);
 			});
 		});
+		container.querySelectorAll('.cal-complete-btn').forEach(btn => {
+			btn.addEventListener('click', () => completeTaskFromCalendar(btn.getAttribute('data-tile-id')));
+		});
+		container.querySelectorAll('.cal-reschedule-btn').forEach(btn => {
+			btn.addEventListener('click', () => rescheduleTaskFromCalendar(btn.getAttribute('data-tile-id'), btn));
+		});
 	}, 0);
 
 		       // Tag filter removed; only text filter and chips remain
@@ -2027,6 +2033,62 @@ function closeCalendarPopup() {
 	document.getElementById('calendarOverlay').classList.add('hidden');
 }
 
+// Mark a planned (once) task as completed straight from the calendar.
+async function completeTaskFromCalendar(tileId) {
+	const raw = rawTiles[tileId];
+	if (!raw) return;
+	raw.status = 'completed';
+	const dt = tiles.find(t => t.id === tileId);
+	if (dt) dt.taskStatus = 'completed';
+	await updateTask(tileId, { status: 'completed' });
+	applyFilters();
+	openCalendarPopup(); // re-render; completed tasks drop out of the calendar
+}
+
+// Reschedule a planned task: pick a new date, update its end_date.
+function rescheduleTaskFromCalendar(tileId, btnEl) {
+	const raw = rawTiles[tileId];
+	if (!raw) return;
+	if (!window.flatpickr) {
+		const v = prompt('New date (YYYY-MM-DD):', raw.end_date || '');
+		if (v && v.trim()) applyReschedule(tileId, v.trim());
+		return;
+	}
+	const input = document.createElement('input');
+	input.type = 'text';
+	input.style.position = 'fixed';
+	input.style.left = '-9999px';
+	document.body.appendChild(input);
+	let done = false;
+	const fp = flatpickr(input, {
+		defaultDate: raw.end_date || undefined,
+		dateFormat: 'Y-m-d',
+		disableMobile: true,
+		positionElement: btnEl || undefined,
+		onChange: (dates, dateStr) => {
+			if (dateStr && !done) {
+				done = true;
+				applyReschedule(tileId, dateStr);
+				try { fp.destroy(); } catch (e) {}
+				input.remove();
+			}
+		},
+		onClose: () => {
+			setTimeout(() => { if (!done) { try { fp.destroy(); } catch (e) {} input.remove(); } }, 50);
+		}
+	});
+	fp.open();
+}
+
+async function applyReschedule(tileId, dateStr) {
+	const raw = rawTiles[tileId];
+	if (!raw) return;
+	raw.end_date = dateStr;
+	await updateTask(tileId, { end_date: dateStr });
+	applyFilters();
+	openCalendarPopup(); // re-render at the new date
+}
+
 function renderOnceTasksCalendar() {
 	// Gather all once-frequency tasks with end_date, EXCLUDING those with status completed, failed, or cancelled
 	const onceTasks = Object.values(rawTiles).filter(t => {
@@ -2062,7 +2124,7 @@ function renderOnceTasksCalendar() {
 	// Get all unique dates, sorted
 	const allDates = Object.keys(dateMap).sort();
 	// Render a simple table calendar (list style for now)
-	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th></tr></thead><tbody>';
+	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th><th class="px-4 py-2 text-left">Actions</th></tr></thead><tbody>';
 	allDates.forEach(date => {
 		dateMap[date].forEach(t => {
 			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
@@ -2077,7 +2139,7 @@ function renderOnceTasksCalendar() {
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td></tr>`;
+				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}">✅ Completed</button><button class="cal-reschedule-btn text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}">📅 Reschedule</button></td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
