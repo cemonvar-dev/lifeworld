@@ -42,6 +42,7 @@ let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dyin
 let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
 let TAGS = [];            // rows from public.tags: { id, name, parent_id, sort_order }
 let TAGS_BY_ID = {};      // id -> tag row
+let tagManageMode = false; // tag filter popup: manage (reorder/parent/delete) vs filter
 let currentUserId = null;
 
 // Load the user's tags from the tags table.
@@ -1147,11 +1148,13 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 			`<span class="flex-1 truncate">${tagObj.label}</span>` +
 			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>` +
 			`<span class="text-[11px] font-semibold text-slate-400 tabular-nums w-7 text-right shrink-0">${tagCounts[tagObj.key] || 0}</span>`;
-		btn.addEventListener('click', () => { setTagFilter(tagObj.key); });
+		btn.addEventListener('click', () => { if (!tagManageMode) setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
-		// Edit button (for all nodes, use tagObj.key)
+		// Rename button (always visible in manage mode, hover-only otherwise)
 		const editBtn = document.createElement('button');
-		editBtn.className = 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
+		editBtn.className = tagManageMode
+			? 'ml-1 text-xs text-slate-400 hover:text-blue-500 transition'
+			: 'ml-1 text-[10px] text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition';
 		editBtn.textContent = '✏️';
 		editBtn.title = 'Rename tag';
 		editBtn.addEventListener('click', (e) => {
@@ -1159,6 +1162,16 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 			renameTag(tagObj.key);
 		});
 		wrapper.appendChild(editBtn);
+		// Manage controls: reorder, change parent, delete
+		if (tagManageMode) {
+			const ctrls = document.createElement('div');
+			ctrls.className = 'flex items-center gap-1 ml-1 shrink-0';
+			ctrls.appendChild(mkIconBtn('⬆', 'Move up', () => moveTag(tagObj.key, -1)));
+			ctrls.appendChild(mkIconBtn('⬇', 'Move down', () => moveTag(tagObj.key, 1)));
+			ctrls.appendChild(buildParentSelect(tagObj.key));
+			ctrls.appendChild(mkIconBtn('🗑️', 'Delete', () => deleteTagFull(tagObj.key)));
+			wrapper.appendChild(ctrls);
+		}
 		fragment.appendChild(wrapper);
 		// Children
 		if (Object.keys(children).length > 0) {
@@ -1169,6 +1182,112 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 		}
 	}
 	return fragment;
+}
+
+// ---- Tag Manager (reorder / re-parent / delete) ----
+function mkIconBtn(txt, title, fn) {
+	const b = document.createElement('button');
+	b.textContent = txt;
+	b.title = title;
+	b.className = 'text-xs px-1 rounded hover:bg-slate-200 transition';
+	b.addEventListener('click', e => { e.stopPropagation(); fn(); });
+	return b;
+}
+
+function getDescendantIds(id) {
+	const out = new Set();
+	(function rec(pid) {
+		TAGS.filter(t => t.parent_id === pid).forEach(c => { out.add(c.id); rec(c.id); });
+	})(id);
+	return out;
+}
+
+// Dropdown to pick a tag's parent (excludes itself + its descendants to avoid cycles).
+function buildParentSelect(id) {
+	const cur = TAGS_BY_ID[id] || {};
+	const sel = document.createElement('select');
+	sel.className = 'text-[11px] border border-slate-200 rounded px-1 py-0.5 bg-white max-w-[110px]';
+	sel.title = 'Parent';
+	const desc = getDescendantIds(id);
+	const root = document.createElement('option');
+	root.value = ''; root.textContent = '(root)';
+	sel.appendChild(root);
+	TAGS.filter(t => t.id !== id && !desc.has(t.id))
+		.map(t => ({ id: t.id, path: tagPath(t.id) }))
+		.sort((a, b) => a.path.localeCompare(b.path))
+		.forEach(o => {
+			const op = document.createElement('option');
+			op.value = o.id; op.textContent = o.path;
+			sel.appendChild(op);
+		});
+	sel.value = cur.parent_id || '';
+	sel.addEventListener('change', e => { e.stopPropagation(); setTagParent(id, sel.value || null); });
+	sel.addEventListener('click', e => e.stopPropagation());
+	return sel;
+}
+
+// Swap a tag with its previous/next sibling (normalizes sort_order to 0..n-1).
+async function moveTag(id, dir) {
+	const cur = TAGS_BY_ID[id];
+	if (!cur) return;
+	const siblings = TAGS.filter(t => t.parent_id === cur.parent_id)
+		.sort((a, b) => (a.sort_order - b.sort_order) || a.name.localeCompare(b.name));
+	const i = siblings.findIndex(t => t.id === id);
+	const j = i + dir;
+	if (j < 0 || j >= siblings.length) return;
+	[siblings[i], siblings[j]] = [siblings[j], siblings[i]];
+	for (let k = 0; k < siblings.length; k++) {
+		if (siblings[k].sort_order !== k) {
+			await supa.from('tags').update({ sort_order: k }).eq('id', siblings[k].id);
+			siblings[k].sort_order = k;
+		}
+	}
+	rebuildTagIndex();
+	openTagFilterPopup();
+}
+
+async function setTagParent(id, newParentId) {
+	const cur = TAGS_BY_ID[id];
+	if (!cur || newParentId === id) return;
+	if (newParentId && getDescendantIds(id).has(newParentId)) {
+		alert("Can't move a tag under one of its own children.");
+		openTagFilterPopup();
+		return;
+	}
+	const sibs = TAGS.filter(t => t.parent_id === newParentId && t.id !== id);
+	const nextOrder = sibs.length ? Math.max(...sibs.map(s => s.sort_order)) + 1 : 0;
+	const { error } = await supa.from('tags').update({ parent_id: newParentId, sort_order: nextOrder }).eq('id', id);
+	if (error) { alert('Move failed: ' + error.message); return; }
+	cur.parent_id = newParentId;
+	cur.sort_order = nextOrder;
+	rebuildTagIndex();
+	openTagFilterPopup();
+}
+
+async function deleteTagFull(id) {
+	const cur = TAGS_BY_ID[id];
+	if (!cur) return;
+	if (!confirm(`Delete tag "${cur.name}"?\nIts sub-tags become top-level, and it's removed from any cards.`)) return;
+	// Remove the tag id from any task that uses it.
+	const affected = Object.values(rawTiles).filter(t => (t.tag_ids || []).includes(id));
+	for (const task of affected) {
+		task.tag_ids = (task.tag_ids || []).filter(x => x !== id);
+		await supa.from('tasks').update({ tag_ids: task.tag_ids }).eq('id', task.id);
+		const dt = tiles.find(t => t.id === task.id);
+		if (dt) dt.tags = [...task.tag_ids];
+	}
+	const { error } = await supa.from('tags').delete().eq('id', id); // children.parent_id -> null via FK
+	if (error) { alert('Delete failed: ' + error.message); return; }
+	if (activeTagFilter === id) activeTagFilter = null;
+	await loadTags();
+	applyFilters();
+	updateFilterBar();
+	openTagFilterPopup();
+}
+
+function toggleTagManage() {
+	tagManageMode = !tagManageMode;
+	openTagFilterPopup();
 }
 
 function openTagFilterPopup() {
@@ -1225,6 +1344,13 @@ function openTagFilterPopup() {
 	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tagTiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	controlsRow.appendChild(allBtn);
+
+	// "Manage" toggle (reorder / re-parent / delete)
+	const manageBtn = document.createElement('button');
+	manageBtn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${tagManageMode ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'}`;
+	manageBtn.innerHTML = `<span class="text-base">🛠️</span><span class="text-xs font-semibold">${tagManageMode ? 'Done' : 'Manage'}</span>`;
+	manageBtn.addEventListener('click', toggleTagManage);
+	controlsRow.appendChild(manageBtn);
 
 	grid.appendChild(controlsRow);
 
