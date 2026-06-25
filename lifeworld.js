@@ -1179,9 +1179,11 @@ function openTagFilterPopup() {
 	const overlay = document.getElementById('tagFilterOverlay');
 	const grid = document.getElementById('tagFilterGrid');
 
+	// Exclude completed cards from all tag tallies (their health is irrelevant).
+	const tagTiles = tiles.filter(t => t.taskStatus !== 'completed');
 	const tagCounts = {};
 	const tagMoods = {}; // tagKey -> { Thriving: n, Dying: n, ... }
-	tiles.forEach(tile => {
+	tagTiles.forEach(tile => {
 		(tile.tags || []).forEach(t => {
 			tagCounts[t] = (tagCounts[t] || 0) + 1;
 			if (!tagMoods[t]) tagMoods[t] = {};
@@ -1223,7 +1225,7 @@ function openTagFilterPopup() {
 	const allBtn = document.createElement('button');
 	allBtn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === null ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
 		}`;
-	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tiles.length}</span>`;
+	allBtn.innerHTML = `<span class="text-base">🌐</span><span class="text-xs font-semibold">All</span><span class="text-[10px] text-slate-400">${tagTiles.length}</span>`;
 	allBtn.addEventListener('click', () => { setTagFilter(null); });
 	controlsRow.appendChild(allBtn);
 
@@ -1248,7 +1250,7 @@ function openTagFilterPopup() {
 		tagTreeContainer.appendChild(renderTagTree(tagTree, tagCounts, 0, tagMoods));
 
 		// Untagged
-		const untaggedCount = tiles.filter(t => !t.tags || t.tags.length === 0).length;
+		const untaggedCount = tagTiles.filter(t => !t.tags || t.tags.length === 0).length;
 		if (untaggedCount > 0) {
 			const btn = document.createElement('button');
 			btn.className = `flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 transition text-center min-w-[70px] ${activeTagFilter === '__untagged__' ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'
@@ -1423,17 +1425,18 @@ function openMoodFilterPopup() {
 	const grid = document.getElementById('moodFilterGrid');
 	grid.innerHTML = '';
 
-	// Count tiles per mood across the whole world.
+	// Count tiles per mood — exclude completed cards (their health is irrelevant).
+	const countable = tiles.filter(t => t.taskStatus !== 'completed');
 	const counts = {};
 	MOODS.forEach(m => { counts[m.label] = 0; });
-	tiles.forEach(t => { if (counts[t.healthLabel] != null) counts[t.healthLabel]++; });
+	countable.forEach(t => { if (counts[t.healthLabel] != null) counts[t.healthLabel]++; });
 
 	const rowClass = active => `flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl border transition text-left ${active ? 'border-slate-800 bg-slate-100' : 'border-slate-200 bg-white hover:bg-slate-50'}`;
 
 	// "All moods" row
 	const allBtn = document.createElement('button');
 	allBtn.className = rowClass(activeMoodFilter === null);
-	allBtn.innerHTML = `<span class="font-semibold">🌈 All moods</span><span class="text-xs font-semibold text-slate-400">${tiles.length}</span>`;
+	allBtn.innerHTML = `<span class="font-semibold">🌈 All moods</span><span class="text-xs font-semibold text-slate-400">${countable.length}</span>`;
 	allBtn.addEventListener('click', () => setMoodFilter(null));
 	grid.appendChild(allBtn);
 
