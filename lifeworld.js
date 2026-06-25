@@ -1125,6 +1125,7 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 		// Expand/collapse if has children
 		let expanded = true;
 		let toggleBtn = null;
+		let childContainer = null; // assigned below; referenced by the toggle handler
 		if (Object.keys(children).length > 0) {
 			toggleBtn = document.createElement('button');
 			toggleBtn.textContent = expanded ? '▼' : '►';
@@ -1177,7 +1178,7 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 		fragment.appendChild(wrapper);
 		// Children
 		if (Object.keys(children).length > 0) {
-			const childContainer = document.createElement('div');
+			childContainer = document.createElement('div');
 			childContainer.style.marginLeft = '0px';
 			childContainer.appendChild(renderTagTree(children, tagCounts, level + 1, tagMoods));
 			fragment.appendChild(childContainer);
