@@ -4,3 +4,8 @@ package-lock.json
 /android/.gradle/
 /android/app/build/
 /android/build/
+# Signing material — never commit
+*.keystore
+*.jks
+keystore.base64.txt
+key.properties
