@@ -8,6 +8,8 @@
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 	<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 	<script src="https://unpkg.com/@supabase/supabase-js@2.48.0/dist/umd/supabase.js"></script>
 	<script src="supa.js"></script>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -118,21 +120,18 @@
 			<button id="closeAddLog" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
 			<div class="text-lg font-bold mb-4">Add Log</div>
 			<div class="mb-3">
-				<label class="text-xs text-slate-500 mb-1 block">Status</label>
-				<div id="logStatusBtns" class="flex gap-2">
-					<button class="log-status-btn flex-1 py-1.5 rounded-lg text-xs font-semibold border bg-green-50 text-green-700 border-green-300 transition" data-status="done">✅ Done</button>
-					<button class="log-status-btn flex-1 py-1.5 rounded-lg text-xs font-semibold border bg-white text-yellow-600 border-slate-200 transition" data-status="skipped">⏭️ Skip</button>
-				</div>
-			</div>
-			<div class="mb-3">
-				<label class="text-xs text-slate-500 mb-1 block">Date</label>
-				<input type="date" id="logDateInput" class="w-full rounded-lg border px-3 py-2 text-sm" />
+				<label class="text-xs text-slate-500 mb-1 block">Date(s)</label>
+				<input type="text" id="logDateInput" placeholder="Select one or more dates" class="w-full rounded-lg border px-3 py-2 text-sm bg-white" />
 			</div>
 			<div class="mb-4">
 				<label class="text-xs text-slate-500 mb-1 block">Note</label>
 				<textarea id="logNoteInput" rows="3" class="w-full rounded-lg border px-3 py-2 text-sm resize-none" placeholder="Add a note..."></textarea>
 			</div>
-			<button id="submitLogBtn" class="w-full py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-md shadow-blue-500/30 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">➕ Add Log</button>
+			<div id="logStatusBtns" class="flex gap-2">
+				<button class="log-status-btn flex-1 py-2 rounded-lg text-sm font-semibold border bg-green-50 text-green-700 border-green-300 transition" data-status="done">✅ Done</button>
+				<button class="log-status-btn flex-1 py-2 rounded-lg text-sm font-semibold border bg-white text-yellow-600 border-slate-200 transition" data-status="skipped">⏭️ Skip</button>
+			</div>
+			<button id="submitLogBtn" class="hidden w-full mt-3 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-md shadow-blue-500/30 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">💾 Update Log</button>
 		</div>
 	</div>
 

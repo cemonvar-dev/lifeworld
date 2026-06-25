@@ -678,36 +678,71 @@ function openTilePopup(tileId) {
 // ---- Add Log Popup ----
 let addLogStatus = 'done';
 let editingLogId = null; // null = add mode, logId = edit mode
+let logDatePicker = null; // flatpickr instance for the date(s) input
 
 function openAddLogPopup(logToEdit) {
 	const overlay = document.getElementById('addLogOverlay');
 	const submitBtn = document.getElementById('submitLogBtn');
+	const dateInput = document.getElementById('logDateInput');
+	const today = new Date().toISOString().split('T')[0];
+
+	// Tear down any previous picker so add/edit modes don't collide.
+	if (logDatePicker) { logDatePicker.destroy(); logDatePicker = null; }
+
 	if (logToEdit) {
-		// Edit mode
+		// Edit mode — single date, status toggle + Update button.
 		editingLogId = logToEdit.id;
-		const logDate = logToEdit.created_at ? logToEdit.created_at.split('T')[0] : new Date().toISOString().split('T')[0];
-		document.getElementById('logDateInput').value = logDate;
+		const logDate = logToEdit.created_at ? logToEdit.created_at.split('T')[0] : today;
+		dateInput.value = logDate;
 		document.getElementById('logNoteInput').value = logToEdit.note || '';
 		addLogStatus = logToEdit.status || 'done';
 		document.querySelector('#addLogOverlay .text-lg.font-bold').textContent = 'Edit Log';
 		submitBtn.textContent = '💾 Update Log';
+		submitBtn.classList.remove('hidden');
+		updateLogStatusBtns();
+		if (window.flatpickr) {
+			logDatePicker = flatpickr(dateInput, { dateFormat: 'Y-m-d', defaultDate: logDate, disableMobile: true });
+		}
 	} else {
-		// Add mode
+		// Add mode — pick multiple dates; Done/Skip each submit one log per date.
 		editingLogId = null;
-		const today = new Date().toISOString().split('T')[0];
-		document.getElementById('logDateInput').value = today;
+		dateInput.value = '';
 		document.getElementById('logNoteInput').value = '';
 		addLogStatus = 'done';
 		document.querySelector('#addLogOverlay .text-lg.font-bold').textContent = 'Add Log';
-		submitBtn.textContent = '➕ Add Log';
+		submitBtn.classList.add('hidden');
+		resetLogStatusBtns();
+		if (window.flatpickr) {
+			logDatePicker = flatpickr(dateInput, { mode: 'multiple', dateFormat: 'Y-m-d', defaultDate: [today], disableMobile: true });
+		} else {
+			dateInput.value = today; // graceful fallback if flatpickr fails to load
+		}
 	}
-	updateLogStatusBtns();
 	overlay.classList.remove('hidden');
 }
 
 function closeAddLogPopup() {
 	editingLogId = null;
+	if (logDatePicker) { logDatePicker.destroy(); logDatePicker = null; }
 	document.getElementById('addLogOverlay').classList.add('hidden');
+}
+
+// Collect the chosen date(s) as YYYY-MM-DD strings (handles multi-select).
+function getSelectedLogDates() {
+	if (logDatePicker && logDatePicker.selectedDates && logDatePicker.selectedDates.length) {
+		return logDatePicker.selectedDates.map(d => logDatePicker.formatDate(d, 'Y-m-d'));
+	}
+	const v = document.getElementById('logDateInput').value || '';
+	return v.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+// Reset the Done/Skip buttons to their base look (used in add mode).
+function resetLogStatusBtns() {
+	document.querySelectorAll('.log-status-btn').forEach(btn => {
+		btn.classList.remove('bg-green-100', 'border-green-400', 'bg-yellow-100', 'border-yellow-400', 'ring-2', 'ring-green-300', 'ring-yellow-300', 'bg-white', 'border-slate-200', 'bg-green-50', 'border-green-300');
+		if (btn.dataset.status === 'done') btn.classList.add('bg-green-50', 'border-green-300');
+		else btn.classList.add('bg-white', 'border-slate-200');
+	});
 }
 
 function updateLogStatusBtns() {
@@ -727,18 +762,18 @@ function updateLogStatusBtns() {
 	});
 }
 
-async function submitLog() {
+async function submitLog(statusArg) {
 	if (!activeTileId) return;
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
 
-	const logDate = document.getElementById('logDateInput').value;
 	const note = document.getElementById('logNoteInput').value.trim();
-	if (!logDate) { alert('Please select a date.'); return; }
+	const dates = getSelectedLogDates();
+	if (!dates.length) { alert('Please select at least one date.'); return; }
 
 	if (editingLogId) {
-		// --- Edit mode ---
-		const updateObj = { status: addLogStatus, log_date: logDate, note: note || null };
+		// --- Edit mode (single date) ---
+		const updateObj = { status: addLogStatus, log_date: dates[0], note: note || null };
 		const { data, error } = await supa
 			.from('task_logs')
 			.update(updateObj)
@@ -753,21 +788,19 @@ async function submitLog() {
 		}
 		editingLogId = null;
 	} else {
-		// --- Add mode ---
-		const insertObj = { task_id: activeTileId, status: addLogStatus, log_date: logDate };
-		if (note) insertObj.note = note;
+		// --- Add mode (one log per selected date; status from the clicked button) ---
+		const status = statusArg || addLogStatus;
+		const rows = dates.map(d => ({ task_id: activeTileId, status, log_date: d, note: note || null }));
 
 		const { data, error } = await supa
 			.from('task_logs')
-			.insert(insertObj)
-			.select()
-			.single();
+			.insert(rows)
+			.select();
 
-		if (error) { console.error('Add log error:', error); alert('Failed to add log: ' + error.message); return; }
+		if (error) { console.error('Add log error:', error); alert('Failed to add logs: ' + error.message); return; }
 
 		if (data) {
-			raw.task_logs = raw.task_logs || [];
-			raw.task_logs.unshift(data);
+			raw.task_logs = (raw.task_logs || []).concat(data);
 			raw.task_logs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 		}
 	}
@@ -800,11 +833,17 @@ function initAddLogPopup() {
 	});
 	document.querySelectorAll('.log-status-btn').forEach(btn => {
 		btn.addEventListener('click', () => {
-			addLogStatus = btn.dataset.status;
-			updateLogStatusBtns();
+			if (editingLogId) {
+				// Edit mode: pick the status; the Update button submits.
+				addLogStatus = btn.dataset.status;
+				updateLogStatusBtns();
+			} else {
+				// Add mode: Done/Skip submit one log per selected date.
+				submitLog(btn.dataset.status);
+			}
 		});
 	});
-	document.getElementById('submitLogBtn').addEventListener('click', submitLog);
+	document.getElementById('submitLogBtn').addEventListener('click', () => submitLog());
 }
 
 // ---- Task Update Helper ----
