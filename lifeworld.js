@@ -1414,9 +1414,11 @@ async function renameTag(id) {
 
 function setTagFilter(tag) {
 	activeTagFilter = tag;
-	closeTagFilterPopup();
-	applyFilters();
+	applyFilters();        // filter the gallery in the background
 	updateFilterBar();
+	// Keep the popup open and re-highlight the active tag (if it's showing).
+	const overlay = document.getElementById('tagFilterOverlay');
+	if (refreshTagTree && overlay && !overlay.classList.contains('hidden')) refreshTagTree();
 }
 
 function updateFilterBar() {
