@@ -31,7 +31,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install npm dependencies
         run: npm install
@@ -44,6 +44,9 @@ jobs:
 
       - name: Add deep-link intent filter (for OAuth redirect)
         run: node scripts/patch-android-manifest.mjs
+
+      - name: Bump compileSdk/AGP for social-login deps
+        run: node scripts/patch-android-build.mjs
 
       - name: Decode signing keystore
         run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lifeworld.keystore"
