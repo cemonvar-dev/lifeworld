@@ -1998,6 +1998,26 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
 
+	// Mobile hamburger menu toggle
+	const navToggle = document.getElementById('navToggle');
+	const navMenu = document.getElementById('navMenu');
+	if (navToggle && navMenu) {
+		const setNavOpen = (open) => {
+			navMenu.classList.toggle('hidden', !open);
+			navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+			navToggle.textContent = open ? '✕' : '☰';
+		};
+		navToggle.addEventListener('click', () => {
+			setNavOpen(navMenu.classList.contains('hidden'));
+		});
+		// Collapse the menu after tapping an action button (mobile only)
+		navMenu.querySelectorAll('button').forEach(btn => {
+			btn.addEventListener('click', () => {
+				if (window.matchMedia('(max-width: 639px)').matches) setNavOpen(false);
+			});
+		});
+	}
+
 	// Calendar button logic
 	document.getElementById('calendarBtn').addEventListener('click', openCalendarPopup);
 	document.getElementById('closeCalendar').addEventListener('click', closeCalendarPopup);
