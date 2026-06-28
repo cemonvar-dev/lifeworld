@@ -1546,6 +1546,103 @@ const STATUS_CYCLE = [
 	{ key: 'noaction', label: '💬 No Action', bg: 'bg-slate-100' }
 ];
 
+// ---- Today Summary (done/skipped & remaining due) ----
+// Split today's tiles into what was acted on (done/skipped via today's log_date)
+// and what is still scheduled-due today but untouched.
+function getTodaySummary() {
+	const doneSkipped = [];
+	const remaining = [];
+	(tiles || []).forEach(t => {
+		if (t.status === 'done' || t.status === 'skipped') {
+			doneSkipped.push(t);
+		} else if (isTileScheduledToday(t.id)) {
+			remaining.push(t); // scheduled today but no action yet
+		}
+	});
+	return { doneSkipped, remaining };
+}
+
+// The done/skipped log that applies to today, for showing status + note.
+function todayLogFor(tileId) {
+	const today = new Date().toISOString().split('T')[0];
+	const logs = (rawTiles[tileId] && rawTiles[tileId].task_logs) || [];
+	return logs.find(l => logDay(l) === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
+}
+
+function refreshTodaySummaryCounts() {
+	const { doneSkipped, remaining } = getTodaySummary();
+	const dc = document.getElementById('todayDoneCount');
+	const rc = document.getElementById('todayRemainingCount');
+	if (dc) dc.textContent = String(doneSkipped.length);
+	if (rc) rc.textContent = String(remaining.length);
+}
+
+function toggleTodaySummaryMenu(forceOpen) {
+	const menu = document.getElementById('todaySummaryMenu');
+	const btn = document.getElementById('todaySummaryBtn');
+	if (!menu || !btn) return;
+	const open = forceOpen !== undefined ? forceOpen : menu.classList.contains('hidden');
+	menu.classList.toggle('hidden', !open);
+	btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+	if (open) refreshTodaySummaryCounts();
+}
+
+function openTodaySummary(type) {
+	const overlay = document.getElementById('todaySummaryOverlay');
+	const titleEl = document.getElementById('todaySummaryTitle');
+	const iconEl = document.getElementById('todaySummaryIcon');
+	const body = document.getElementById('todaySummaryBody');
+	const { doneSkipped, remaining } = getTodaySummary();
+
+	let list, emptyMsg;
+	if (type === 'done') {
+		titleEl.textContent = 'Done / Skipped Today';
+		iconEl.textContent = '✅';
+		list = doneSkipped;
+		emptyMsg = 'Nothing logged yet today.';
+	} else {
+		titleEl.textContent = 'Remaining Today';
+		iconEl.textContent = '📋';
+		list = remaining;
+		emptyMsg = '🎉 All done — nothing left for today!';
+	}
+
+	if (!list.length) {
+		body.innerHTML = `<div class="text-center text-slate-400 py-12 text-sm">${emptyMsg}</div>`;
+	} else {
+		body.innerHTML = list.map(t => {
+			let badge = '';
+			if (type === 'done') {
+				const log = todayLogFor(t.id);
+				const isDone = log && (log.status === 'done' || log.status === 'completed');
+				badge = isDone
+					? '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">✅ Done</span>'
+					: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 whitespace-nowrap">⏭️ Skip</span>';
+			} else {
+				badge = '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 whitespace-nowrap">Due</span>';
+			}
+			return `<button class="today-summary-row w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition" data-tile-id="${t.id}">
+				<span class="text-xl shrink-0">${t.emoji}</span>
+				<span class="flex-1 font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
+				${badge}
+			</button>`;
+		}).join('');
+		body.querySelectorAll('.today-summary-row').forEach(row => {
+			row.addEventListener('click', () => {
+				closeTodaySummary();
+				openTilePopup(row.getAttribute('data-tile-id'));
+			});
+		});
+	}
+
+	toggleTodaySummaryMenu(false);
+	overlay.classList.remove('hidden');
+}
+
+function closeTodaySummary() {
+	document.getElementById('todaySummaryOverlay').classList.add('hidden');
+}
+
 function toggleStatusFilter() {
 	const idx = STATUS_CYCLE.findIndex(s => s.key === activeStatusFilter);
 	const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
@@ -2010,11 +2107,32 @@ document.addEventListener('DOMContentLoaded', () => {
 		navToggle.addEventListener('click', () => {
 			setNavOpen(navMenu.classList.contains('hidden'));
 		});
-		// Collapse the menu after tapping an action button (mobile only)
-		navMenu.querySelectorAll('button').forEach(btn => {
+		// Collapse the menu after tapping an action button (mobile only).
+		// Skip buttons flagged data-keep-menu (e.g. the Today-summary sub-dropdown toggle).
+		navMenu.querySelectorAll('button:not([data-keep-menu])').forEach(btn => {
 			btn.addEventListener('click', () => {
 				if (window.matchMedia('(max-width: 639px)').matches) setNavOpen(false);
 			});
+		});
+	}
+
+	// Today summary dropdown (❓): two options open a popup
+	const todaySummaryBtn = document.getElementById('todaySummaryBtn');
+	if (todaySummaryBtn) {
+		todaySummaryBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			toggleTodaySummaryMenu();
+		});
+		document.getElementById('todayRemainingBtn').addEventListener('click', () => openTodaySummary('remaining'));
+		document.getElementById('todayDoneBtn').addEventListener('click', () => openTodaySummary('done'));
+		document.getElementById('closeTodaySummary').addEventListener('click', closeTodaySummary);
+		document.getElementById('todaySummaryOverlay').addEventListener('click', e => {
+			if (e.target === document.getElementById('todaySummaryOverlay')) closeTodaySummary();
+		});
+		// Close the dropdown when clicking anywhere outside it
+		document.addEventListener('click', (e) => {
+			const wrapper = document.getElementById('todaySummaryWrapper');
+			if (wrapper && !wrapper.contains(e.target)) toggleTodaySummaryMenu(false);
 		});
 	}
 
