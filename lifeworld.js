@@ -968,12 +968,11 @@ async function updateTask(taskId, updates) {
 }
 
 // ---- Local notifications / reminders (native app only) ----
-const REMINDER_TIMES = {
-	morning: { hour: 8, minute: 0 },
-	afternoon: { hour: 13, minute: 0 },
-	evening: { hour: 18, minute: 0 },
-	night: { hour: 21, minute: 0 }
-};
+// Two reminders per day for every active task: 08:00 and 20:00.
+const REMINDER_TIMES = [
+	{ hour: 8, minute: 0 },
+	{ hour: 20, minute: 0 }
+];
 
 // Rebuild all device reminders from the current cards. The OS fires them even
 // when the app is closed; we re-sync on app open and after schedule edits.
@@ -1056,13 +1055,9 @@ async function scheduleReminders() {
 			const status = (task.status || '').toLowerCase();
 			if (status === 'completed' || status === 'cancelled' || status === 'failed') return;
 			const mode = task.frequency_mode || 'daily';
-			const buckets = (typeof task.time_of_day === 'string' && task.time_of_day)
-				? task.time_of_day.split(',').map(s => s.trim()).filter(Boolean)
-				: ['morning']; // no time set -> morning
 			const base = { title: `⏰ ${task.name}`, body: 'Time to take action.', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id } };
 
-			buckets.forEach(bucket => {
-				const t = REMINDER_TIMES[bucket] || REMINDER_TIMES.morning;
+			REMINDER_TIMES.forEach(t => {
 				if (mode === 'daily') {
 					notifications.push({ id: id++, ...base, schedule: { on: { hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
 				} else if (mode === 'weekly') {
