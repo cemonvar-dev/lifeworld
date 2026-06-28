@@ -40,6 +40,7 @@ let activeTimelineFilter = null; // 'today' or null
 let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
 let activeLifecycleFilter = 'active'; // 'active' (planned+in progress), 'all', 'completed', 'failed', 'cancelled'
 let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
+let activeFreqFilter = null; // null = all, else 'daily' | 'weekly' | 'monthly' | 'once'
 let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
 let TAGS = [];            // rows from public.tags: { id, name, parent_id, sort_order }
 let TAGS_BY_ID = {};      // id -> tag row
@@ -1799,6 +1800,25 @@ function toggleLifecycleFilter() {
 	applyFilters();
 }
 
+// ---- Frequency filter ----
+const FREQ_CYCLE = [
+	{ key: null, label: '🔁 All Freq', bg: 'bg-white text-slate-700 border-slate-300' },
+	{ key: 'daily', label: '📆 Daily', bg: 'bg-indigo-100 text-indigo-700 border-indigo-300' },
+	{ key: 'weekly', label: '🗓️ Weekly', bg: 'bg-violet-100 text-violet-700 border-violet-300' },
+	{ key: 'monthly', label: '📅 Monthly', bg: 'bg-teal-100 text-teal-700 border-teal-300' },
+	{ key: 'once', label: '📍 Once', bg: 'bg-amber-100 text-amber-700 border-amber-300' }
+];
+
+function toggleFreqFilter() {
+	const idx = FREQ_CYCLE.findIndex(s => s.key === activeFreqFilter);
+	const next = FREQ_CYCLE[(idx + 1) % FREQ_CYCLE.length];
+	activeFreqFilter = next.key;
+	const btn = document.getElementById('freqFilterBtn');
+	btn.className = `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 ${next.bg}`;
+	btn.textContent = next.label;
+	applyFilters();
+}
+
 // ---- Mood (health state) filter ----
 // Order/emoji mirror healthToPlant().
 const MOODS = [
@@ -1906,6 +1926,9 @@ function applyFilters() {
 		       if (activeMoodFilter) {
 			filtered = filtered.filter(t => t.healthLabel === activeMoodFilter);
 		}
+		if (activeFreqFilter) {
+			filtered = filtered.filter(t => ((rawTiles[t.id] && rawTiles[t.id].frequency_mode) || 'daily') === activeFreqFilter);
+		}
 		const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
 		       if (q) {
 			       if (q === 'overdue') {
@@ -1928,55 +1951,6 @@ function applyFilters() {
 			       }
 		       }
 	renderGallery(filtered);
-}
-
-// ---- Reset Today's Logs ----
-async function resetTodayLogs() {
-	if (!confirm('Reset all done/skip flags for today?')) return;
-	const today = todayLocal();
-	// Find today's done/skip logs across all tiles
-	const logIdsToReset = [];
-	Object.values(rawTiles).forEach(raw => {
-		(raw.task_logs || []).forEach(log => {
-			const logDate = logDay(log);
-			if (logDate === today && (log.status === 'done' || log.status === 'skipped' || log.status === 'completed')) {
-				logIdsToReset.push(log.id);
-			}
-		});
-	});
-	if (logIdsToReset.length === 0) {
-		alert('Nothing to reset — no done/skipped logs for today.');
-		return;
-	}
-	// Delete today's logs from DB
-	const { error } = await supa.from('task_logs').delete().in('id', logIdsToReset);
-	if (error) { console.error('Reset error:', error); return; }
-	// Remove from local data
-	Object.values(rawTiles).forEach(raw => {
-		raw.task_logs = (raw.task_logs || []).filter(log => !logIdsToReset.includes(log.id));
-	});
-	// Rebuild display tiles
-	tiles = Object.values(rawTiles).map(task => {
-		const logs = task.task_logs || [];
-		const lastLog = logs[0];
-		const health = calculateHealth(task);
-		const plant = healthToPlant(health);
-		return {
-			id: task.id,
-			name: task.name,
-			tags: task.tag_ids || [],
-			status: getTodayStatus(logs),
-			taskStatus: task.status || 'in progress',
-			emoji: plant.emoji,
-			health,
-			healthLabel: plant.label,
-			healthColor: plant.color,
-			count: logs.length,
-			createdAt: task.created_at || null,
-			   lastUpdate: lastLog ? (lastLog.log_date || lastLog.created_at) : null
-		};
-	});
-	applyFilters();
 }
 
 // ---- AI Chat ----
@@ -2208,7 +2182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
 	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
-	document.getElementById('resetBtn').addEventListener('click', resetTodayLogs);
+	document.getElementById('freqFilterBtn').addEventListener('click', toggleFreqFilter);
 
 	// Auto-refresh the done/skip flags when reopened on a new day.
 	document.addEventListener('visibilitychange', () => { if (!document.hidden) maybeRefreshForNewDay(); });
