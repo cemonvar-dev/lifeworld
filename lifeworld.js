@@ -139,9 +139,18 @@ function healthToPlant(score) {
 	return { emoji: '⚡', label: 'Dying', color: 'bg-red-50 border-red-200' };
 }
 
+// Local calendar date as YYYY-MM-DD. Logs are saved with the user's LOCAL
+// date (flatpickr 'Y-m-d'), so "today" must also be local. Using UTC
+// (toISOString) makes yesterday's logs count as today during the window
+// between local midnight and the UTC date rollover (e.g. 00:00–03:00 in TR).
+function todayLocal() {
+	const d = new Date();
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 // ---- Data Fetching ----
 function getTodayStatus(logs) {
-	const today = new Date().toISOString().split('T')[0];
+	const today = todayLocal();
 	const todayLog = (logs || []).find(l => logDay(l) === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
 	if (!todayLog) return 'noaction';
 	if (todayLog.status === 'completed' || todayLog.status === 'done') return 'done';
@@ -711,7 +720,7 @@ function openAddLogPopup(logToEdit) {
 	const overlay = document.getElementById('addLogOverlay');
 	const submitBtn = document.getElementById('submitLogBtn');
 	const dateInput = document.getElementById('logDateInput');
-	const today = new Date().toISOString().split('T')[0];
+	const today = todayLocal();
 
 	// Tear down any previous picker so add/edit modes don't collide.
 	if (logDatePicker) { logDatePicker.destroy(); logDatePicker = null; }
@@ -1045,7 +1054,7 @@ async function quickLog(tileId, status) {
 	const raw = rawTiles[tileId];
 	if (!raw) return;
 
-	const today = new Date().toISOString().split('T')[0];
+	const today = todayLocal();
 
 	// Check if there's already a log for today — update it instead of creating duplicate
 	const existingLog = (raw.task_logs || []).find(l => {
@@ -1520,7 +1529,7 @@ function isTileScheduledToday(tileId) {
 	}
 	if (mode === 'once') {
 		if (!raw.end_date) return false;
-		const today = new Date().toISOString().split('T')[0];
+		const today = todayLocal();
 		return raw.end_date === today;
 	}
 	return true;
@@ -1547,33 +1556,30 @@ const STATUS_CYCLE = [
 ];
 
 // ---- Today Summary (done/skipped & remaining due) ----
-// Split today's tiles into what was acted on (done/skipped via today's log_date)
-// and what is still scheduled-due today but untouched.
+// Bucket tiles by today's LOCAL log_date: done, skipped, and still
+// scheduled-due-but-untouched. Read straight from the logs so it can't
+// drift from a tile's cached status.
 function getTodaySummary() {
-	const doneSkipped = [];
-	const remaining = [];
+	const today = todayLocal();
+	const done = [], skipped = [], remaining = [];
 	(tiles || []).forEach(t => {
-		if (t.status === 'done' || t.status === 'skipped') {
-			doneSkipped.push(t);
+		const logs = (rawTiles[t.id] && rawTiles[t.id].task_logs) || [];
+		const todayLog = logs.find(l => logDay(l) === today &&
+			(l.status === 'done' || l.status === 'completed' || l.status === 'skipped'));
+		if (todayLog) {
+			(todayLog.status === 'skipped' ? skipped : done).push(t);
 		} else if (isTileScheduledToday(t.id)) {
-			remaining.push(t); // scheduled today but no action yet
+			remaining.push(t); // scheduled today, no action yet
 		}
 	});
-	return { doneSkipped, remaining };
-}
-
-// The done/skipped log that applies to today, for showing status + note.
-function todayLogFor(tileId) {
-	const today = new Date().toISOString().split('T')[0];
-	const logs = (rawTiles[tileId] && rawTiles[tileId].task_logs) || [];
-	return logs.find(l => logDay(l) === today && (l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
+	return { done, skipped, remaining };
 }
 
 function refreshTodaySummaryCounts() {
-	const { doneSkipped, remaining } = getTodaySummary();
+	const { done, skipped, remaining } = getTodaySummary();
 	const dc = document.getElementById('todayDoneCount');
 	const rc = document.getElementById('todayRemainingCount');
-	if (dc) dc.textContent = String(doneSkipped.length);
+	if (dc) dc.textContent = String(done.length + skipped.length);
 	if (rc) rc.textContent = String(remaining.length);
 }
 
@@ -1587,53 +1593,54 @@ function toggleTodaySummaryMenu(forceOpen) {
 	if (open) refreshTodaySummaryCounts();
 }
 
+// A row button that links to a tile's detail popup.
+function todaySummaryRow(t, hover) {
+	return `<button class="today-summary-row w-full flex items-center gap-2 px-2.5 py-2 rounded-lg ${hover} text-left transition" data-tile-id="${t.id}">
+		<span class="text-lg shrink-0">${t.emoji}</span>
+		<span class="flex-1 text-sm font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
+	</button>`;
+}
+
 function openTodaySummary(type) {
 	const overlay = document.getElementById('todaySummaryOverlay');
 	const titleEl = document.getElementById('todaySummaryTitle');
 	const iconEl = document.getElementById('todaySummaryIcon');
 	const body = document.getElementById('todaySummaryBody');
-	const { doneSkipped, remaining } = getTodaySummary();
+	const { done, skipped, remaining } = getTodaySummary();
 
-	let list, emptyMsg;
 	if (type === 'done') {
-		titleEl.textContent = 'Done / Skipped Today';
+		titleEl.textContent = "Today's Log";
 		iconEl.textContent = '✅';
-		list = doneSkipped;
-		emptyMsg = 'Nothing logged yet today.';
+		// Two-column table: Done on the left, Skip on the right.
+		const column = (items, head, headClass, hover) => {
+			const rows = items.length
+				? items.map(t => todaySummaryRow(t, hover)).join('')
+				: '<div class="text-center text-slate-300 text-xs py-6">—</div>';
+			return `<div class="flex flex-col gap-0.5">
+				<div class="sticky top-0 ${headClass} text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">${head} (${items.length})</div>
+				${rows}
+			</div>`;
+		};
+		body.innerHTML = (!done.length && !skipped.length)
+			? '<div class="text-center text-slate-400 py-12 text-sm">Nothing logged yet today.</div>'
+			: `<div class="grid grid-cols-2 gap-3 items-start">
+				${column(done, '✅ Done', 'bg-green-100 text-green-700', 'hover:bg-green-50')}
+				${column(skipped, '⏭️ Skip', 'bg-yellow-100 text-yellow-700', 'hover:bg-yellow-50')}
+			</div>`;
 	} else {
 		titleEl.textContent = 'Remaining Today';
 		iconEl.textContent = '📋';
-		list = remaining;
-		emptyMsg = '🎉 All done — nothing left for today!';
+		body.innerHTML = remaining.length
+			? remaining.map(t => todaySummaryRow(t, 'hover:bg-slate-50')).join('')
+			: '<div class="text-center text-slate-400 py-12 text-sm">🎉 All done — nothing left for today!</div>';
 	}
 
-	if (!list.length) {
-		body.innerHTML = `<div class="text-center text-slate-400 py-12 text-sm">${emptyMsg}</div>`;
-	} else {
-		body.innerHTML = list.map(t => {
-			let badge = '';
-			if (type === 'done') {
-				const log = todayLogFor(t.id);
-				const isDone = log && (log.status === 'done' || log.status === 'completed');
-				badge = isDone
-					? '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 whitespace-nowrap">✅ Done</span>'
-					: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 whitespace-nowrap">⏭️ Skip</span>';
-			} else {
-				badge = '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 whitespace-nowrap">Due</span>';
-			}
-			return `<button class="today-summary-row w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 text-left transition" data-tile-id="${t.id}">
-				<span class="text-xl shrink-0">${t.emoji}</span>
-				<span class="flex-1 font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
-				${badge}
-			</button>`;
-		}).join('');
-		body.querySelectorAll('.today-summary-row').forEach(row => {
-			row.addEventListener('click', () => {
-				closeTodaySummary();
-				openTilePopup(row.getAttribute('data-tile-id'));
-			});
+	body.querySelectorAll('.today-summary-row').forEach(row => {
+		row.addEventListener('click', () => {
+			closeTodaySummary();
+			openTilePopup(row.getAttribute('data-tile-id'));
 		});
-	}
+	});
 
 	toggleTodaySummaryMenu(false);
 	overlay.classList.remove('hidden');
@@ -1811,7 +1818,7 @@ function applyFilters() {
 // ---- Reset Today's Logs ----
 async function resetTodayLogs() {
 	if (!confirm('Reset all done/skip flags for today?')) return;
-	const today = new Date().toISOString().split('T')[0];
+	const today = todayLocal();
 	// Find today's done/skip logs across all tiles
 	const logIdsToReset = [];
 	Object.values(rawTiles).forEach(raw => {
@@ -1866,7 +1873,7 @@ function buildTaskContext() {
 		const health = calculateHealth(task);
 		const plant = healthToPlant(health);
 		const lastLog = logs[0];
-		const todayStr = new Date().toISOString().split('T')[0];
+		const todayStr = todayLocal();
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
