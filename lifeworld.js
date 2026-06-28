@@ -117,9 +117,9 @@ function calculateHealth(task) {
 		if (mode === 'daily') isExpected = true;
 		else if (mode === 'weekly') isExpected = freqDays.includes(dayOfWeek);
 		else if (mode === 'monthly') {
-			// Expect once per month — check if it's the 1st or same day-of-month as start
-			const startDay = startDate.getDate();
-			isExpected = d.getDate() === startDay;
+			// Expect once per month on the chosen day-of-month (clamped for short months).
+			const md = monthlyDateFor(task, d.getFullYear(), d.getMonth());
+			isExpected = d.getDate() === md.getDate();
 		}
 		if (isExpected) {
 			expected++;
@@ -148,6 +148,26 @@ function tilePlant(task, health) {
 	if (status === 'cancelled') return { emoji: '🚫', label: 'Cancelled', color: 'bg-slate-50 border-slate-200', finished: true };
 	if (status === 'failed') return { emoji: '🏴', label: 'Failed', color: 'bg-red-50 border-red-200', finished: true };
 	return healthToPlant(health);
+}
+
+// Day-of-month a monthly task recurs on (1–31). Falls back to the creation day
+// when unset (or if the day_of_month column isn't present in the DB yet).
+function monthlyDom(task) {
+	const dom = parseInt(task && task.day_of_month, 10);
+	if (dom >= 1 && dom <= 31) return dom;
+	return (task && task.created_at) ? new Date(task.created_at).getDate() : 1;
+}
+
+// The monthly day resolved to a real date in a given year/month, clamped to the
+// last day for short months (e.g. 31 → 28/30).
+function monthlyDateFor(task, year, month) {
+	const last = new Date(year, month + 1, 0).getDate();
+	return new Date(year, month, Math.min(monthlyDom(task), last));
+}
+
+function ordinal(n) {
+	const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+	return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 // Local calendar date as YYYY-MM-DD. Logs are saved with the user's LOCAL
@@ -228,6 +248,17 @@ async function fetchTilesFromSupabase() {
 	await loadTags();
 	renderGallery(tiles);
 	scheduleReminders();
+	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
+}
+
+// When the app/tab is reopened on a new calendar day, re-fetch so the
+// done/skip flags reset for the new day (they're date-based, but the cached
+// `tiles` won't recompute on their own if the app stayed open overnight).
+let lastRenderedDay = null;
+function maybeRefreshForNewDay() {
+	if (lastRenderedDay && todayLocal() !== lastRenderedDay) {
+		fetchTilesFromSupabase();
+	}
 }
 
 // ---- Gallery Rendering ----
@@ -267,10 +298,8 @@ function getNextDueLabel(tileId) {
 	}
 
 	if (mode === 'monthly') {
-		const startDate = raw.created_at ? new Date(raw.created_at) : today;
-		const targetDay = startDate.getDate();
-		let next = new Date(today.getFullYear(), today.getMonth(), targetDay);
-		if (next < today) next.setMonth(next.getMonth() + 1);
+		let next = monthlyDateFor(raw, today.getFullYear(), today.getMonth());
+		if (next < today) next = monthlyDateFor(raw, today.getFullYear(), today.getMonth() + 1);
 		const diff = Math.round((next - today) / 86400000);
 		if (diff === 0) return 'today';
 		if (diff === 1) return 'tomorrow';
@@ -548,6 +577,12 @@ function openTilePopup(tileId) {
 			<label class="text-xs text-slate-500">Date</label>
 			<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${raw.end_date || ''}" />
 		</div>
+		<div id="monthlyDayPicker" class="mb-8" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
+			<label class="text-xs text-slate-500">Day of month</label>
+			<select id="monthlyDaySelect" class="ml-2 rounded-lg border px-2 py-1 text-sm">
+				${Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}" ${monthlyDom(raw) === d ? 'selected' : ''}>${ordinal(d)}</option>`).join('')}
+			</select>
+		</div>
 		<div class="mb-2 text-sm font-semibold">Time of Day</div>
 		<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
 			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
@@ -675,6 +710,20 @@ function openTilePopup(tileId) {
 			raw.end_date = e.target.value || null;
 			applyFilters();
 			await updateTask(activeTileId, { end_date: raw.end_date });
+		});
+	}
+
+	// Wire up monthly day-of-month selector
+	const monthlyDaySelect = document.getElementById('monthlyDaySelect');
+	if (monthlyDaySelect) {
+		monthlyDaySelect.addEventListener('change', async e => {
+			if (!activeTileId) return;
+			const raw = rawTiles[activeTileId];
+			if (!raw) return;
+			raw.day_of_month = parseInt(e.target.value, 10);
+			applyFilters();
+			scheduleReminders();
+			await updateTask(activeTileId, { day_of_month: raw.day_of_month });
 		});
 	}
 
@@ -1020,7 +1069,7 @@ async function scheduleReminders() {
 						notifications.push({ id: id++, ...base, schedule: { on: { weekday: d.day_of_week + 1, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
 					});
 				} else if (mode === 'monthly') {
-					const dom = task.created_at ? new Date(task.created_at).getDate() : 1;
+					const dom = monthlyDom(task);
 					notifications.push({ id: id++, ...base, schedule: { on: { day: dom, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
 				} else if (mode === 'once' && task.end_date) {
 					const when = new Date(task.end_date + 'T00:00:00');
@@ -2160,6 +2209,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('resetBtn').addEventListener('click', resetTodayLogs);
+
+	// Auto-refresh the done/skip flags when reopened on a new day.
+	document.addEventListener('visibilitychange', () => { if (!document.hidden) maybeRefreshForNewDay(); });
+	window.addEventListener('focus', maybeRefreshForNewDay);
+	const capApp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+	if (capApp) capApp.addListener('resume', maybeRefreshForNewDay);
 	document.getElementById('lifecycleFilterBtn').addEventListener('click', toggleLifecycleFilter);
 	document.getElementById('moodFilterBtn').addEventListener('click', openMoodFilterPopup);
 	document.getElementById('closeMoodFilter').addEventListener('click', closeMoodFilterPopup);
