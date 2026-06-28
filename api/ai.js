@@ -92,7 +92,7 @@ export default async function handler(req, res) {
 		}
 	}
 
-	const { messages, taskContext } = req.body;
+	const { messages, taskContext, responseFormat } = req.body;
 	if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages required' });
 
 	const systemPrompt = `You are LifeWorld AI — a personal life coach and productivity assistant. You have access to the user's task/habit tracking data below. Use it to give specific, actionable advice.
@@ -123,8 +123,13 @@ ${taskContext || 'No task data available.'}`;
 					{ role: 'system', content: systemPrompt },
 					...messages
 				],
-				max_tokens: 1000,
-				temperature: 0.7
+				max_tokens: 1500,
+				temperature: 0.7,
+				// Optional strict JSON mode (e.g. auto-reschedule). Only allow the
+				// json_object form so callers can't inject arbitrary request fields.
+				...(responseFormat && responseFormat.type === 'json_object'
+					? { response_format: { type: 'json_object' } }
+					: {})
 			})
 		});
 
