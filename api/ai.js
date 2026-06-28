@@ -6,7 +6,7 @@
 //   SUPABASE_ANON_KEY         - public anon key (used to validate the user's JWT)
 //   SUPABASE_SERVICE_ROLE_KEY - service role key (server-only; bypasses RLS for quota)
 // Optional:
-//   AI_DAILY_LIMIT            - free-tier messages per user per day (default 5)
+//   AI_DAILY_LIMIT            - free-tier messages per user per day (default 25)
 //   ALLOWED_ORIGIN            - exact origin to allow via CORS (default "*")
 //
 // One-time DB setup: run scripts/ai-quota.sql in the Supabase SQL editor.
@@ -14,7 +14,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://baswgycuhblyppvvdpay.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '5', 10);
+const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '25', 10);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
 async function getUserFromToken(token) {
