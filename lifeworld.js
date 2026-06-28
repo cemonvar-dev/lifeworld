@@ -2409,16 +2409,22 @@ async function autoRescheduleCalendar() {
 		if (!session) { alert('Please sign in to use AI auto-reschedule.'); return; }
 
 		const today = todayLocal();
-		const list = onceTasks.map(t => ({
-			id: t.id,
-			name: t.name,
-			tag: (t.tag_ids && t.tag_ids[0]) ? tagName(t.tag_ids[0]) : '',
-			date: t.end_date
-		}));
+		// Overdue (past) tasks first — they're the ones that most need moving.
+		const list = onceTasks
+			.map(t => ({
+				id: t.id,
+				name: t.name,
+				tag: (t.tag_ids && t.tag_ids[0]) ? tagName(t.tag_ids[0]) : '',
+				date: t.end_date,
+				overdue: t.end_date < today
+			}))
+			.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
-		const instruction = `You are a scheduling assistant. Today is ${today}. Below is a JSON list of one-time planned events, each with an id, name, tag (category) and current date.
+		const instruction = `You are a scheduling assistant. Today is ${today}. Below is a JSON list of one-time planned events, each with an id, name, tag (category), current date, and an "overdue" flag.
 
-Redistribute their dates so that events of the same category/tag are spread out over time instead of clustering in the same week or month. For example, dining out or social events should land roughly once or twice a month, not all at once. Keep every event on or after ${today}, keep the SAME number of events, do not invent or drop events, and don't put two same-tag events on the same day. Spread them across enough months that the spacing feels natural and relaxed.
+CRITICAL: Every event marked "overdue": true has a date in the PAST and MUST be rescheduled to a future date (on or after ${today}). These overdue events are the top priority — make sure none keep a past date.
+
+Then redistribute ALL events (overdue and upcoming) so that events of the same category/tag are spread out over time instead of clustering in the same week or month. For example, dining out or social events should land roughly once or twice a month, not all at once. Keep every event on or after ${today}, keep the SAME number of events, do not invent or drop events, and don't put two same-tag events on the same day. Spread them across enough months that the spacing feels natural and relaxed.
 
 Events:
 ${JSON.stringify(list)}
@@ -2454,11 +2460,15 @@ Respond with ONLY a JSON object in exactly this shape, no prose:
 		onceTasks.forEach(t => { byId[t.id] = t; });
 		const proposals = (parsed && Array.isArray(parsed.schedule) ? parsed.schedule : [])
 			.filter(s => s && byId[s.id] && /^\d{4}-\d{2}-\d{2}$/.test(s.date) && s.date >= today)
-			.map(s => ({ id: s.id, name: byId[s.id].name, from: byId[s.id].end_date, to: s.date, reason: s.reason || '' }))
+			.map(s => ({ id: s.id, name: byId[s.id].name, from: byId[s.id].end_date, to: s.date, reason: s.reason || '', overdue: byId[s.id].end_date < today }))
 			.filter(p => p.from !== p.to);
 
 		if (!proposals.length) { alert('The AI did not suggest any changes — your schedule already looks well spread out.'); return; }
-		renderReschedulePreview(proposals);
+
+		// Overdue tasks the AI failed to move forward (still need attention).
+		const movedIds = new Set(proposals.map(p => p.id));
+		const missedOverdue = onceTasks.filter(t => t.end_date < today && !movedIds.has(t.id)).length;
+		renderReschedulePreview(proposals, missedOverdue);
 	} catch (e) {
 		console.error('auto reschedule error:', e);
 		alert('Something went wrong with auto-reschedule.');
@@ -2467,7 +2477,7 @@ Respond with ONLY a JSON object in exactly this shape, no prose:
 	}
 }
 
-function renderReschedulePreview(proposals) {
+function renderReschedulePreview(proposals, missedOverdue) {
 	// Order the preview by the new date so it reads as a timeline (old → new).
 	// 'YYYY-MM-DD' strings sort chronologically as plain text.
 	proposals = proposals.slice().sort((a, b) => (a.to < b.to ? -1 : a.to > b.to ? 1 : 0));
@@ -2479,14 +2489,17 @@ function renderReschedulePreview(proposals) {
 		const yy = String(d.getFullYear()).slice(-2);
 		return `${d.getDate()} ${d.toLocaleDateString(undefined, { month: 'short' })} '${yy} ${d.toLocaleDateString(undefined, { weekday: 'short' })}`;
 	};
+	const overdueCount = proposals.filter(p => p.overdue).length;
 	const rows = proposals.map(p => `<tr>
-		<td class="border px-3 py-2">${escapeHtml(p.name)}</td>
-		<td class="border px-3 py-2 whitespace-nowrap text-slate-400 line-through">${fmt(p.from)}</td>
+		<td class="border px-3 py-2">${p.overdue ? '<span class="text-xs font-semibold text-red-500 mr-1">⚠️</span>' : ''}${escapeHtml(p.name)}</td>
+		<td class="border px-3 py-2 whitespace-nowrap line-through ${p.overdue ? 'text-red-400' : 'text-slate-400'}">${fmt(p.from)}</td>
 		<td class="border px-3 py-2 whitespace-nowrap font-semibold text-blue-700">${fmt(p.to)}</td>
 		<td class="border px-3 py-2 text-xs text-slate-500">${escapeHtml(p.reason)}</td>
 	</tr>`).join('');
+	const warn = missedOverdue ? `<div class="mb-2 text-xs text-red-500">⚠️ ${missedOverdue} overdue task(s) were not moved — try again to reschedule them.</div>` : '';
 	container.innerHTML = `
-		<div class="mb-3 text-sm text-slate-600">🤖 Proposed new dates for <b>${proposals.length}</b> task(s). Review, then apply.</div>
+		<div class="mb-1 text-sm text-slate-600">🤖 Proposed new dates for <b>${proposals.length}</b> task(s)${overdueCount ? ` — including <b class="text-red-500">${overdueCount} overdue</b>` : ''}. Review, then apply.</div>
+		${warn}
 		<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>
 			<th class="px-3 py-2 text-left">Task</th>
 			<th class="px-3 py-2 text-left">From</th>
