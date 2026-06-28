@@ -139,6 +139,17 @@ function healthToPlant(score) {
 	return { emoji: '⚡', label: 'Dying', color: 'bg-red-50 border-red-200' };
 }
 
+// Visuals for a tile. Finished lifecycle states get a status icon (🏁 finish
+// line) instead of a health/weather emoji — a completed task stops being
+// logged, so its health would otherwise decay to "dying" and mislead.
+function tilePlant(task, health) {
+	const status = (task && task.status || '').toLowerCase();
+	if (status === 'completed') return { emoji: '🏁', label: 'Completed', color: 'bg-emerald-50 border-emerald-200', finished: true };
+	if (status === 'cancelled') return { emoji: '🚫', label: 'Cancelled', color: 'bg-slate-50 border-slate-200', finished: true };
+	if (status === 'failed') return { emoji: '🏴', label: 'Failed', color: 'bg-red-50 border-red-200', finished: true };
+	return healthToPlant(health);
+}
+
 // Local calendar date as YYYY-MM-DD. Logs are saved with the user's LOCAL
 // date (flatpickr 'Y-m-d'), so "today" must also be local. Using UTC
 // (toISOString) makes yesterday's logs count as today during the window
@@ -308,7 +319,8 @@ function renderGallery(filteredTiles) {
 		groupGrid.dataset.tagGroup = tag;
 		groups[tag].forEach(tile => {
 			const tileDiv = document.createElement("div");
-			const tileColor = tile.healthColor || 'bg-white';
+			const tp = tilePlant({ status: tile.taskStatus }, tile.health);
+			const tileColor = tp.color || tile.healthColor || 'bg-white';
 			// Remove color class from tile, use data attribute for gradient
 			tileDiv.className = `tile rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.setAttribute('data-tilecolor', tileColor);
@@ -321,13 +333,13 @@ function renderGallery(filteredTiles) {
 			tileDiv.innerHTML = `
 				   <div class="flex w-full justify-between items-start mb-2">
 					   <div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
-					   <div class="text-3xl text-right w-1/4">${tile.emoji}</div>
+					   <div class="text-3xl text-right w-1/4">${tp.emoji}</div>
 				   </div>
 				   <div class="flex gap-2 mt-1">
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
 					   <span class="text-xs text-slate-500">(${tile.count})</span>
 				   </div>
-				   <div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>
+				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : `<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>`}
 				   <div class="flex justify-between items-center w-full mt-1">
 					   <span class="text-xs text-slate-400">📌 ${createdAt}</span>
 					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
@@ -511,7 +523,7 @@ function openTilePopup(tileId) {
 
 	popupBody.innerHTML = `
 		<div class="flex items-center gap-3 mb-4">
-			<span class="text-4xl">${plant.emoji}</span>
+			<span class="text-4xl">${tilePlant(raw, health).emoji}</span>
 			<div>
 				<div class="text-xl font-bold">
 					<input id="tileNameInput" type="text" value="${String(raw.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')}" class="border-b border-slate-300 focus:border-blue-400 outline-none bg-transparent font-bold text-xl w-full" style="min-width:80px;max-width:100%;" autocomplete="off" />
