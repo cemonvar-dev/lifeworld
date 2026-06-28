@@ -2245,6 +2245,22 @@ function openCalendarPopup() {
 		});
 		const autoBtn = document.getElementById('autoRescheduleBtn');
 		if (autoBtn) autoBtn.addEventListener('click', autoRescheduleCalendar);
+
+		// Row selection: per-row checkboxes + select-all, with a live button label.
+		const updateAutoLabel = () => {
+			const n = container.querySelectorAll('.cal-select:checked').length;
+			const ab = document.getElementById('autoRescheduleBtn');
+			if (ab) ab.innerHTML = n ? `🤖 Reschedule ${n} selected` : '🤖 Auto Reschedule';
+		};
+		container.querySelectorAll('.cal-select').forEach(cb => cb.addEventListener('change', updateAutoLabel));
+		const selectAll = document.getElementById('calSelectAll');
+		if (selectAll) selectAll.addEventListener('change', () => {
+			container.querySelectorAll('.cal-select').forEach(cb => {
+				const row = cb.closest('tr');
+				if (row && row.style.display !== 'none') cb.checked = selectAll.checked;
+			});
+			updateAutoLabel();
+		});
 	}, 0);
 
 		       // Tag filter removed; only text filter and chips remain
@@ -2288,6 +2304,7 @@ function openCalendarPopup() {
 	       function filterCalendarRows() {
 		       const rows = container.querySelectorAll('tbody tr');
 			       rows.forEach(row => {
+				       if (row.classList.contains('cal-month-row')) { row.style.display = filterTerms.length ? 'none' : ''; return; }
 				       const date = row.getAttribute('data-date') || '';
 				       const shortDate = row.getAttribute('data-shortdate') || '';
 				       const tag = row.getAttribute('data-tag') || '';
@@ -2395,10 +2412,16 @@ function plannedOnceTasks() {
 
 async function autoRescheduleCalendar() {
 	const onceTasks = plannedOnceTasks();
-	if (onceTasks.length < 2) {
-		alert('Need at least 2 planned tasks to auto-distribute.');
+	// If rows are checked, reschedule only those; otherwise the whole list.
+	const selectedIds = Array.from(document.querySelectorAll('.cal-select:checked')).map(c => c.getAttribute('data-tile-id'));
+	const hasSelection = selectedIds.length > 0;
+	const targetTasks = hasSelection ? onceTasks.filter(t => selectedIds.includes(t.id)) : onceTasks;
+
+	if (!hasSelection && onceTasks.length < 2) {
+		alert('Need at least 2 planned tasks to auto-distribute (or tick specific rows to reschedule just those).');
 		return;
 	}
+	if (hasSelection && !targetTasks.length) { alert('No valid tasks selected.'); return; }
 
 	const btn = document.getElementById('autoRescheduleBtn');
 	const orig = btn ? btn.innerHTML : '';
@@ -2409,27 +2432,35 @@ async function autoRescheduleCalendar() {
 		if (!session) { alert('Please sign in to use AI auto-reschedule.'); return; }
 
 		const today = todayLocal();
-		// Overdue (past) tasks first — they're the ones that most need moving.
+		// Send the full list (so the AI sees existing dates to avoid clustering),
+		// flagging which ones to actually move. Overdue/oldest first.
 		const list = onceTasks
 			.map(t => ({
 				id: t.id,
 				name: t.name,
 				tag: (t.tag_ids && t.tag_ids[0]) ? tagName(t.tag_ids[0]) : '',
 				date: t.end_date,
-				overdue: t.end_date < today
+				overdue: t.end_date < today,
+				reschedule: hasSelection ? selectedIds.includes(t.id) : true
 			}))
 			.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
-		const instruction = `You are a scheduling assistant. Today is ${today}. Below is a JSON list of one-time planned events, each with an id, name, tag (category), current date, and an "overdue" flag.
+		const scopeRule = hasSelection
+			? `Only reschedule events marked "reschedule": true. Leave every other event on its current date — treat those as fixed and use them so the moved events don't land in the same week as a same-tag event.`
+			: `Reschedule every event ("reschedule" is true for all of them).`;
 
-CRITICAL: Every event marked "overdue": true has a date in the PAST and MUST be rescheduled to a future date (on or after ${today}). These overdue events are the top priority — make sure none keep a past date.
+		const instruction = `You are a scheduling assistant. Today is ${today}. Below is a JSON list of one-time planned events, each with an id, name, tag (category), current date, an "overdue" flag, and a "reschedule" flag.
 
-Then redistribute ALL events (overdue and upcoming) so that events of the same category/tag are spread out over time instead of clustering in the same week or month. For example, dining out or social events should land roughly once or twice a month, not all at once. Keep every event on or after ${today}, keep the SAME number of events, do not invent or drop events, and don't put two same-tag events on the same day. Spread them across enough months that the spacing feels natural and relaxed.
+${scopeRule}
+
+CRITICAL: Any event you reschedule that is marked "overdue": true has a date in the PAST and MUST be moved to a future date (on or after ${today}). These overdue events are the top priority — none may keep a past date.
+
+When choosing new dates, spread events of the same category/tag out over time instead of clustering them in the same week or month. For example, dining out or social events should land roughly once or twice a month, not all at once. Keep every rescheduled event on or after ${today}, do not invent or drop events, and don't put two same-tag events on the same day. Spread them across enough months that the spacing feels natural and relaxed.
 
 Events:
 ${JSON.stringify(list)}
 
-Respond with ONLY a JSON object in exactly this shape, no prose:
+Respond with ONLY a JSON object in exactly this shape, listing only the events you moved, no prose:
 {"schedule":[{"id":"<id>","date":"YYYY-MM-DD","reason":"<short reason>"}]}`;
 
 		const response = await fetch(`${API_BASE}/api/ai`, {
@@ -2460,14 +2491,15 @@ Respond with ONLY a JSON object in exactly this shape, no prose:
 		onceTasks.forEach(t => { byId[t.id] = t; });
 		const proposals = (parsed && Array.isArray(parsed.schedule) ? parsed.schedule : [])
 			.filter(s => s && byId[s.id] && /^\d{4}-\d{2}-\d{2}$/.test(s.date) && s.date >= today)
+			.filter(s => !hasSelection || selectedIds.includes(s.id)) // never touch unselected rows
 			.map(s => ({ id: s.id, name: byId[s.id].name, from: byId[s.id].end_date, to: s.date, reason: s.reason || '', overdue: byId[s.id].end_date < today }))
 			.filter(p => p.from !== p.to);
 
 		if (!proposals.length) { alert('The AI did not suggest any changes — your schedule already looks well spread out.'); return; }
 
-		// Overdue tasks the AI failed to move forward (still need attention).
+		// Overdue tasks (within the rescheduled set) the AI failed to move forward.
 		const movedIds = new Set(proposals.map(p => p.id));
-		const missedOverdue = onceTasks.filter(t => t.end_date < today && !movedIds.has(t.id)).length;
+		const missedOverdue = targetTasks.filter(t => t.end_date < today && !movedIds.has(t.id)).length;
 		renderReschedulePreview(proposals, missedOverdue);
 	} catch (e) {
 		console.error('auto reschedule error:', e);
@@ -2564,9 +2596,20 @@ function renderOnceTasksCalendar() {
 	});
 	// Get all unique dates, sorted
 	const allDates = Object.keys(dateMap).sort();
-	// Render a simple table calendar (list style for now)
-	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr><th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th><th class="px-4 py-2 text-left">Actions</th></tr></thead><tbody>';
+	// Render a table calendar grouped by month, with a select checkbox per row.
+	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
+		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
+		+ '<th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th><th class="px-4 py-2 text-left">Actions</th>'
+		+ '</tr></thead><tbody>';
+	let currentMonthKey = '';
 	allDates.forEach(date => {
+		const dObj = new Date(date + 'T00:00:00');
+		const monthKey = `${dObj.getFullYear()}-${dObj.getMonth()}`;
+		if (monthKey !== currentMonthKey) {
+			currentMonthKey = monthKey;
+			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+			html += `<tr class="cal-month-row"><td colspan="6" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
+		}
 		dateMap[date].forEach(t => {
 			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
 			const tagLabel = tagId ? tagName(tagId) : '';
@@ -2580,7 +2623,7 @@ function renderOnceTasksCalendar() {
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}">✅ Completed</button><button class="cal-reschedule-btn text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}">📅 Reschedule</button></td></tr>`;
+				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-3 py-2 text-center"><input type="checkbox" class="cal-select" data-tile-id="${t.id}" /></td><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}">✅ Completed</button><button class="cal-reschedule-btn text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}">📅 Reschedule</button></td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
