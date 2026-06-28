@@ -2468,9 +2468,17 @@ Respond with ONLY a JSON object in exactly this shape, no prose:
 }
 
 function renderReschedulePreview(proposals) {
+	// Order the preview by the new date so it reads as a timeline (old → new).
+	// 'YYYY-MM-DD' strings sort chronologically as plain text.
+	proposals = proposals.slice().sort((a, b) => (a.to < b.to ? -1 : a.to > b.to ? 1 : 0));
 	pendingReschedule = proposals;
 	const container = document.getElementById('calendarContainer');
-	const fmt = ds => new Date(ds + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+	// e.g. "28 Jun '26 Tue"
+	const fmt = ds => {
+		const d = new Date(ds + 'T00:00:00');
+		const yy = String(d.getFullYear()).slice(-2);
+		return `${d.getDate()} ${d.toLocaleDateString(undefined, { month: 'short' })} '${yy} ${d.toLocaleDateString(undefined, { weekday: 'short' })}`;
+	};
 	const rows = proposals.map(p => `<tr>
 		<td class="border px-3 py-2">${escapeHtml(p.name)}</td>
 		<td class="border px-3 py-2 whitespace-nowrap text-slate-400 line-through">${fmt(p.from)}</td>
