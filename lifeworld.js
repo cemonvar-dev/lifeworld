@@ -915,6 +915,43 @@ const REMINDER_TIMES = {
 
 // Rebuild all device reminders from the current cards. The OS fires them even
 // when the app is closed; we re-sync on app open and after schedule edits.
+// Action buttons shown under each reminder notification.
+const NOTIF_ACTION_TYPE = 'reminderActions';
+
+// Log a done/skip straight to Supabase from a notification tap. Doesn't rely
+// on rawTiles being loaded (the app may be cold-starting), so it talks to the
+// DB directly, then refreshes the UI if it's up.
+async function logFromNotification(taskId, status) {
+	const today = todayLocal();
+	const { data: existing } = await supa
+		.from('task_logs')
+		.select('id')
+		.eq('task_id', taskId)
+		.eq('log_date', today)
+		.in('status', ['done', 'completed', 'skipped'])
+		.limit(1);
+	if (existing && existing.length) {
+		await supa.from('task_logs').update({ status }).eq('id', existing[0].id);
+	} else {
+		await supa.from('task_logs').insert({ task_id: taskId, status, log_date: today });
+	}
+}
+
+async function onNotificationAction(event) {
+	const action = event && event.actionId;
+	const taskId = event && event.notification && event.notification.extra && event.notification.extra.taskId;
+	if (!taskId || (action !== 'done' && action !== 'skip')) return; // ignore plain taps
+	const status = action === 'done' ? 'done' : 'skipped';
+	try {
+		const { data: { session } } = await supa.auth.getSession();
+		if (!session) return; // signed out — nothing we can log
+		await logFromNotification(taskId, status);
+		await fetchTilesFromSupabase(); // refresh gallery + reschedule
+	} catch (e) {
+		console.error('notification action error:', e);
+	}
+}
+
 async function scheduleReminders() {
 	const cap = window.Capacitor;
 	const LN = cap && cap.Plugins && cap.Plugins.LocalNotifications;
@@ -925,6 +962,23 @@ async function scheduleReminders() {
 		if (perm.display !== 'granted') return;
 
 		try { await LN.createChannel({ id: 'reminders', name: 'Reminders', importance: 4, visibility: 1 }); } catch (e) {}
+
+		// One-time: register the Done/Skip buttons and the tap handler.
+		if (!scheduleReminders._init) {
+			scheduleReminders._init = true;
+			try {
+				await LN.registerActionTypes({
+					types: [{
+						id: NOTIF_ACTION_TYPE,
+						actions: [
+							{ id: 'done', title: '✅ Done' },
+							{ id: 'skip', title: '⏭️ Skip', destructive: true }
+						]
+					}]
+				});
+			} catch (e) { console.error('registerActionTypes error:', e); }
+			LN.addListener('localNotificationActionPerformed', onNotificationAction);
+		}
 
 		// Clear what we previously scheduled, then rebuild.
 		const pending = await LN.getPending();
@@ -943,7 +997,7 @@ async function scheduleReminders() {
 			const buckets = (typeof task.time_of_day === 'string' && task.time_of_day)
 				? task.time_of_day.split(',').map(s => s.trim()).filter(Boolean)
 				: ['morning']; // no time set -> morning
-			const base = { title: `⏰ ${task.name}`, body: 'Time to take action.', channelId: 'reminders' };
+			const base = { title: `⏰ ${task.name}`, body: 'Time to take action.', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id } };
 
 			buckets.forEach(bucket => {
 				const t = REMINDER_TIMES[bucket] || REMINDER_TIMES.morning;
