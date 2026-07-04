@@ -363,7 +363,7 @@ function renderGallery(filteredTiles) {
 			tileDiv.innerHTML = `
 				   <div class="flex w-full justify-between items-start mb-2">
 					   <div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
-					   <div class="text-3xl text-right w-1/4">${tp.emoji}</div>
+					   <div class="text-base text-right w-1/4">${tp.emoji}</div>
 				   </div>
 				   <div class="flex gap-2 mt-1">
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
@@ -1245,15 +1245,23 @@ function setVoiceLang(lang) {
 	try { localStorage.setItem('lw_voice_lang', lang); } catch (e) {}
 }
 
+// ---- Settings ----
+function openSettings() {
+	const sel = document.getElementById('settingsVoiceLang');
+	if (sel) sel.value = getVoiceLang();
+	document.getElementById('settingsOverlay').classList.remove('hidden');
+}
+function closeSettings() {
+	document.getElementById('settingsOverlay').classList.add('hidden');
+}
+
 function addNewTile() {
 	if (!currentUserId) return;
 	stopTileDictation();
 	const input = document.getElementById('newTileInput');
 	const status = document.getElementById('newTileMicStatus');
-	const langSel = document.getElementById('newTileLang');
 	if (input) input.value = '';
 	if (status) { status.classList.add('hidden'); status.textContent = ''; }
-	if (langSel) langSel.value = getVoiceLang();
 	document.getElementById('newTileOverlay').classList.remove('hidden');
 	setTimeout(() => { if (input) input.focus(); }, 50);
 }
@@ -1735,12 +1743,14 @@ function isTileScheduledToday(tileId) {
 function toggleTodayFilter() {
 	activeTimelineFilter = activeTimelineFilter === 'today' ? null : 'today';
 	const btn = document.getElementById('todayFilterBtn');
-	if (activeTimelineFilter === 'today') {
-		btn.classList.remove('bg-white');
-		btn.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
-	} else {
-		btn.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
-		btn.classList.add('bg-white');
+	if (btn) {
+		if (activeTimelineFilter === 'today') {
+			btn.classList.remove('bg-white');
+			btn.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+		} else {
+			btn.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
+			btn.classList.add('bg-white');
+		}
 	}
 	applyFilters();
 }
@@ -1846,6 +1856,54 @@ function openTodaySummary(type) {
 function closeTodaySummary() {
 	document.getElementById('todaySummaryOverlay').classList.add('hidden');
 }
+
+// Combined today view: Remaining list + Done/Skip table in one popup.
+function openTodaySummaryCombined() {
+	const overlay = document.getElementById('todaySummaryOverlay');
+	const titleEl = document.getElementById('todaySummaryTitle');
+	const iconEl = document.getElementById('todaySummaryIcon');
+	const body = document.getElementById('todaySummaryBody');
+	const { done, skipped, remaining } = getTodaySummary();
+	titleEl.textContent = "Today's Summary";
+	iconEl.textContent = '📋';
+
+	const listOr = (items, hover) => items.length
+		? items.map(t => todaySummaryRow(t, hover)).join('')
+		: '<div class="text-center text-slate-300 text-xs py-3">—</div>';
+	const col = (items, head, headClass, hover) =>
+		`<div class="flex flex-col gap-0.5"><div class="${headClass} text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">${head} (${items.length})</div>${listOr(items, hover)}</div>`;
+
+	body.innerHTML = `
+		<div class="mb-4">
+			<div class="bg-blue-100 text-blue-700 text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">📋 Remaining (${remaining.length})</div>
+			${listOr(remaining, 'hover:bg-slate-50')}
+		</div>
+		<div class="grid grid-cols-2 gap-3 items-start">
+			${col(done, '✅ Done', 'bg-green-100 text-green-700', 'hover:bg-green-50')}
+			${col(skipped, '⏭️ Skip', 'bg-yellow-100 text-yellow-700', 'hover:bg-yellow-50')}
+		</div>`;
+	body.querySelectorAll('.today-summary-row').forEach(row => {
+		row.addEventListener('click', () => { closeTodaySummary(); openTilePopup(row.getAttribute('data-tile-id')); });
+	});
+	overlay.classList.remove('hidden');
+}
+
+// ---- Calendar & Filter menus ----
+function openCalendarMenu() {
+	// Reflect whether the Today filter is currently on.
+	const t = document.getElementById('todayItemsBtn');
+	if (t) {
+		const on = activeTimelineFilter === 'today';
+		t.classList.toggle('bg-blue-50', on);
+		t.classList.toggle('border-blue-300', on);
+		t.classList.toggle('text-blue-700', on);
+		t.textContent = on ? '📅 Today\'s items ✓' : '📅 Today\'s items';
+	}
+	document.getElementById('calendarMenuOverlay').classList.remove('hidden');
+}
+function closeCalendarMenu() { document.getElementById('calendarMenuOverlay').classList.add('hidden'); }
+function openFilterMenu() { document.getElementById('filterMenuOverlay').classList.remove('hidden'); }
+function closeFilterMenu() { document.getElementById('filterMenuOverlay').classList.add('hidden'); }
 
 function toggleStatusFilter() {
 	const idx = STATUS_CYCLE.findIndex(s => s.key === activeStatusFilter);
@@ -2261,7 +2319,6 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
 	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
-	document.getElementById('todayFilterBtn').addEventListener('click', toggleTodayFilter);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('freqFilterBtn').addEventListener('click', toggleFreqFilter);
 
@@ -2282,7 +2339,14 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('closeNewTile').addEventListener('click', closeNewTileModal);
 	document.getElementById('createNewTileBtn').addEventListener('click', submitNewTile);
 	document.getElementById('newTileMicBtn').addEventListener('click', startTileDictation);
-	document.getElementById('newTileLang').addEventListener('change', e => setVoiceLang(e.target.value));
+
+	// Settings popup (voice language, …)
+	document.getElementById('settingsBtn').addEventListener('click', openSettings);
+	document.getElementById('closeSettings').addEventListener('click', closeSettings);
+	document.getElementById('settingsOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
+	});
+	document.getElementById('settingsVoiceLang').addEventListener('change', e => setVoiceLang(e.target.value));
 	document.getElementById('newTileOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
 	});
@@ -2331,16 +2395,36 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Calendar button logic
-	document.getElementById('calendarBtn').addEventListener('click', openCalendarPopup);
+	// Calendar menu (📆): long-term plan / today's items / today's summary
+	document.getElementById('calendarMenuBtn').addEventListener('click', openCalendarMenu);
+	document.getElementById('closeCalendarMenu').addEventListener('click', closeCalendarMenu);
+	document.getElementById('calendarMenuOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('calendarMenuOverlay')) closeCalendarMenu();
+	});
+	document.getElementById('longTermPlanBtn').addEventListener('click', () => { closeCalendarMenu(); openCalendarPopup(); });
+	document.getElementById('todayItemsBtn').addEventListener('click', () => { closeCalendarMenu(); toggleTodayFilter(); });
+	document.getElementById('todaySummaryOpenBtn').addEventListener('click', () => { closeCalendarMenu(); openTodaySummaryCombined(); });
+
+	// Planned-tasks calendar (opened from the calendar menu)
 	document.getElementById('closeCalendar').addEventListener('click', closeCalendarPopup);
 	document.getElementById('calendarOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('calendarOverlay')) closeCalendarPopup();
 	});
 
-	// Set filter and click the Today button on load
-	activeTimelineFilter = 'today';
-	document.getElementById('todayFilterBtn').click();
+	// Filter menu (🔽): relocate the filter pills into the modal
+	document.getElementById('filterMenuBtn').addEventListener('click', openFilterMenu);
+	document.getElementById('closeFilterMenu').addEventListener('click', closeFilterMenu);
+	document.getElementById('filterMenuOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('filterMenuOverlay')) closeFilterMenu();
+	});
+	const filterMenuList = document.getElementById('filterMenuList');
+	['statusFilterBtn', 'tagFilterBtn', 'freqFilterBtn', 'lifecycleFilterBtn', 'moodFilterBtn'].forEach(id => {
+		const el = document.getElementById(id);
+		if (el && filterMenuList) filterMenuList.appendChild(el);
+	});
+	// Tag/Mood open their own popups — close the filter menu so they aren't hidden behind it.
+	document.getElementById('tagFilterBtn').addEventListener('click', closeFilterMenu);
+	document.getElementById('moodFilterBtn').addEventListener('click', closeFilterMenu);
 });
 
 // ---- Calendar Popup ----

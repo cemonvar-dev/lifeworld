@@ -67,6 +67,16 @@
 			/* Submenu keeps its own layout (count badge stays right-aligned) */
 			#navMenu #todaySummaryMenu { position: static; width: 100%; margin-top: 6px; box-shadow: none; }
 		}
+
+		/* Filter modal: stack the relocated pills as a full-width left-aligned list */
+		#filterMenuList > button {
+			width: 100%;
+			justify-content: flex-start;
+			text-align: left;
+			border-radius: 12px !important;
+			padding: 12px 16px !important;
+			transform: none !important;
+		}
 	</style>
 </head>
 <body class="min-h-screen text-slate-900 antialiased bg-gradient-to-b from-indigo-50/50 via-slate-50 to-slate-100">
@@ -93,13 +103,9 @@
 				<input type="text" id="searchBox" aria-label="Search tiles" class="rounded-full border border-slate-200/80 bg-white/70 backdrop-blur px-4 py-2 w-full sm:w-64 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300 transition" placeholder="Search tiles..." />
 			</div>
 			<div id="navMenu" class="hidden sm:flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2 w-full sm:w-auto">
-				<button id="calendarBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border border-amber-200/80 bg-amber-50/80 text-amber-700 shadow-sm transition-all duration-200 hover:bg-amber-100/80 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">
-					📆 Calendar
-				</button>
-				<button id="todayFilterBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">
-					📅 Today
-				</button>
-				<div id="todaySummaryWrapper" class="relative">
+				<button id="calendarMenuBtn" title="Calendar" aria-label="Calendar" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border border-amber-200/80 bg-amber-50/80 text-amber-700 shadow-sm transition-all duration-200 hover:bg-amber-100/80 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">📆<span class="sm:hidden ml-1">Calendar</span></button>
+				<button id="filterMenuBtn" title="Filters" aria-label="Filters" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">🔽<span class="sm:hidden ml-1">Filters</span></button>
+				<div id="todaySummaryWrapper" class="relative hidden">
 					<button id="todaySummaryBtn" data-keep-menu aria-label="Today summary" aria-haspopup="true" aria-expanded="false" title="What's done and what's left today" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 w-full sm:w-auto rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">❓<span class="sm:hidden ml-1">Today summary</span></button>
 					<div id="todaySummaryMenu" class="hidden absolute right-0 mt-2 w-60 rounded-2xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1.5 z-[55]">
 						<button id="todayRemainingBtn" class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition">
@@ -121,8 +127,8 @@
 				<button id="freqFilterBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">
 					🔁 All Freq
 				</button>
-				<button id="lifecycleFilterBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 bg-blue-50/80 border-blue-300/80 text-blue-700">
-					📊 Active
+				<button id="lifecycleFilterBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 bg-orange-100 text-orange-700 border-orange-300">
+					🔥 Active
 				</button>
 				<button id="moodFilterBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">
 					🌦️ Mood
@@ -130,6 +136,7 @@
 				<button id="aiChatBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 border border-transparent shadow-md shadow-purple-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 active:translate-y-0">
 					🤖 AI
 				</button>
+				<button id="settingsBtn" title="Settings" aria-label="Settings" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">⚙️<span class="sm:hidden ml-1">Settings</span></button>
 			</div>
 		</header>
 
@@ -212,6 +219,50 @@
 		</div>
 	</div>
 
+	<!-- Calendar menu (Long-term plan / Today's items / Today's summary) -->
+	<div id="calendarMenuOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
+			<button id="closeCalendarMenu" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			<span class="absolute top-3 left-4 text-2xl">📆</span>
+			<div class="text-2xl font-extrabold mb-5 text-center tracking-tight">Calendar</div>
+			<div class="flex flex-col gap-2">
+				<button id="longTermPlanBtn" class="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition">🗓️ Long term plan <span class="text-xs font-normal text-amber-500">(planned calendar)</span></button>
+				<button id="todayItemsBtn" class="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border bg-white text-slate-700 hover:bg-slate-50 transition">📅 Today's items</button>
+				<button id="todaySummaryOpenBtn" class="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border bg-white text-slate-700 hover:bg-slate-50 transition">📋 Today's summary</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filter menu (the filter pills relocated here) -->
+	<div id="filterMenuOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
+			<button id="closeFilterMenu" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			<span class="absolute top-3 left-4 text-2xl">🔽</span>
+			<div class="text-2xl font-extrabold mb-5 text-center tracking-tight">Filters</div>
+			<div id="filterMenuList" class="flex flex-col gap-2"></div>
+		</div>
+	</div>
+
+	<!-- Settings Popup -->
+	<div id="settingsOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
+			<button id="closeSettings" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			<span class="absolute top-3 left-4 text-2xl">⚙️</span>
+			<div class="text-2xl font-extrabold mb-5 text-center tracking-tight">Settings</div>
+			<div class="mb-2">
+				<label for="settingsVoiceLang" class="text-sm font-semibold block mb-1">🎙️ Voice language</label>
+				<p class="text-xs text-slate-500 mb-2">Language used when dictating tile titles with the mic.</p>
+				<select id="settingsVoiceLang" class="w-full rounded-lg border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300">
+					<option value="en-US">English</option>
+					<option value="de-DE">Deutsch</option>
+					<option value="it-IT">Italiano</option>
+					<option value="es-ES">Español</option>
+					<option value="tr-TR">Türkçe</option>
+				</select>
+			</div>
+		</div>
+	</div>
+
 	<!-- New Tile Popup (type or dictate the title) -->
 	<div id="newTileOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
@@ -220,16 +271,6 @@
 			<div class="flex items-center gap-2 mb-2">
 				<input type="text" id="newTileInput" placeholder="Tile name…" autocomplete="off" class="flex-1 rounded-lg border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300 transition" />
 				<button id="newTileMicBtn" aria-label="Speak the title" title="Speak the title" class="grid place-items-center h-10 w-10 shrink-0 rounded-full border border-slate-200 bg-white text-xl hover:bg-slate-50 active:scale-95 transition">🎤</button>
-			</div>
-			<div class="flex items-center gap-2 mb-2">
-				<label for="newTileLang" class="text-xs text-slate-500">🎙️ Voice language</label>
-				<select id="newTileLang" class="rounded-lg border border-slate-200 px-2 py-1 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/40">
-					<option value="en-US">English</option>
-					<option value="de-DE">Deutsch</option>
-					<option value="it-IT">Italiano</option>
-					<option value="es-ES">Español</option>
-					<option value="tr-TR">Türkçe</option>
-				</select>
 			</div>
 			<div id="newTileMicStatus" class="hidden text-xs mb-3"></div>
 			<button id="createNewTileBtn" class="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-md shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all">➕ Create</button>
