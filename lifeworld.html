@@ -181,6 +181,20 @@
 		</div>
 	</div>
 
+	<!-- New Tile Popup (type or dictate the title) -->
+	<div id="newTileOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
+		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
+			<button id="closeNewTile" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			<div class="text-lg font-bold mb-4">New Tile</div>
+			<div class="flex items-center gap-2 mb-2">
+				<input type="text" id="newTileInput" placeholder="Tile name…" autocomplete="off" class="flex-1 rounded-lg border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300 transition" />
+				<button id="newTileMicBtn" aria-label="Speak the title" title="Speak the title" class="grid place-items-center h-10 w-10 shrink-0 rounded-full border border-slate-200 bg-white text-xl hover:bg-slate-50 active:scale-95 transition">🎤</button>
+			</div>
+			<div id="newTileMicStatus" class="hidden text-xs mb-3"></div>
+			<button id="createNewTileBtn" class="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-md shadow-blue-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all">➕ Create</button>
+		</div>
+	</div>
+
 	<!-- AI Chat Popup -->
 	<div id="aiChatOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[70] hidden flex items-end sm:items-center justify-center">
 		<div class="bg-white/90 backdrop-blur-2xl shadow-2xl shadow-slate-900/20 border border-white/60 rounded-t-3xl sm:rounded-3xl w-full sm:w-[420px] max-h-[85vh] flex flex-col relative">

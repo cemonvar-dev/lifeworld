@@ -1236,48 +1236,124 @@ async function deleteTile() {
 }
 
 // ---- Add New Tile ----
-async function addNewTile() {
-	const name = prompt('Enter tile name:');
-	if (!name || !name.trim()) return;
+// ---- New Tile (type or dictate the title) ----
+function addNewTile() {
 	if (!currentUserId) return;
+	stopTileDictation();
+	const input = document.getElementById('newTileInput');
+	const status = document.getElementById('newTileMicStatus');
+	if (input) input.value = '';
+	if (status) { status.classList.add('hidden'); status.textContent = ''; }
+	document.getElementById('newTileOverlay').classList.remove('hidden');
+	setTimeout(() => { if (input) input.focus(); }, 50);
+}
 
-	const { data, error } = await supa
-		.from('tasks')
-		.insert({
-			user_id: currentUserId,
-			name: name.trim(),
-			frequency_mode: 'daily'
-		})
-		.select('*, task_logs(*), task_frequency_days(*)')
-		.single();
+function closeNewTileModal() {
+	stopTileDictation();
+	document.getElementById('newTileOverlay').classList.add('hidden');
+}
 
-	if (error || !data) {
-		console.error('Add error:', error);
-		alert('Failed to add tile: ' + (error?.message || 'unknown error'));
+async function submitNewTile() {
+	const input = document.getElementById('newTileInput');
+	const name = (input && input.value || '').trim();
+	if (!name) { if (input) input.focus(); return; }
+	closeNewTileModal();
+	await createTileByName(name); // handles insert + render + reminders
+}
+
+// --- Speech-to-text for the title ---
+// Native Android uses the Capacitor speech-recognition plugin (the Web Speech
+// API isn't available in the Android WebView); browsers fall back to it.
+let webSpeechRecognizer = null;
+
+function setMicStatus(msg, tone) {
+	const el = document.getElementById('newTileMicStatus');
+	if (!el) return;
+	el.textContent = msg || '';
+	el.className = `text-xs mb-3 ${tone === 'error' ? 'text-red-500' : tone === 'live' ? 'text-blue-600' : 'text-slate-500'}${msg ? '' : ' hidden'}`;
+}
+
+function setMicActive(active) {
+	const btn = document.getElementById('newTileMicBtn');
+	if (!btn) return;
+	btn.classList.toggle('bg-red-100', active);
+	btn.classList.toggle('border-red-300', active);
+	btn.classList.toggle('animate-pulse', active);
+}
+
+async function startTileDictation() {
+	const cap = window.Capacitor;
+	const SR = cap && cap.Plugins && cap.Plugins.SpeechRecognition;
+	const input = document.getElementById('newTileInput');
+
+	// Native plugin path
+	if (SR && cap.isNativePlatform && cap.isNativePlatform()) {
+		try {
+			const avail = await SR.available();
+			if (!(avail && (avail.available === true || avail === true))) {
+				setMicStatus('Speech recognition not available on this device.', 'error');
+				return;
+			}
+			const perm = await SR.requestPermissions().catch(() => null);
+			if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') {
+				setMicStatus('Microphone permission denied.', 'error');
+				return;
+			}
+			setMicActive(true);
+			setMicStatus('🎙️ Listening… speak the title', 'live');
+			const res = await SR.start({ language: 'tr-TR', maxResults: 1, partialResults: false, popup: false });
+			const text = res && res.matches && res.matches[0];
+			if (text && input) input.value = text;
+			setMicActive(false);
+			setMicStatus(text ? '' : 'Didn\'t catch that — try again.', text ? '' : 'error');
+			if (input) input.focus();
+		} catch (e) {
+			console.error('native dictation error:', e);
+			setMicActive(false);
+			setMicStatus('Could not start voice input.', 'error');
+		}
 		return;
 	}
 
-	rawTiles[data.id] = data;
-	const health = calculateHealth(data);
-	const plant = healthToPlant(health);
-	tiles.push({
-		id: data.id,
-		name: data.name,
-		tags: data.tag_ids || [],
-		status: 'noaction',
-		taskStatus: data.status || 'in progress',
-		emoji: plant.emoji,
-		health,
-		healthLabel: plant.label,
-		healthColor: plant.color,
-		count: 0,
-		createdAt: data.created_at || null,
-		lastUpdate: null
-	});
+	// Web fallback (Chrome / PWA)
+	const WebSR = window.SpeechRecognition || window.webkitSpeechRecognition;
+	if (!WebSR) {
+		setMicStatus('Voice input isn\'t supported here — please type the title.', 'error');
+		return;
+	}
+	try {
+		webSpeechRecognizer = new WebSR();
+		webSpeechRecognizer.lang = 'tr-TR';
+		webSpeechRecognizer.interimResults = false;
+		webSpeechRecognizer.maxAlternatives = 1;
+		setMicActive(true);
+		setMicStatus('🎙️ Listening… speak the title', 'live');
+		webSpeechRecognizer.onresult = (ev) => {
+			const text = ev.results && ev.results[0] && ev.results[0][0] && ev.results[0][0].transcript;
+			if (text && input) input.value = text.trim();
+			if (input) input.focus();
+		};
+		webSpeechRecognizer.onerror = (ev) => {
+			setMicActive(false);
+			setMicStatus(ev.error === 'not-allowed' ? 'Microphone permission denied.' : 'Voice input error — please type.', 'error');
+		};
+		webSpeechRecognizer.onend = () => { setMicActive(false); setMicStatus(''); };
+		webSpeechRecognizer.start();
+	} catch (e) {
+		console.error('web dictation error:', e);
+		setMicActive(false);
+		setMicStatus('Could not start voice input.', 'error');
+	}
+}
 
-	applyFilters();
-	openTilePopup(data.id);
-	scheduleReminders();
+function stopTileDictation() {
+	setMicActive(false);
+	try {
+		const cap = window.Capacitor;
+		const SR = cap && cap.Plugins && cap.Plugins.SpeechRecognition;
+		if (SR && cap.isNativePlatform && cap.isNativePlatform()) SR.stop().catch(() => {});
+	} catch (e) {}
+	if (webSpeechRecognizer) { try { webSpeechRecognizer.abort(); } catch (e) {} webSpeechRecognizer = null; }
 }
 
 // ---- Tag Filter ----
@@ -2191,6 +2267,17 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('moodFilterOverlay')) closeMoodFilterPopup();
 	});
 	document.getElementById('addTileBtn').addEventListener('click', addNewTile);
+
+	// New-tile modal (type or dictate the title)
+	document.getElementById('closeNewTile').addEventListener('click', closeNewTileModal);
+	document.getElementById('createNewTileBtn').addEventListener('click', submitNewTile);
+	document.getElementById('newTileMicBtn').addEventListener('click', startTileDictation);
+	document.getElementById('newTileOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
+	});
+	document.getElementById('newTileInput').addEventListener('keydown', e => {
+		if (e.key === 'Enter') { e.preventDefault(); submitNewTile(); }
+	});
 
 	// Mobile hamburger menu toggle
 	const navToggle = document.getElementById('navToggle');
