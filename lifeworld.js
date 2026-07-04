@@ -1237,13 +1237,23 @@ async function deleteTile() {
 
 // ---- Add New Tile ----
 // ---- New Tile (type or dictate the title) ----
+// Remembered voice-recognition language (BCP-47 tag).
+function getVoiceLang() {
+	try { return localStorage.getItem('lw_voice_lang') || 'en-US'; } catch (e) { return 'en-US'; }
+}
+function setVoiceLang(lang) {
+	try { localStorage.setItem('lw_voice_lang', lang); } catch (e) {}
+}
+
 function addNewTile() {
 	if (!currentUserId) return;
 	stopTileDictation();
 	const input = document.getElementById('newTileInput');
 	const status = document.getElementById('newTileMicStatus');
+	const langSel = document.getElementById('newTileLang');
 	if (input) input.value = '';
 	if (status) { status.classList.add('hidden'); status.textContent = ''; }
+	if (langSel) langSel.value = getVoiceLang();
 	document.getElementById('newTileOverlay').classList.remove('hidden');
 	setTimeout(() => { if (input) input.focus(); }, 50);
 }
@@ -1301,7 +1311,7 @@ async function startTileDictation() {
 			}
 			setMicActive(true);
 			setMicStatus('🎙️ Listening… speak the title', 'live');
-			const res = await SR.start({ language: 'tr-TR', maxResults: 1, partialResults: false, popup: false });
+			const res = await SR.start({ language: getVoiceLang(), maxResults: 1, partialResults: false, popup: false });
 			const text = res && res.matches && res.matches[0];
 			if (text && input) input.value = text;
 			setMicActive(false);
@@ -1323,7 +1333,7 @@ async function startTileDictation() {
 	}
 	try {
 		webSpeechRecognizer = new WebSR();
-		webSpeechRecognizer.lang = 'tr-TR';
+		webSpeechRecognizer.lang = getVoiceLang();
 		webSpeechRecognizer.interimResults = false;
 		webSpeechRecognizer.maxAlternatives = 1;
 		setMicActive(true);
@@ -2272,6 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('closeNewTile').addEventListener('click', closeNewTileModal);
 	document.getElementById('createNewTileBtn').addEventListener('click', submitNewTile);
 	document.getElementById('newTileMicBtn').addEventListener('click', startTileDictation);
+	document.getElementById('newTileLang').addEventListener('change', e => setVoiceLang(e.target.value));
 	document.getElementById('newTileOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
 	});
