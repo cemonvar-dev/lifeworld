@@ -1,62 +1,75 @@
-LifeWorld — Visual Habit & Growth Tracker
+# LifeWorld — Visual Habit & Growth Tracker
 
-LifeWorld is a lightweight, visual, tile-based personal growth tracker built with HTML, CSS, JavaScript, jQuery UI, and Supabase.
-Each action you take in real life updates a tile in your world — forming a gentle, identity-based motivation system.
-This repository contains the v0.3 web version, featuring tile management, logging, frequencies, Supabase sync, search, filters, and a modern popup UI.
+LifeWorld is a lightweight, visual, tile-based personal growth tracker. Each
+habit or task is a **tile** whose health "grows" or "wilts" based on how
+consistently you act on it — a gentle, identity-based motivation system.
 
-🚀 Features (v0.3)
-✓ 512-Tile Interactive Grid
-Click any tile to open the popup
-Empty tiles show a + icon
-Drag & drop tiles on desktop to reorder (mobile disables dragging automatically)
+Built with vanilla **HTML / CSS (Tailwind) / JavaScript**, **Supabase** for auth
+and data, **OpenAI** (via a Vercel serverless function) for the AI assistant, and
+**Capacitor 7** for the native Android app. Runs as a web app / PWA and as an
+installable Android APK from the same codebase.
 
-✓ Tile Details Popup
-Editable tile name
-Add log entries (saved to history)
-Modern Save/Cancel UI
-ESC key = Cancel
-Click outside popup = Cancel
-Auto-loads tile history
-New frequency selector (Daily / Weekly / Custom Days)
-Custom day selector (Mon–Sun)
+- **Web:** https://lifeworld.vercel.app
+- **Android:** APK built in CI (GitHub Actions, Capacitor 7, JDK 21)
 
-✓ Frequency System
-Each tile has its own schedule:
-Daily
-Weekly
-Custom days (Mon–Sun combination)
-Frequency is used to compute:
-When the tile is next due
-Quick filter behavior (Today, Tomorrow, 2 Days, 3+ Days)
+## Features
 
-✓ Search & Quick Filters
-Search by tile name or log text
-Quick filters:
-Today
-Tomorrow
-2 Days
-3+ Days
-All tiles
+### Tiles & health
+- Dynamic, tag-grouped tiles — no fixed grid. Add a tile with the **+** button
+  (type or **dictate** the title with the 🎤 mic).
+- Each tile shows a **health emoji** based on recent adherence: ⭐ Thriving →
+  ☀️ Healthy → ⛅ Growing → 🌧️ Wilting → ⚡ Dying.
+- **Lifecycle states** get a status flag instead of a health emoji:
+  🏁 Completed · 🚫 Cancelled · 🏴 Failed.
+- Quick **✅ Done / ⏭️ Skip** per day, straight from the card. Flags are
+  date-based, so they reset automatically each morning (history is preserved).
 
-✓ Supabase Cloud Sync
-Using:
-worlds table
-user_id + data JSON structure
-If logged in:
-Tiles auto-load from cloud
-Auto-sync on save
-If NOT logged in:
-Works offline using LocalStorage
-Same tile structure
-Auth via Google OAuth.
+### Frequencies
+- **Daily**, **Weekly** (specific weekdays), **Monthly** (a chosen day of the
+  month, clamped for short months), and **Once** (a specific date).
+- Frequency drives the next-due label, health calculation, and reminders.
 
-✓ Responsive UI
-Tile layout with auto-fit grid
-Mobile scrolling fixed
-Drag disabled on mobile for smooth gestures
-Header with profile icon
-Dropdown login/logout menu
+### Calendar
+- **Long-term plan:** all planned (once) tasks, grouped by month, with
+  complete / reschedule actions and row checkboxes.
+- **🤖 Auto Reschedule:** sends the planned tasks to the AI, which spreads
+  same-category events out over time (and pulls overdue items forward), then
+  previews the changes before applying.
+- **Today's items** and a combined **Today's summary** (remaining + done/skip).
 
-✓ PWA Support (preliminary)
-A full icon set and manifest.json are included.
-Service worker template installed.
+### Filters & search
+- Search by tile name or tag.
+- Filter by **Status**, **Tags** (selecting a parent tag includes all child
+  tags), **Frequency**, **Lifecycle** (defaults to 🔥 Active), and **Mood**
+  (health state).
+
+### AI assistant
+- Chat coach grounded in your task data (OpenAI, `gpt-4o-mini` by default).
+- Per-user **daily message quota** (default 25) enforced server-side; premium
+  accounts bypass it.
+
+### Reminders (native Android)
+- Local notifications **twice a day (08:00 & 20:00)** for every active task,
+  with **Done / Skip** action buttons that log straight to Supabase.
+
+### Settings
+- Voice-recognition **language** (English, German, Italian, Spanish, Turkish),
+  used for mic dictation.
+
+## Architecture
+- **Frontend:** `lifeworld.html` + `lifeworld.js` (Tailwind via CDN, Choices.js,
+  flatpickr). Served statically from Vercel; the Android shell loads the same URL.
+- **Backend:** Vercel serverless functions in `api/` (dependency-free, e.g.
+  `api/ai.js`). Secrets live in Vercel env vars.
+- **Data:** Supabase — `tasks`, `task_logs`, `task_frequency_days`, `tags`,
+  `ai_usage`. Row-Level Security scopes every row to its owner.
+- **Auth:** Supabase with Google OAuth (native PKCE + deep link on Android).
+- **Mobile:** Capacitor 7; the native Android project is generated and signed in
+  GitHub Actions. Plugins: local notifications, speech recognition, social login.
+- **One-time SQL migrations** live in `scripts/*.sql` (run in the Supabase SQL
+  editor).
+
+## Development
+This is a static site — open `lifeworld.html` (or serve the folder) and it talks
+to the live Supabase project. The Android APK is produced by the
+`Build Android APK` GitHub Actions workflow; no local Android toolchain required.
