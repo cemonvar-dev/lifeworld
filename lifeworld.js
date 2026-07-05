@@ -967,9 +967,11 @@ async function updateTask(taskId, updates) {
 }
 
 // ---- Local notifications / reminders (native app only) ----
-// Two reminders per day for every active task: 08:00 and 20:00.
+// Reminders every 4 hours during waking hours (skips the 00:00 / 04:00 slots).
 const REMINDER_TIMES = [
 	{ hour: 8, minute: 0 },
+	{ hour: 12, minute: 0 },
+	{ hour: 16, minute: 0 },
 	{ hour: 20, minute: 0 }
 ];
 
