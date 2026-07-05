@@ -1434,8 +1434,7 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 		btn.innerHTML =
 			`<span class="text-base shrink-0">🏷️</span>` +
 			`<span class="flex-1 truncate">${tagObj.label}</span>` +
-			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>` +
-			`<span class="text-[11px] font-semibold text-slate-400 tabular-nums w-7 text-right shrink-0">${tagCounts[tagObj.key] || 0}</span>`;
+			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>`;
 		btn.addEventListener('click', () => { if (!tagManageMode) setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
 		// Rename button (always visible in manage mode, hover-only otherwise)
