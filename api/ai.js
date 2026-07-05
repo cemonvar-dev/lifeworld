@@ -51,6 +51,60 @@ async function consumeQuota(userId, limit) {
 	}
 }
 
+// ---- Long-term memory (ai_memory table; service-role only) ----
+// A compact, evolving profile of the user that is injected into the system
+// prompt every session, so the assistant "remembers" across chats/devices.
+
+async function getMemory(userId) {
+	if (!SUPABASE_SERVICE_ROLE_KEY) return '';
+	try {
+		const resp = await fetch(`${SUPABASE_URL}/rest/v1/ai_memory?user_id=eq.${userId}&select=notes`, {
+			headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` }
+		});
+		if (!resp.ok) return '';
+		const rows = await resp.json();
+		return (Array.isArray(rows) && rows[0] && rows[0].notes) ? rows[0].notes : '';
+	} catch { return ''; }
+}
+
+async function saveMemory(userId, notes) {
+	if (!SUPABASE_SERVICE_ROLE_KEY) return;
+	try {
+		await fetch(`${SUPABASE_URL}/rest/v1/ai_memory`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				apikey: SUPABASE_SERVICE_ROLE_KEY,
+				Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+				Prefer: 'resolution=merge-duplicates' // upsert on the user_id primary key
+			},
+			body: JSON.stringify({ user_id: userId, notes: notes.slice(0, 4000), updated_at: new Date().toISOString() })
+		});
+	} catch { /* best-effort */ }
+}
+
+// Merge durable facts from the latest exchange into the user's memory.
+async function updateMemory(apiKey, userId, prevNotes, userMsg, assistantReply) {
+	try {
+		const sys = `You maintain a concise long-term memory about a user of a habit-tracking app, based on their coaching chats. Merge any durable facts from the latest exchange (goals, motivations, recurring struggles, preferences, constraints, notable wins) into the existing memory. Keep it under 180 words as short bullet points. Drop anything stale, redundant, or trivial. Do NOT include day-to-day task stats (the app already provides those live). Output ONLY the updated memory text, no preamble.`;
+		const user = `EXISTING MEMORY:\n${prevNotes || '(empty)'}\n\nLATEST EXCHANGE:\nUser: ${userMsg}\nAssistant: ${assistantReply}\n\nUpdated memory:`;
+		const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+			body: JSON.stringify({
+				model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+				messages: [{ role: 'system', content: sys }, { role: 'user', content: user }],
+				max_tokens: 350,
+				temperature: 0.2
+			})
+		});
+		if (!resp.ok) return;
+		const data = await resp.json();
+		const notes = data.choices?.[0]?.message?.content?.trim();
+		if (notes) await saveMemory(userId, notes);
+	} catch { /* best-effort; never blocks the chat */ }
+}
+
 export default async function handler(req, res) {
 	// CORS
 	res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -95,6 +149,10 @@ export default async function handler(req, res) {
 	const { messages, taskContext, responseFormat } = req.body;
 	if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages required' });
 
+	// Long-term memory only applies to normal chat (not the reschedule JSON call).
+	const isChat = !(responseFormat && responseFormat.type === 'json_object');
+	const memory = isChat ? await getMemory(user.id) : '';
+
 	const systemPrompt = `You are LifeWorld AI — a personal life coach and productivity assistant. You have access to the user's task/habit tracking data below. Use it to give specific, actionable advice.
 
 Be encouraging but honest. Use emojis sparingly. Keep responses concise (2-4 paragraphs max unless asked for detail).
@@ -108,7 +166,7 @@ You can:
 - Answer any questions about their data
 
 USER'S TASK DATA:
-${taskContext || 'No task data available.'}`;
+${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOUT THIS USER (learned from past chats — durable context, may be outdated; the task data above is authoritative for current stats):\n${memory}` : ''}`;
 
 	try {
 		const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -141,6 +199,11 @@ ${taskContext || 'No task data available.'}`;
 
 		const data = await response.json();
 		const reply = data.choices?.[0]?.message?.content || 'No response from AI.';
+		// Fold durable facts from this exchange into the user's long-term memory.
+		if (isChat) {
+			const lastUser = [...messages].reverse().find(m => m.role === 'user');
+			await updateMemory(apiKey, user.id, memory, lastUser ? lastUser.content : '', reply);
+		}
 		return res.status(200).json({ reply });
 	} catch (err) {
 		console.error('AI handler error:', err);
