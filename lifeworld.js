@@ -2045,7 +2045,10 @@ function applyFilters() {
 	if (activeTagFilter === '__untagged__') {
 		filtered = filtered.filter(t => !t.tags || t.tags.length === 0);
 	} else if (activeTagFilter) {
-		filtered = filtered.filter(t => (t.tags || []).includes(activeTagFilter));
+		// Include the selected tag AND all of its child tags (e.g. work → work-idari…).
+		const wanted = getDescendantIds(activeTagFilter);
+		wanted.add(activeTagFilter);
+		filtered = filtered.filter(t => (t.tags || []).some(tag => wanted.has(tag)));
 	}
 	if (activeTimelineFilter === 'today') {
 		filtered = filtered.filter(t => isTileScheduledToday(t.id));
