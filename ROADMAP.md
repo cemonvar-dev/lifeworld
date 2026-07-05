@@ -17,6 +17,34 @@ not a commitment.
 - Native Android reminders every 4h with Done/Skip actions
 - Auth (Supabase + Google OAuth), Vercel web + CI-built Android APK, Lemon Squeezy premium
 
+## 🧭 Direction: Items + Planning (capture now, plan later)
+The biggest architectural shift — split the app into two layers:
+
+- **Items (a catalog / library):** real-world things you want to experience,
+  stored independently of any plan. Add one in **seconds, hands-busy** (e.g. voice
+  "add restaurant Ziya Kebap" while driving) with zero planning. Types:
+  - **Venues** — restaurants, cafés, pubs, bars, night clubs, or any category you define
+  - **Places to visit** — historical sites, beaches, aurora spots, foreign destinations
+  - **Cuisine** — dishes / food styles to try or cook
+  - **Art** — exhibitions, galleries, films, concerts, books
+  - **Sports** — activities/events to do or attend
+  - …extensible; the item type is user-definable.
+- **Planning (tiles/tasks):** when you have time, review captured items and create
+  plans from them — a task/tile **linked to an item**, with date (or range),
+  frequency, budget, reminders. One item can spawn many plans over time.
+
+**Flow:** capture-now → review-later → plan. Items are the backlog; tiles are the
+commitments.
+
+**AI enrichment (web-augmented):** the assistant researches an item online and fills
+in useful context — typical **pricing**, hours, popularity — and **estimates a
+budget** (e.g. "dinner for 2 at this restaurant ≈ X"). Feeds the budget add-on and
+auto-reschedule. Needs a web-search/browse capability in the AI backend.
+
+> This is a "let's talk about it later" theme — captured here so it isn't lost.
+> It touches the data model (new `items` table + item↔task link), capture UX, and
+> AI web access, so it's a multi-step effort worth scoping on its own.
+
 ## 🔜 Now (polish, low-effort / high-value)
 - **Tile due date shows the year** — the card footer's next-due label omits the year
   (e.g. "4 Tem" with no '26/'27); include it so far-off dates aren't ambiguous.
@@ -34,11 +62,11 @@ not a commitment.
 ## 🌓 Next (meaningful features)
 - **Date ranges for tiles** — let a tile span a start–end date (e.g. 10–14 Jul)
   instead of a single date. Flows into the calendar, "next due", and reminders.
-- **Venues** — a user-defined *venue* type (restaurants, cafés, pubs, bars, night
-  clubs, or any category you create) for spots you want to go to; track planned vs
-  visited. Extends LifeWorld beyond habits into places-to-experience.
-- **Places to visit** — a bucket-list type for destinations (historical sites,
-  beaches, aurora spots, foreign trips…), with plan/visited status.
+- **Items layer — first slice** — see the "Items + Planning" direction above.
+  Ship an `items` catalog with **quick capture** (voice/one-tap) for venues, places,
+  cuisine, art, and sports, plus a link from **item → tile** so plans reference items.
+- **AI web pricing / budget estimate** — AI researches an item online and suggests a
+  budget (e.g. dinner for 2); pairs with the budget add-on.
 - **iOS app** — Capacitor iOS build → TestFlight → App Store (needs Apple Developer
   account, Sign in with Apple, APNs). Big lift; see earlier discussion.
 - **Insights / analytics** — streaks, trends, per-tag rollups, a weekly review screen.
