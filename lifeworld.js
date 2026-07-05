@@ -280,7 +280,7 @@ function getNextDueLabel(tileId) {
 		if (diff === 0) return 'today';
 		if (diff === 1) return 'tomorrow';
 		if (diff <= 7) return `in ${diff} days`;
-		return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+		return `${d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} '${String(d.getFullYear()).slice(-2)}`;
 	}
 
 	if (mode === 'weekly') {
@@ -305,7 +305,7 @@ function getNextDueLabel(tileId) {
 		if (diff === 0) return 'today';
 		if (diff === 1) return 'tomorrow';
 		if (diff <= 7) return `in ${diff} days`;
-		return next.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+		return `${next.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} '${String(next.getFullYear()).slice(-2)}`;
 	}
 
 	return '—';
@@ -2808,7 +2808,7 @@ function renderOnceTasksCalendar() {
 	// Render a table calendar grouped by month, with a select checkbox per row.
 	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
 		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
-		+ '<th class="px-4 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Day</th><th class="px-4 py-2 text-left">Tag</th><th class="px-4 py-2 text-left">Task</th><th class="px-4 py-2 text-left">Actions</th>'
+		+ '<th class="px-3 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
 		+ '</tr></thead><tbody>';
 	let currentMonthKey = '';
 	allDates.forEach(date => {
@@ -2817,7 +2817,7 @@ function renderOnceTasksCalendar() {
 		if (monthKey !== currentMonthKey) {
 			currentMonthKey = monthKey;
 			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-			html += `<tr class="cal-month-row"><td colspan="6" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
+			html += `<tr class="cal-month-row"><td colspan="4" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
 		}
 		dateMap[date].forEach(t => {
 			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
@@ -2827,12 +2827,12 @@ function renderOnceTasksCalendar() {
 			const allTags = (t.tag_ids || []).map(tagName).join(',');
 			// Compute weekday name
 			const d = new Date(date + 'T00:00:00');
-			const dayName = d.toLocaleDateString(undefined, { weekday: 'long' });
+			const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
 			// Format date as DD-MM
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-3 py-2 text-center"><input type="checkbox" class="cal-select" data-tile-id="${t.id}" /></td><td class="border px-4 py-2 whitespace-nowrap font-semibold">${shortDate}</td><td class="border px-4 py-2 whitespace-nowrap">${dayName}</td><td class="border px-4 py-2">${escapeHtml(tagLabel)}</td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button></td></tr>`;
+				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-3 py-2 text-center"><input type="checkbox" class="cal-select" data-tile-id="${t.id}" /></td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button></td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
