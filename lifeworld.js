@@ -247,7 +247,7 @@ async function fetchTilesFromSupabase() {
 	       });
 
 	await loadTags();
-	renderGallery(tiles);
+	applyFilters(); // apply the default filters (e.g. 🔥 Active) on first paint
 	scheduleReminders();
 	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
 }
@@ -369,9 +369,8 @@ function renderGallery(filteredTiles) {
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
 					   <span class="text-xs text-slate-500">(${tile.count})</span>
 				   </div>
-				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : `<div class="text-xs font-medium ${tile.health >= 60 ? 'text-green-600' : tile.health >= 40 ? 'text-yellow-600' : 'text-red-500'}">${tile.health}% ${tile.healthLabel}</div>`}
+				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex justify-between items-center w-full mt-1">
-					   <span class="text-xs text-slate-400">📌 ${createdAt}</span>
 					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
 					   <span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
 				   </div>
