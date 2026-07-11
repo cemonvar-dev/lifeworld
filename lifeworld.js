@@ -41,6 +41,7 @@ let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
 let activeLifecycleFilter = 'active'; // binary: 'active' (not completed), 'all', 'completed'
 let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
 let activeFreqFilter = null; // null = all, else 'daily' | 'weekly' | 'monthly' | 'once'
+let searchChips = []; // committed search terms (Enter in the search box); OR-matched
 let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
 let TAGS = [];            // rows from public.tags: { id, name, parent_id, sort_order }
 let TAGS_BY_ID = {};      // id -> tag row
@@ -2565,28 +2566,53 @@ function applyFilters() {
 		if (activeFreqFilter) {
 			filtered = filtered.filter(t => ((rawTiles[t.id] && rawTiles[t.id].frequency_mode) || 'daily') === activeFreqFilter);
 		}
-		const q = (document.getElementById('searchBox').value || '').trim().toLowerCase();
-		       if (q) {
-			       if (q === 'overdue') {
-				       filtered = filtered.filter(t => getNextDueLabel(t.id) === 'overdue');
-			       } else if (["january","february","march","april","may","june","july","august","september","october","november","december"].includes(q)) {
-				       // Filter by month name on lastUpdate
-				       filtered = filtered.filter(t => {
-					       if (!t.lastUpdate) return false;
-					       const d = new Date(t.lastUpdate);
-					       const month = d.toLocaleString('default', { month: 'long' }).toLowerCase();
-					       return month === q;
-				       });
-			       } else {
-				       // Search by name or tag (partial, case-insensitive)
-				       filtered = filtered.filter(t => {
-					       const nameMatch = t.name.toLowerCase().includes(q);
-					       const tagMatch = (t.tags || []).some(id => tagName(id).toLowerCase().includes(q));
-					       return nameMatch || tagMatch;
-				       });
-			       }
-		       }
+		// Search: committed chips (Enter) plus the current uncommitted input,
+		// OR-matched — a tile shows if it matches ANY of the terms.
+		const q = (document.getElementById('searchBox').value || '').trim();
+		const terms = [...searchChips];
+		if (q) terms.push(q);
+		if (terms.length) {
+			filtered = filtered.filter(t => terms.some(term => matchesSearchTerm(t, term)));
+		}
 	renderGallery(filtered);
+}
+
+const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+// Does a tile match one search term? Supports "overdue", a month name, or a
+// partial name/tag match — all case-insensitive.
+function matchesSearchTerm(t, rawTerm) {
+	const term = String(rawTerm || '').trim().toLowerCase();
+	if (!term) return true;
+	if (term === 'overdue') return getNextDueLabel(t.id) === 'overdue';
+	if (MONTH_NAMES.includes(term)) {
+		if (!t.lastUpdate) return false;
+		return new Date(t.lastUpdate).toLocaleString('default', { month: 'long' }).toLowerCase() === term;
+	}
+	const nameMatch = t.name.toLowerCase().includes(term);
+	const tagMatch = (t.tags || []).some(id => tagName(id).toLowerCase().includes(term));
+	return nameMatch || tagMatch;
+}
+
+// Render committed search chips (like the tag-filter chip). Empty -> hidden.
+function renderSearchChips() {
+	const box = document.getElementById('searchChips');
+	if (!box) return;
+	if (!searchChips.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+	box.classList.remove('hidden');
+	box.innerHTML = searchChips.map((term, i) => `
+		<span class="inline-flex items-center gap-1 rounded-full bg-white/70 backdrop-blur border border-white/60 shadow-sm px-3 py-1 text-sm font-medium text-slate-600">
+			🔍 ${escapeHtml(term)}
+			<button class="search-chip-x text-xs text-slate-400 hover:text-red-500 ml-1" data-idx="${i}" title="Remove">✕</button>
+		</span>`).join('')
+		+ (searchChips.length > 1 ? `<button id="clearSearchChips" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>` : '');
+	box.querySelectorAll('.search-chip-x').forEach(b => b.addEventListener('click', () => {
+		searchChips.splice(parseInt(b.dataset.idx, 10), 1);
+		renderSearchChips();
+		applyFilters();
+	}));
+	const clr = document.getElementById('clearSearchChips');
+	if (clr) clr.addEventListener('click', () => { searchChips = []; renderSearchChips(); applyFilters(); });
 }
 
 // ---- AI Chat ----
@@ -2909,7 +2935,19 @@ document.addEventListener('DOMContentLoaded', () => {
 	initNotifications();
 	fetchTilesFromSupabase();
 
-	document.getElementById('searchBox').addEventListener('input', () => applyFilters());
+	const searchBox = document.getElementById('searchBox');
+	searchBox.addEventListener('input', () => applyFilters());
+	searchBox.addEventListener('keydown', (e) => {
+		if (e.key !== 'Enter') return;
+		e.preventDefault();
+		const term = searchBox.value.trim();
+		if (term && !searchChips.some(c => c.toLowerCase() === term.toLowerCase())) {
+			searchChips.push(term);
+			searchBox.value = '';
+			renderSearchChips();
+		}
+		applyFilters();
+	});
 	document.getElementById('tagFilterBtn').addEventListener('click', openTagFilterPopup);
 	document.getElementById('closeTagFilter').addEventListener('click', closeTagFilterPopup);
 	document.getElementById('tagFilterOverlay').addEventListener('click', e => {
