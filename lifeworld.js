@@ -47,6 +47,10 @@ let TAGS_BY_ID = {};      // id -> tag row
 let tagManageMode = false; // tag filter popup: manage (reorder/parent/delete) vs filter
 let refreshTagTree = null; // re-renders just the tag tree in place (preserves scroll/search)
 let currentUserId = null;
+// Trusted premium flag (server-set app_metadata; never user_metadata). Gates
+// premium-only features like attachments in the UI — RLS enforces it for real.
+let currentUserIsPremium = false;
+function isPremiumUser() { return !!currentUserIsPremium; }
 
 // Load the user's tags from the tags table.
 async function loadTags() {
@@ -197,6 +201,7 @@ async function fetchTilesFromSupabase() {
 		return;
 	}
 	currentUserId = session.user.id;
+	currentUserIsPremium = !!(session.user.app_metadata && session.user.app_metadata.premium);
 
 	// Fetch tasks with related logs and frequency days
 	const { data, error } = await supa
@@ -838,17 +843,23 @@ function openTilePopup(tileId) {
 	// Wire up add log button
 	document.getElementById('addLogBtn').addEventListener('click', () => openAddLogPopup());
 
-	// Wire up attachments (photos / screenshots / files)
+	// Wire up attachments (photos / screenshots / files) — Premium feature.
 	const addAttachmentBtn = document.getElementById('addAttachmentBtn');
 	const attachmentInput = document.getElementById('attachmentInput');
 	if (addAttachmentBtn && attachmentInput) {
-		addAttachmentBtn.addEventListener('click', () => attachmentInput.click());
-		attachmentInput.addEventListener('change', async () => {
-			if (attachmentInput.files && attachmentInput.files.length) {
-				await uploadAttachments(tileId, Array.from(attachmentInput.files), addAttachmentBtn);
-				attachmentInput.value = '';
-			}
-		});
+		if (isPremiumUser()) {
+			addAttachmentBtn.addEventListener('click', () => attachmentInput.click());
+			attachmentInput.addEventListener('change', async () => {
+				if (attachmentInput.files && attachmentInput.files.length) {
+					await uploadAttachments(tileId, Array.from(attachmentInput.files), addAttachmentBtn);
+					attachmentInput.value = '';
+				}
+			});
+		} else {
+			addAttachmentBtn.textContent = '🔒 Premium';
+			addAttachmentBtn.title = 'Attachments are a Premium feature';
+			addAttachmentBtn.addEventListener('click', () => openUpgradeCheckout());
+		}
 	}
 	renderAttachments(tileId);
 
@@ -1546,7 +1557,11 @@ async function renderAttachments(taskId) {
 		return;
 	}
 	if (!data || !data.length) {
-		listEl.innerHTML = '<div class="text-xs text-slate-400 col-span-full">No attachments yet.</div>';
+		listEl.innerHTML = isPremiumUser()
+			? '<div class="text-xs text-slate-400 col-span-full">No attachments yet.</div>'
+			: '<button type="button" id="attachUpsell" class="col-span-full text-left text-xs text-slate-500 bg-purple-50 border border-purple-100 rounded-lg px-3 py-2 hover:bg-purple-100 transition">✨ Attach photos, screenshots & files with <span class="font-semibold text-purple-600">Premium</span> — tap to upgrade.</button>';
+		const upsell = document.getElementById('attachUpsell');
+		if (upsell) upsell.addEventListener('click', () => openUpgradeCheckout());
 		return;
 	}
 	const items = await Promise.all(data.map(async att => {
@@ -1580,6 +1595,11 @@ async function renderAttachments(taskId) {
 async function uploadAttachments(taskId, files, btnEl) {
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session) { alert('Please sign in to add attachments.'); return; }
+	// Premium-only. RLS enforces this too, but fail early with a clear prompt.
+	if (!(session.user.app_metadata && session.user.app_metadata.premium)) {
+		openUpgradeCheckout();
+		return;
+	}
 	const userId = session.user.id;
 	const origLabel = btnEl ? btnEl.textContent : '';
 	if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Uploading…'; }
