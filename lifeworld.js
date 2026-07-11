@@ -2628,14 +2628,23 @@ function renderSearchChips() {
 			🔍 ${escapeHtml(term)}
 			<button class="search-chip-x text-xs text-slate-400 hover:text-red-500 ml-1" data-idx="${i}" title="Remove">✕</button>
 		</span>`).join('')
-		+ (searchChips.length > 1 ? `<button id="clearSearchChips" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>` : '');
+		+ `<button id="clearSearchChips" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>`;
 	box.querySelectorAll('.search-chip-x').forEach(b => b.addEventListener('click', () => {
 		searchChips.splice(parseInt(b.dataset.idx, 10), 1);
 		renderSearchChips();
 		applyFilters();
 	}));
 	const clr = document.getElementById('clearSearchChips');
-	if (clr) clr.addEventListener('click', () => { searchChips = []; renderSearchChips(); applyFilters(); });
+	if (clr) clr.addEventListener('click', clearAllChips);
+}
+
+// Clear everything: the tag filter AND all search chips (one "Clear all").
+function clearAllChips() {
+	searchChips = [];
+	const sb = document.getElementById('searchBox');
+	if (sb) sb.value = '';
+	renderSearchChips();
+	setTagFilter(null); // also runs applyFilters() + updateFilterBar()
 }
 
 // ---- AI Chat ----
@@ -2976,7 +2985,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('tagFilterOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
-	document.getElementById('clearFilterBtn').addEventListener('click', () => setTagFilter(null));
+	document.getElementById('clearFilterBtn').addEventListener('click', clearAllChips);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('freqFilterBtn').addEventListener('click', toggleFreqFilter);
 
