@@ -3330,26 +3330,38 @@ function openCalendarPopup() {
 		       const liveTerm = (filterInput && filterInput.value.trim().toLowerCase()) || '';
 		       const terms = liveTerm ? [...filterTerms, liveTerm] : [...filterTerms];
 		       const rows = container.querySelectorAll('tbody tr');
-		       // Hide a month or time-of-day header when it has no visible rows under it.
-		       let monthRow = null, monthHasVisible = false;
-		       let dpRow = null, dpHasVisible = false;
+		       // Hide a month / date / time-of-day header when it has no visible rows under it.
+		       let monthRow = null, monthVis = false;
+		       let dateRow = null, dateVis = false;
+		       let dpRow = null, dpVis = false;
 		       const finalizeDaypart = () => {
-			       if (dpRow) dpRow.style.display = dpHasVisible ? '' : 'none';
-			       dpRow = null; dpHasVisible = false;
+			       if (dpRow) dpRow.style.display = dpVis ? '' : 'none';
+			       dpRow = null; dpVis = false;
+		       };
+		       const finalizeDate = () => {
+			       finalizeDaypart();
+			       if (dateRow) dateRow.style.display = dateVis ? '' : 'none';
+			       dateRow = null; dateVis = false;
 		       };
 		       const finalizeMonth = () => {
-			       finalizeDaypart();
-			       if (monthRow) monthRow.style.display = monthHasVisible ? '' : 'none';
+			       finalizeDate();
+			       if (monthRow) monthRow.style.display = monthVis ? '' : 'none';
+			       monthRow = null; monthVis = false;
 		       };
 		       rows.forEach(row => {
 			       if (row.classList.contains('cal-month-row')) {
 				       finalizeMonth();
-				       monthRow = row; monthHasVisible = false;
+				       monthRow = row; monthVis = false;
+				       return;
+			       }
+			       if (row.classList.contains('cal-date-row')) {
+				       finalizeDate();
+				       dateRow = row; dateVis = false;
 				       return;
 			       }
 			       if (row.classList.contains('cal-daypart-row')) {
 				       finalizeDaypart();
-				       dpRow = row; dpHasVisible = false;
+				       dpRow = row; dpVis = false;
 				       return;
 			       }
 			       const kind = row.getAttribute('data-kind') || 'once';
@@ -3363,7 +3375,7 @@ function openCalendarPopup() {
 				       date.includes(term) || shortDate.includes(term) || tag.includes(term) || task.includes(term));
 			       const visible = kindMatch && textMatch;
 			       row.style.display = visible ? '' : 'none';
-			       if (visible) { monthHasVisible = true; dpHasVisible = true; }
+			       if (visible) { monthVis = true; dateVis = true; dpVis = true; }
 		       });
 		       finalizeMonth();
 	       }
@@ -3649,7 +3661,7 @@ function renderOnceTasksCalendar() {
 	// Render a table calendar grouped by month, with a select checkbox per one-time row.
 	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
 		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
-		+ '<th class="px-3 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
+		+ '<th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
 		+ '</tr></thead><tbody>';
 	// Time-of-day buckets (display order); '' = no preference.
 	const DAYPARTS = [
@@ -3678,7 +3690,6 @@ function renderOnceTasksCalendar() {
 		const desc = escapeHtml(t.name);
 		const allTags = (t.tag_ids || []).map(tagName).join(',');
 		const d = new Date(date + 'T00:00:00');
-		const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
 		const shortDate = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 		// Routine rows: a frequency badge, no select/complete/reschedule (open the tile instead).
 		const freqBadge = kind === 'routine'
@@ -3690,7 +3701,7 @@ function renderOnceTasksCalendar() {
 		const actionsCell = kind === 'once'
 			? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
 			: (statusLabels[statusOnDate(t, date)] || '');
-		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
+		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-4 py-2 pl-6"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 	}
 
 	let currentMonthKey = '';
@@ -3700,8 +3711,12 @@ function renderOnceTasksCalendar() {
 		if (monthKey !== currentMonthKey) {
 			currentMonthKey = monthKey;
 			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-			html += `<tr class="cal-month-row"><td colspan="4" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
+			html += `<tr class="cal-month-row"><td colspan="3" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
 		}
+		// Date header: groups the day's rows (dayparts nest beneath it).
+		const dayName = dObj.toLocaleDateString(undefined, { weekday: 'short' });
+		const shortDate = `${String(dObj.getDate()).padStart(2, '0')}-${String(dObj.getMonth() + 1).padStart(2, '0')}`;
+		html += `<tr class="cal-date-row"><td colspan="3" class="bg-slate-50 font-semibold text-slate-700 px-4 py-1.5">${shortDate} · ${dayName}</td></tr>`;
 		const rows = dateMap[date].slice().sort(bySort);
 		// Sub-group a date's rows by time of day — but only when at least one row
 		// has a time set, so one-time lists that don't use it stay flat.
@@ -3711,7 +3726,7 @@ function renderOnceTasksCalendar() {
 			DAYPARTS.forEach(dp => {
 				const group = rows.filter(e => tileTimeOfDay(e.task) === dp.key);
 				if (!group.length) return;
-				html += `<tr class="cal-daypart-row"><td colspan="4" class="bg-slate-50 text-slate-500 text-xs font-semibold px-4 py-1.5">${dp.icon} ${dp.label}</td></tr>`;
+				html += `<tr class="cal-daypart-row"><td colspan="3" class="text-slate-500 text-xs font-semibold pl-8 pr-4 py-1">${dp.icon} ${dp.label}</td></tr>`;
 				group.forEach(e => { html += renderRow(e, date); });
 			});
 		}
