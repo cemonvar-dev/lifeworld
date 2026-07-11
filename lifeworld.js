@@ -567,54 +567,40 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		${tagDropdownHtml}
-		<div class="mb-2 text-sm font-semibold">Frequency</div>
-		<div id="freqBtns" class="flex flex-wrap gap-2 mb-3">
-			${['daily', 'weekly', 'once', 'monthly'].map(f => `<button class='freq-btn px-3 py-1 rounded-full text-xs border transition ${freqMode === f ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-freq='${f}'>${f}</button>`).join('')}
+		<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+			<div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
+				<div id="freqSelectMount"></div>
+			</div>
+			<div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
+				<div id="reminderSelectMount"></div>
+			</div>
+			<div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Status</div>
+				<div id="lifecycleSelectMount"></div>
+			</div>
 		</div>
 		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
 			${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
 		</div>
-		<div id="onceDatePicker" class="mb-8" style="display:${freqMode === 'once' ? 'block' : 'none'}">
+		<div id="onceDatePicker" class="mb-3" style="display:${freqMode === 'once' ? 'block' : 'none'}">
 			<label class="text-xs text-slate-500">Date</label>
 			<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${raw.end_date || ''}" />
 		</div>
-		<div id="monthlyDayPicker" class="mb-8" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
+		<div id="monthlyDayPicker" class="mb-3" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
 			<label class="text-xs text-slate-500">Day of month</label>
 			<select id="monthlyDaySelect" class="ml-2 rounded-lg border px-2 py-1 text-sm">
 				${Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}" ${monthlyDom(raw) === d ? 'selected' : ''}>${ordinal(d)}</option>`).join('')}
 			</select>
 		</div>
+		<div id="reminderCustomWrap" class="mb-3" style="display:none">
+			<label class="text-xs text-slate-500">Reminder date &amp; time</label>
+			<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
+		</div>
 		<div class="mb-2 text-sm font-semibold">Time of Day</div>
 		<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
 			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
-		</div>
-		<hr class="my-5 border-slate-200">
-		<div class="mb-2 text-sm font-semibold">Reminder</div>
-		<div class="flex flex-col gap-2 mb-8">
-			<select id="reminderPreset" class="rounded-lg border px-2 py-1.5 text-sm">
-				<option value="">No reminder</option>
-				<option value="1h">In 1 hour</option>
-				<option value="3h">In 3 hours</option>
-				<option value="eve">This evening (6:00 PM)</option>
-				<option value="tom9">Tomorrow morning (9:00 AM)</option>
-				<option value="tomeve">Tomorrow evening (6:00 PM)</option>
-				<option value="week">Next week (9:00 AM)</option>
-				<option value="custom">Custom date &amp; time…</option>
-			</select>
-			<input type="datetime-local" id="reminderCustom" class="rounded-lg border px-2 py-1.5 text-sm" style="display:none" />
-			<div id="reminderStatus" class="text-xs text-slate-500"></div>
-		</div>
-		<hr class="my-5 border-slate-200">
-		<div class="mb-2 text-sm font-semibold">Lifecycle Status</div>
-		<div id="lifecycleBtns" class="flex flex-wrap gap-2 mb-8">
-			   ${[
-				   { key: 'active', label: '🔥 Active', bg: 'bg-orange-100 text-orange-700 border-orange-300' },
-				   { key: 'planned', label: '📋 Planned', bg: 'bg-blue-100 text-blue-700 border-blue-300' },
-				   { key: 'in progress', label: '🔄 In Progress', bg: 'bg-green-100 text-green-700 border-green-300' },
-				   { key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
-				   { key: 'failed', label: '❌ Failed', bg: 'bg-red-100 text-red-700 border-red-300' },
-				   { key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-slate-100 text-slate-600 border-slate-300' }
-			   ].map(s => `<button class='lifecycle-btn px-3 py-1 rounded-full text-xs border transition ${(raw.status || 'in progress') === s.key ? s.bg + " font-bold ring-2 ring-offset-1 ring-slate-400" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50"}' data-lifecycle='${s.key}'>${s.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-1">
@@ -648,47 +634,76 @@ function openTilePopup(tileId) {
 	}
 
 
-	// Reminder section logic (one-shot per-tile reminder → native notification)
-	const reminderPreset = document.getElementById('reminderPreset');
-	const reminderCustom = document.getElementById('reminderCustom');
-	const reminderStatus = document.getElementById('reminderStatus');
-	if (reminderPreset && reminderCustom && reminderStatus) {
-		const refreshReminderStatus = () => {
-			const iso = rawTiles[activeTileId] && rawTiles[activeTileId].reminder_at;
-			reminderStatus.innerHTML = iso
-				? `🔔 Set for <span class="font-semibold">${formatReminderAt(iso)}</span> &nbsp;<button id="clearReminderBtn" type="button" class="text-red-400 hover:text-red-600 underline">Clear</button>`
-				: 'No reminder set.';
-			const clr = document.getElementById('clearReminderBtn');
-			if (clr) clr.addEventListener('click', async () => {
-				await setTileReminder(activeTileId, null);
-				reminderPreset.value = '';
-				reminderCustom.style.display = 'none';
-				refreshReminderStatus();
-			});
-		};
-		refreshReminderStatus();
-		reminderPreset.addEventListener('change', async () => {
-			const v = reminderPreset.value;
+	// Frequency / Reminder / Status — styled dropdowns (icon left, text right).
+	lwSelect(document.getElementById('freqSelectMount'), {
+		options: [
+			{ value: 'daily', icon: '🔁', label: 'Daily' },
+			{ value: 'weekly', icon: '📆', label: 'Weekly' },
+			{ value: 'monthly', icon: '🗓️', label: 'Monthly' },
+			{ value: 'once', icon: '1️⃣', label: 'Once' }
+		],
+		value: freqMode,
+		onSelect: (v) => setFrequency(v) // re-renders the popup, revealing the right sub-picker
+	});
+
+	lwSelect(document.getElementById('lifecycleSelectMount'), {
+		options: [
+			{ value: 'active', icon: '🔥', label: 'Active' },
+			{ value: 'planned', icon: '📋', label: 'Planned' },
+			{ value: 'in progress', icon: '🔄', label: 'In Progress' },
+			{ value: 'completed', icon: '✅', label: 'Completed' },
+			{ value: 'failed', icon: '❌', label: 'Failed' },
+			{ value: 'cancelled', icon: '🚫', label: 'Cancelled' }
+		],
+		value: (raw.status || 'in progress'),
+		onSelect: async (v) => {
+			raw.status = v;
+			const displayTile = tiles.find(t => t.id === tileId);
+			if (displayTile) displayTile.taskStatus = v;
+			openTilePopup(tileId);
+			await updateTask(tileId, { status: v });
+		}
+	});
+
+	const remIso = raw.reminder_at;
+	lwSelect(document.getElementById('reminderSelectMount'), {
+		options: [
+			{ value: '', icon: '🔕', label: 'No reminder' },
+			{ value: '1h', icon: '⏰', label: 'In 1 hour' },
+			{ value: '3h', icon: '⏰', label: 'In 3 hours' },
+			{ value: 'eve', icon: '🌇', label: 'This evening (6 PM)' },
+			{ value: 'tom9', icon: '🌅', label: 'Tomorrow 9 AM' },
+			{ value: 'tomeve', icon: '🌇', label: 'Tomorrow 6 PM' },
+			{ value: 'week', icon: '📅', label: 'Next week' },
+			{ value: 'custom', icon: '✏️', label: 'Custom date & time…' }
+		],
+		value: '',
+		display: remIso ? { icon: '🔔', label: formatReminderAt(remIso) } : { icon: '🔕', label: 'No reminder' },
+		onSelect: async (v) => {
+			const wrap = document.getElementById('reminderCustomWrap');
+			const ci = document.getElementById('reminderCustom');
 			if (v === 'custom') {
-				const existing = rawTiles[activeTileId] && rawTiles[activeTileId].reminder_at;
-				const seed = existing ? new Date(existing) : new Date(Date.now() + 3600000);
-				reminderCustom.value = toLocalInputValue(seed);
-				reminderCustom.style.display = 'block';
+				const seed = remIso ? new Date(remIso) : new Date(Date.now() + 3600000);
+				if (ci) ci.value = toLocalInputValue(seed);
+				if (wrap) wrap.style.display = 'block';
+				if (ci) ci.focus();
 				return;
 			}
-			reminderCustom.style.display = 'none';
-			if (v === '') { await setTileReminder(activeTileId, null); refreshReminderStatus(); return; }
+			if (wrap) wrap.style.display = 'none';
+			if (v === '') { await setTileReminder(activeTileId, null); openTilePopup(activeTileId); return; }
 			const when = computeReminderAt(v);
-			if (when) { await setTileReminder(activeTileId, when); reminderPreset.value = ''; refreshReminderStatus(); }
-		});
+			if (when) { await setTileReminder(activeTileId, when); openTilePopup(activeTileId); }
+		}
+	});
+
+	const reminderCustom = document.getElementById('reminderCustom');
+	if (reminderCustom) {
 		reminderCustom.addEventListener('change', async () => {
 			if (!reminderCustom.value) return;
-			const when = new Date(reminderCustom.value); // datetime-local is parsed as local time
+			const when = new Date(reminderCustom.value); // datetime-local parsed as local time
 			if (isNaN(when.getTime())) return;
 			await setTileReminder(activeTileId, when);
-			reminderPreset.value = '';
-			reminderCustom.style.display = 'none';
-			refreshReminderStatus();
+			openTilePopup(activeTileId);
 		});
 	}
 
@@ -751,10 +766,7 @@ function openTilePopup(tileId) {
 
 	// End multiselect dropdown logic
 
-	// Wire up frequency buttons
-	document.querySelectorAll('.freq-btn').forEach(btn => {
-		btn.addEventListener('click', e => { e.stopPropagation(); setFrequency(btn.dataset.freq); });
-	});
+	// (Frequency & Status are handled by the styled dropdowns above.)
 
 	// Wire up weekly day buttons
 	document.querySelectorAll('.day-btn').forEach(btn => {
@@ -795,19 +807,6 @@ function openTilePopup(tileId) {
 
 	// Wire up delete tile button
 	document.getElementById('deleteTileBtn').addEventListener('click', deleteTile);
-
-	// Wire up lifecycle buttons
-	document.querySelectorAll('.lifecycle-btn').forEach(btn => {
-		btn.addEventListener('click', async e => {
-			e.stopPropagation();
-			const newStatus = btn.dataset.lifecycle;
-			raw.status = newStatus;
-			const displayTile = tiles.find(t => t.id === tileId);
-			if (displayTile) displayTile.taskStatus = newStatus;
-			openTilePopup(tileId);
-			await updateTask(tileId, { status: newStatus });
-		});
-	});
 
 	// Wire up log edit buttons
 	document.querySelectorAll('.edit-log').forEach(btn => {
@@ -1052,6 +1051,55 @@ function formatReminderAt(iso) {
 function toLocalInputValue(d) {
 	const p = n => String(n).padStart(2, '0');
 	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// ---- Styled dropdown (icon left, text right) ----
+// Renders a custom select into `mount`. config = {options:[{value,icon,label}],
+// value, display?, placeholder?, onSelect(value)}. `display` overrides the button
+// face when the current value isn't one of the options (e.g. the reminder time).
+function lwSelect(mount, config) {
+	if (!mount) return;
+	const opts = config.options || [];
+	const sel = opts.find(o => o.value === config.value);
+	const disp = config.display || sel || { icon: '', label: config.placeholder || 'Select…' };
+	mount.classList.add('relative', 'lw-select');
+	mount.innerHTML = `
+		<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-sm hover:bg-slate-50 transition">
+			<span class="flex items-center gap-2 min-w-0"><span class="text-base leading-none">${disp.icon || ''}</span><span class="truncate">${disp.label || ''}</span></span>
+			<span class="text-slate-400 text-xs">▼</span>
+		</button>
+		<div class="lw-select-menu hidden absolute left-0 right-0 mt-1 rounded-xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1 z-[60] max-h-60 overflow-y-auto">
+			${opts.map(o => `
+				<button type="button" class="lw-opt w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-slate-100 transition ${o.value === config.value ? 'bg-slate-50 font-semibold' : ''}" data-value="${String(o.value).replace(/"/g, '&quot;')}">
+					<span class="text-base w-5 text-center leading-none">${o.icon || ''}</span>
+					<span class="flex-1 min-w-0 truncate">${o.label}</span>
+					${o.value === config.value ? '<span class="text-emerald-500">✓</span>' : ''}
+				</button>`).join('')}
+		</div>`;
+	const btn = mount.querySelector('.lw-select-btn');
+	const menu = mount.querySelector('.lw-select-menu');
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		const wasHidden = menu.classList.contains('hidden');
+		document.querySelectorAll('.lw-select-menu').forEach(m => m.classList.add('hidden')); // close others
+		menu.classList.toggle('hidden', !wasHidden);
+	});
+	menu.querySelectorAll('.lw-opt').forEach(o => {
+		o.addEventListener('click', (e) => {
+			e.stopPropagation();
+			menu.classList.add('hidden');
+			config.onSelect(o.dataset.value);
+		});
+	});
+	// Close open menus when clicking anywhere outside a dropdown (registered once).
+	if (!window.__lwSelectGlobal) {
+		window.__lwSelectGlobal = true;
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.lw-select')) {
+				document.querySelectorAll('.lw-select-menu').forEach(m => m.classList.add('hidden'));
+			}
+		});
+	}
 }
 
 // Persist a tile's reminder (Date or null) and re-sync device notifications.
