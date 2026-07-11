@@ -2108,7 +2108,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
@@ -2213,6 +2213,99 @@ function appendUpgradeButton() {
 	container.scrollTop = container.scrollHeight;
 }
 
+// ---- AI task actions (create / update / delete) ----
+// The assistant may return {"actions":[...], "message":"..."}; we execute the
+// actions against Supabase as the signed-in user, then refresh from the DB.
+function resolveTagIds(names) {
+	const ids = [];
+	(names || []).forEach(n => {
+		const t = (TAGS || []).find(x => x.name.toLowerCase() === String(n).trim().toLowerCase());
+		if (t) ids.push(t.id);
+	});
+	return ids;
+}
+
+// Map an AI action's fields to a tasks-row patch (shared by create/update).
+function aiTaskPatch(a) {
+	const patch = {};
+	if (a.name != null) patch.name = String(a.name).trim();
+	if (a.frequency) patch.frequency_mode = a.frequency;
+	if (a.status) patch.status = a.status;
+	if (a.end_date !== undefined) patch.end_date = a.end_date || null;
+	if (a.day_of_month !== undefined) patch.day_of_month = a.day_of_month ? parseInt(a.day_of_month, 10) : null;
+	if (Array.isArray(a.tags)) patch.tag_ids = resolveTagIds(a.tags);
+	return patch;
+}
+
+// Replace a task's weekly weekdays (0=Sun..6=Sat) when provided.
+async function aiSetWeekdays(taskId, weekdays) {
+	if (!Array.isArray(weekdays)) return;
+	await supa.from('task_frequency_days').delete().eq('task_id', taskId);
+	const rows = weekdays.map(d => ({ task_id: taskId, day_of_week: parseInt(d, 10) })).filter(r => r.day_of_week >= 0 && r.day_of_week <= 6);
+	if (rows.length) await supa.from('task_frequency_days').insert(rows);
+}
+
+async function aiCreateTask(a) {
+	const patch = aiTaskPatch(a);
+	if (!patch.name) throw new Error('missing name');
+	if (!patch.frequency_mode) patch.frequency_mode = 'daily';
+	patch.user_id = currentUserId;
+	const { data, error } = await supa.from('tasks').insert(patch).select('id').single();
+	if (error || !data) throw error || new Error('insert failed');
+	if (patch.frequency_mode === 'weekly') await aiSetWeekdays(data.id, a.weekdays);
+	return `✅ Created “${patch.name}”`;
+}
+
+async function aiUpdateTask(a) {
+	if (!a.id || !rawTiles[a.id]) throw new Error('unknown task id');
+	const patch = aiTaskPatch(a);
+	delete patch.user_id;
+	const name = patch.name || rawTiles[a.id].name;
+	if (Object.keys(patch).length) {
+		const { error } = await supa.from('tasks').update(patch).eq('id', a.id);
+		if (error) throw error;
+	}
+	if ((patch.frequency_mode || rawTiles[a.id].frequency_mode) === 'weekly' && Array.isArray(a.weekdays)) {
+		await aiSetWeekdays(a.id, a.weekdays);
+	}
+	return `✏️ Updated “${name}”`;
+}
+
+async function aiDeleteTask(a) {
+	if (!a.id || !rawTiles[a.id]) throw new Error('unknown task id');
+	const name = rawTiles[a.id].name;
+	await supa.from('task_logs').delete().eq('task_id', a.id);
+	await supa.from('task_frequency_days').delete().eq('task_id', a.id);
+	const { error } = await supa.from('tasks').delete().eq('id', a.id);
+	if (error) throw error;
+	return `🗑️ Deleted “${name}”`;
+}
+
+async function executeAiActions(actions) {
+	// Confirm destructive deletes before running anything.
+	const deletes = actions.filter(a => a && a.type === 'delete' && a.id && rawTiles[a.id]);
+	if (deletes.length) {
+		const names = deletes.map(d => `“${rawTiles[d.id].name}”`).join(', ');
+		if (!confirm(`The AI wants to DELETE ${deletes.length} task(s): ${names}.\n\nThis can't be undone. Proceed?`)) {
+			actions = actions.filter(a => !(a.type === 'delete'));
+			if (!actions.length) return '❌ Cancelled — nothing changed.';
+		}
+	}
+	const results = [];
+	for (const a of actions) {
+		try {
+			if (a.type === 'create') results.push(await aiCreateTask(a));
+			else if (a.type === 'update') results.push(await aiUpdateTask(a));
+			else if (a.type === 'delete') results.push(await aiDeleteTask(a));
+		} catch (e) {
+			console.error('AI action failed:', a, e);
+			results.push(`⚠️ Could not ${a.type} ${a.name ? '“' + a.name + '”' : (a.id || '')}`);
+		}
+	}
+	await fetchTilesFromSupabase(); // reload everything so the UI is consistent
+	return results.join('\n');
+}
+
 async function sendAiMessage(text) {
 	if (!text || !text.trim()) return;
 	const msg = text.trim();
@@ -2264,11 +2357,17 @@ async function sendAiMessage(text) {
 
 		   const data = await response.json();
 		   const reply = data.reply || 'No response.';
-		   // Try to parse as a command from the AI
+		   // The AI may return an action command (create/update/delete tasks).
 		   let handled = false;
 		   try {
-			   const cmd = JSON.parse(reply);
-			   if (cmd.action === 'create_tile' && cmd.name) {
+			   const cmd = JSON.parse(stripFences(reply));
+			   if (cmd && Array.isArray(cmd.actions) && cmd.actions.length) {
+				   const summary = await executeAiActions(cmd.actions);
+				   const msg = [cmd.message, summary].filter(Boolean).join('\n\n') || 'Done.';
+				   aiChatHistory.push({ role: 'assistant', content: msg });
+				   appendAiMessage('assistant', msg);
+				   handled = true;
+			   } else if (cmd && cmd.action === 'create_tile' && cmd.name) {
 				   await createTileByName(cmd.name);
 				   handled = true;
 			   }
