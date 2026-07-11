@@ -572,6 +572,10 @@ function openTilePopup(tileId) {
 			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
+		<div class="mb-3 sm:max-w-xs">
+			<div class="mb-1 text-xs font-semibold text-slate-500">Status</div>
+			<div id="lifecycleSelectMount"></div>
+		</div>
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		${tagDropdownHtml}
 		<div class="mb-3">
@@ -581,26 +585,22 @@ function openTilePopup(tileId) {
 				<button type="button" class="routine-opt px-3 py-1.5 transition border-l border-slate-300 ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0">1️⃣ One-time</button>
 			</div>
 		</div>
-		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-			<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
-				<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
-				<div id="freqSelectMount"></div>
-			</div>
-			<div id="reminderCell" style="display:${!isRoutine ? 'block' : 'none'}">
-				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
-				<div id="reminderSelectMount"></div>
+		<div id="freqCell" class="mb-3 sm:max-w-xs" style="display:${isRoutine ? 'block' : 'none'}">
+			<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
+			<div id="freqSelectMount"></div>
+		</div>
+		<div id="oneTimeRow" class="grid grid-cols-2 gap-3 mb-3" style="display:${!isRoutine ? 'grid' : 'none'}">
+			<div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
+				<input type="date" id="onceDateInput" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
 			</div>
 			<div>
-				<div class="mb-1 text-xs font-semibold text-slate-500">Status</div>
-				<div id="lifecycleSelectMount"></div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
+				<div id="reminderSelectMount"></div>
 			</div>
 		</div>
 		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
 			${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
-		</div>
-		<div id="onceDatePicker" class="mb-3" style="display:${freqMode === 'once' ? 'block' : 'none'}">
-			<label class="text-xs text-slate-500">Date</label>
-			<input type="date" id="onceDateInput" class="ml-2 rounded-lg border px-2 py-1 text-sm" value="${raw.end_date || ''}" />
 		</div>
 		<div id="monthlyDayPicker" class="mb-3" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
 			<label class="text-xs text-slate-500">Day of month</label>
