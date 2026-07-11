@@ -630,7 +630,7 @@ function openTilePopup(tileId) {
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-1">
-			<div class="text-md font-semibold">Log Timeline</div>
+			<div class="text-md font-semibold">Timeline</div>
 			<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition">+</button>
 		</div>
 		<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
