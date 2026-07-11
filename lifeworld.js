@@ -613,10 +613,8 @@ function openTilePopup(tileId) {
 			<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
 		</div>
 		<div id="todSection" style="display:${isRoutine ? 'block' : 'none'}">
-			<div class="mb-2 text-sm font-semibold">Time of Day</div>
-			<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
-				${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
-			</div>
+			<div class="mb-1 text-xs font-semibold text-slate-500">Time of Day</div>
+			<div id="todSelectMount" class="sm:max-w-xs mb-8"></div>
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-2">
@@ -673,7 +671,8 @@ function openTilePopup(tileId) {
 
 	// Routine ⟷ One-time toggle: routine = daily/weekly/monthly, one-time = 'once'.
 	document.querySelectorAll('.routine-opt').forEach(btn => {
-		btn.addEventListener('click', () => {
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
 			const wantRoutine = btn.dataset.routine === '1';
 			const cur = (rawTiles[activeTileId] && rawTiles[activeTileId].frequency_mode) || 'daily';
 			if (wantRoutine === (cur !== 'once')) return; // already in this mode
@@ -782,11 +781,17 @@ function openTilePopup(tileId) {
 		tagDropdownSearch.focus();
 	});
 
-	document.addEventListener('click', e => {
-		if (!tagDropdownBtn.contains(e.target) && !tagDropdownMenu.contains(e.target)) {
-			tagDropdownMenu.style.display = 'none';
-		}
-	});
+	// Close the tag menu on any click outside it. Registered once and keyed off
+	// the live DOM (not this render's captured elements), so re-renders — e.g.
+	// clicking the Routine/One-time toggle — can't leave a stale handler that
+	// mis-toggles the menu. The menu now opens ONLY via its own button.
+	if (!window.__tagCloseGlobal) {
+		window.__tagCloseGlobal = true;
+		document.addEventListener('click', e => {
+			const menu = document.getElementById('tagDropdownMenu');
+			if (menu && !e.target.closest('.tagDropdown')) menu.style.display = 'none';
+		});
+	}
 
 	tagDropdownSearch.addEventListener('input', e => {
 		renderTagOptions(tagDropdownSearch.value);
@@ -835,9 +840,23 @@ function openTilePopup(tileId) {
 		});
 	}
 
-	// Wire up time-of-day buttons
-	document.querySelectorAll('.tod-btn').forEach(btn => {
-		btn.addEventListener('click', e => { e.stopPropagation(); toggleTimeOfDay(btn.dataset.tod); });
+	// Time of Day — multi-select dropdown; persists in place (no full re-render).
+	lwMultiSelect(document.getElementById('todSelectMount'), {
+		options: [
+			{ value: 'morning', icon: '🌅', label: 'Morning' },
+			{ value: 'afternoon', icon: '☀️', label: 'Afternoon' },
+			{ value: 'evening', icon: '🌇', label: 'Evening' },
+			{ value: 'night', icon: '🌙', label: 'Night' }
+		],
+		values: timeOfDayArr,
+		placeholder: 'Any time',
+		onToggle: async (v, values) => {
+			const r = rawTiles[activeTileId];
+			if (!r) return;
+			r.time_of_day = values.join(',');
+			await updateTask(activeTileId, { time_of_day: r.time_of_day });
+			scheduleReminders();
+		}
 	});
 
 	// Wire up delete tile button
@@ -1157,6 +1176,62 @@ function lwSelect(mount, config) {
 	}
 }
 
+// Multi-select variant of lwSelect (icon left, text right, checkmarks). Toggling
+// an option updates in place and keeps the menu open; config.onToggle(value,
+// selectedArray) persists. Shares the outside-click closer with lwSelect.
+function lwMultiSelect(mount, config) {
+	if (!mount) return;
+	const opts = config.options || [];
+	const selected = new Set(config.values || []);
+	mount.classList.add('relative', 'lw-select');
+	const faceHtml = () => {
+		const chosen = opts.filter(o => selected.has(o.value));
+		if (!chosen.length) return `<span class="text-slate-400">${config.placeholder || 'Select…'}</span>`;
+		return chosen.map(o => `${o.icon || ''} ${escapeHtml(o.label)}`).join(', ');
+	};
+	const render = (keepOpen) => {
+		mount.innerHTML = `
+			<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-sm hover:bg-slate-50 transition">
+				<span class="min-w-0 truncate">${faceHtml()}</span>
+				<span class="text-slate-400 text-xs">▼</span>
+			</button>
+			<div class="lw-select-menu ${keepOpen ? '' : 'hidden'} absolute left-0 right-0 mt-1 rounded-xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1 z-[60] max-h-60 overflow-y-auto">
+				${opts.map(o => `
+					<button type="button" class="lw-opt w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-slate-100 transition ${selected.has(o.value) ? 'bg-slate-50 font-semibold' : ''}" data-value="${String(o.value).replace(/"/g, '&quot;')}">
+						<span class="text-base w-5 text-center leading-none">${o.icon || ''}</span>
+						<span class="flex-1 min-w-0 truncate">${escapeHtml(o.label)}</span>
+						${selected.has(o.value) ? '<span class="text-emerald-500">✓</span>' : ''}
+					</button>`).join('')}
+			</div>`;
+		const btn = mount.querySelector('.lw-select-btn');
+		const menu = mount.querySelector('.lw-select-menu');
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const wasHidden = menu.classList.contains('hidden');
+			document.querySelectorAll('.lw-select-menu').forEach(m => m.classList.add('hidden'));
+			menu.classList.toggle('hidden', !wasHidden);
+		});
+		menu.querySelectorAll('.lw-opt').forEach(o => {
+			o.addEventListener('click', (e) => {
+				e.stopPropagation();
+				const v = o.dataset.value;
+				if (selected.has(v)) selected.delete(v); else selected.add(v);
+				if (config.onToggle) config.onToggle(v, Array.from(selected));
+				render(true); // re-render but keep the menu open for more picks
+			});
+		});
+	};
+	render(false);
+	if (!window.__lwSelectGlobal) {
+		window.__lwSelectGlobal = true;
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.lw-select')) {
+				document.querySelectorAll('.lw-select-menu').forEach(m => m.classList.add('hidden'));
+			}
+		});
+	}
+}
+
 // Persist a tile's reminder (Date or null) and re-sync device notifications.
 async function setTileReminder(tileId, dateOrNull) {
 	const iso = dateOrNull ? dateOrNull.toISOString() : null;
@@ -1452,24 +1527,6 @@ async function toggleWeeklyDay(day) {
 	}
 	openTilePopup(activeTileId);
 	applyFilters();
-	scheduleReminders();
-}
-
-// ---- Time of Day Operations ----
-async function toggleTimeOfDay(tod) {
-	if (!activeTileId) return;
-	const raw = rawTiles[activeTileId];
-	if (!raw) return;
-	let todArr = raw.time_of_day ? raw.time_of_day.split(',').filter(Boolean) : [];
-	const idx = todArr.indexOf(tod);
-	if (idx >= 0) {
-		todArr.splice(idx, 1);
-	} else {
-		todArr.push(tod);
-	}
-	raw.time_of_day = todArr.join(',');
-	openTilePopup(activeTileId);
-	await updateTask(activeTileId, { time_of_day: raw.time_of_day });
 	scheduleReminders();
 }
 
