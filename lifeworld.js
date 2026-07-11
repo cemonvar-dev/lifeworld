@@ -204,6 +204,14 @@ function statusOnDate(raw, dateStr) {
 	return dateStr > todayLocal() ? null : 'noaction';
 }
 
+// The tile's time-of-day preference as a single string ('morning'…'night' or '').
+// Stored in Supabase as a text[] (e.g. ["morning"]); tolerate a plain string too.
+function tileTimeOfDay(raw) {
+	const v = raw && raw.time_of_day;
+	if (Array.isArray(v)) return v[0] || '';
+	return v || '';
+}
+
 async function fetchTilesFromSupabase() {
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session || !session.user) {
@@ -788,10 +796,11 @@ function openTilePopup(tileId) {
 			{ value: 'evening', icon: '🌇', label: 'Evening' },
 			{ value: 'night', icon: '🌙', label: 'Night' }
 		],
-		value: raw.time_of_day || '',
+		value: tileTimeOfDay(raw),
 		onSelect: async (v) => {
-			raw.time_of_day = v || null;
-			await updateTask(activeTileId, { time_of_day: v || null });
+			// Column is text[] — store [v] (or [] to clear).
+			raw.time_of_day = v ? [v] : [];
+			await updateTask(activeTileId, { time_of_day: v ? [v] : [] });
 		}
 	});
 
@@ -3680,7 +3689,7 @@ function renderOnceTasksCalendar() {
 		const actionsCell = kind === 'once'
 			? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
 			: (statusLabels[statusOnDate(t, date)] || '');
-		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${t.time_of_day || ''}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
+		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 	}
 
 	let currentMonthKey = '';
@@ -3695,11 +3704,11 @@ function renderOnceTasksCalendar() {
 		const rows = dateMap[date].slice().sort(bySort);
 		// Sub-group a date's rows by time of day — but only when at least one row
 		// has a time set, so one-time lists that don't use it stay flat.
-		if (!rows.some(e => e.task.time_of_day)) {
+		if (!rows.some(e => tileTimeOfDay(e.task))) {
 			rows.forEach(e => { html += renderRow(e, date); });
 		} else {
 			DAYPARTS.forEach(dp => {
-				const group = rows.filter(e => (e.task.time_of_day || '') === dp.key);
+				const group = rows.filter(e => tileTimeOfDay(e.task) === dp.key);
 				if (!group.length) return;
 				html += `<tr class="cal-daypart-row"><td colspan="4" class="bg-slate-50 text-slate-500 text-xs font-semibold px-4 py-1.5">${dp.icon} ${dp.label}</td></tr>`;
 				group.forEach(e => { html += renderRow(e, date); });
