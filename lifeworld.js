@@ -2221,7 +2221,12 @@ function isTileScheduledToday(tileId) {
 	const raw = rawTiles[tileId];
 	if (!raw) return false;
 	const mode = raw.frequency_mode || 'daily';
-	if (mode === 'daily' || mode === 'monthly') return true;
+	if (mode === 'daily') return true;
+	if (mode === 'monthly') {
+		// Due today only on its day-of-month (clamped to the month's last day).
+		const now = new Date();
+		return monthlyDateFor(raw, now.getFullYear(), now.getMonth()).getDate() === now.getDate();
+	}
 	if (mode === 'weekly') {
 		const todayDay = new Date().getDay(); // 0=Sun..6=Sat
 		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
