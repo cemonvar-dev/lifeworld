@@ -548,7 +548,10 @@ function openTilePopup(tileId) {
 	const statusLabel = lastLog
 		? (lastLog.status === 'completed' ? '✅ Completed' : lastLog.status === 'done' ? '💪 Done' : lastLog.status === 'skipped' ? '😢 Skipped' : '💬 No Action')
 		: '💬 No Action';
-	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.log_date || lastLog.created_at).toLocaleDateString() : '';
+	const lastUpdateTime = (lastLog && lastLog.created_at)
+		? ' · ' + new Date(lastLog.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+		: '';
+	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.log_date || lastLog.created_at).toLocaleDateString() + lastUpdateTime : '';
 
 	const freqMode = raw.frequency_mode || 'daily';
 	// Routine (recurring: daily/weekly/monthly) vs One-time (frequency 'once').
