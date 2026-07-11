@@ -2275,8 +2275,8 @@ function getTodaySummary() {
 			(l.status === 'done' || l.status === 'completed' || l.status === 'skipped'));
 		if (todayLog) {
 			(todayLog.status === 'skipped' ? skipped : done).push(t);
-		} else if (isTileScheduledToday(t.id)) {
-			remaining.push(t); // scheduled today, no action yet
+		} else if (t.taskStatus !== 'completed' && isTileScheduledToday(t.id)) {
+			remaining.push(t); // scheduled today, not completed, no action yet
 		}
 	});
 	return { done, skipped, remaining };
