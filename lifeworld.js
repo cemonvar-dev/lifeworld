@@ -3320,13 +3320,26 @@ function openCalendarPopup() {
 		       const liveTerm = (filterInput && filterInput.value.trim().toLowerCase()) || '';
 		       const terms = liveTerm ? [...filterTerms, liveTerm] : [...filterTerms];
 		       const rows = container.querySelectorAll('tbody tr');
-		       // Track the current month header so it can be hidden when it has no visible rows.
+		       // Hide a month or time-of-day header when it has no visible rows under it.
 		       let monthRow = null, monthHasVisible = false;
-		       const finalizeMonth = () => { if (monthRow) monthRow.style.display = monthHasVisible ? '' : 'none'; };
+		       let dpRow = null, dpHasVisible = false;
+		       const finalizeDaypart = () => {
+			       if (dpRow) dpRow.style.display = dpHasVisible ? '' : 'none';
+			       dpRow = null; dpHasVisible = false;
+		       };
+		       const finalizeMonth = () => {
+			       finalizeDaypart();
+			       if (monthRow) monthRow.style.display = monthHasVisible ? '' : 'none';
+		       };
 		       rows.forEach(row => {
 			       if (row.classList.contains('cal-month-row')) {
 				       finalizeMonth();
 				       monthRow = row; monthHasVisible = false;
+				       return;
+			       }
+			       if (row.classList.contains('cal-daypart-row')) {
+				       finalizeDaypart();
+				       dpRow = row; dpHasVisible = false;
 				       return;
 			       }
 			       const kind = row.getAttribute('data-kind') || 'once';
@@ -3340,7 +3353,7 @@ function openCalendarPopup() {
 				       date.includes(term) || shortDate.includes(term) || tag.includes(term) || task.includes(term));
 			       const visible = kindMatch && textMatch;
 			       row.style.display = visible ? '' : 'none';
-			       if (visible) monthHasVisible = true;
+			       if (visible) { monthHasVisible = true; dpHasVisible = true; }
 		       });
 		       finalizeMonth();
 	       }
@@ -3628,6 +3641,48 @@ function renderOnceTasksCalendar() {
 		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
 		+ '<th class="px-3 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
 		+ '</tr></thead><tbody>';
+	// Time-of-day buckets (display order); '' = no preference.
+	const DAYPARTS = [
+		{ key: 'morning', icon: '🌅', label: 'Morning' },
+		{ key: 'afternoon', icon: '☀️', label: 'Afternoon' },
+		{ key: 'evening', icon: '🌇', label: 'Evening' },
+		{ key: 'night', icon: '🌙', label: 'Night' },
+		{ key: '', icon: '🕒', label: 'Any time' }
+	];
+	const statusLabels = {
+		done: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ done</span>',
+		skipped: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">⏭️ skip</span>',
+		noaction: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">💬 no action</span>'
+	};
+	// Order within a date/daypart: by tag path (untagged last), then name.
+	const tagSortKey = t => {
+		const id = (t.tag_ids && t.tag_ids.length) ? t.tag_ids[0] : '';
+		return id ? tagPath(id).toLowerCase() : '￿';
+	};
+	const bySort = (a, b) => tagSortKey(a.task).localeCompare(tagSortKey(b.task)) || a.task.name.localeCompare(b.task.name);
+
+	function renderRow(e, date) {
+		const t = e.task, kind = e.kind;
+		const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
+		const tagLabel = tagId ? tagName(tagId) : '';
+		const desc = escapeHtml(t.name);
+		const allTags = (t.tag_ids || []).map(tagName).join(',');
+		const d = new Date(date + 'T00:00:00');
+		const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
+		const shortDate = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+		// Routine rows: a frequency badge, no select/complete/reschedule (open the tile instead).
+		const freqBadge = kind === 'routine'
+			? ` <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 align-middle">🔁 ${escapeHtml(t.frequency_mode)}</span>`
+			: '';
+		const selectCell = kind === 'once' ? `<input type="checkbox" class="cal-select" data-tile-id="${t.id}" />` : '';
+		// Routine rows show the occurrence's status (done/skip/no action, or blank
+		// when the date hasn't arrived); one-time rows keep complete/reschedule.
+		const actionsCell = kind === 'once'
+			? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
+			: (statusLabels[statusOnDate(t, date)] || '');
+		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${t.time_of_day || ''}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
+	}
+
 	let currentMonthKey = '';
 	allDates.forEach(date => {
 		const dObj = new Date(date + 'T00:00:00');
@@ -3637,45 +3692,19 @@ function renderOnceTasksCalendar() {
 			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 			html += `<tr class="cal-month-row"><td colspan="4" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
 		}
-		// Within a date, order rows by tag (untagged last), then by name.
-		const tagSortKey = t => {
-			const id = (t.tag_ids && t.tag_ids.length) ? t.tag_ids[0] : '';
-			return id ? tagPath(id).toLowerCase() : '￿';
-		};
-		dateMap[date]
-			.sort((a, b) => tagSortKey(a.task).localeCompare(tagSortKey(b.task))
-				|| a.task.name.localeCompare(b.task.name))
-			.forEach(e => {
-			const t = e.task;
-			const kind = e.kind;
-			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
-			const tagLabel = tagId ? tagName(tagId) : '';
-			const desc = escapeHtml(t.name);
-			const allTags = (t.tag_ids || []).map(tagName).join(',');
-			const d = new Date(date + 'T00:00:00');
-			const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
-			const day = String(d.getDate()).padStart(2, '0');
-			const month = String(d.getMonth() + 1).padStart(2, '0');
-			const shortDate = `${day}-${month}`;
-			// Routine rows: a frequency badge, no select/complete/reschedule (open the tile instead).
-			const freqBadge = kind === 'routine'
-				? ` <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 align-middle">🔁 ${escapeHtml(t.frequency_mode)}</span>`
-				: '';
-			const selectCell = kind === 'once'
-				? `<input type="checkbox" class="cal-select" data-tile-id="${t.id}" />`
-				: '';
-			// Routine rows show the occurrence's status instead of action buttons:
-			// done / skip / no action, or blank when the date hasn't arrived yet.
-			const statusLabels = {
-				done: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ done</span>',
-				skipped: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">⏭️ skip</span>',
-				noaction: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">💬 no action</span>',
-			};
-			const actionsCell = kind === 'once'
-				? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
-				: (statusLabels[statusOnDate(t, date)] || '');
-			html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
-		});
+		const rows = dateMap[date].slice().sort(bySort);
+		// Sub-group a date's rows by time of day — but only when at least one row
+		// has a time set, so one-time lists that don't use it stay flat.
+		if (!rows.some(e => e.task.time_of_day)) {
+			rows.forEach(e => { html += renderRow(e, date); });
+		} else {
+			DAYPARTS.forEach(dp => {
+				const group = rows.filter(e => (e.task.time_of_day || '') === dp.key);
+				if (!group.length) return;
+				html += `<tr class="cal-daypart-row"><td colspan="4" class="bg-slate-50 text-slate-500 text-xs font-semibold px-4 py-1.5">${dp.icon} ${dp.label}</td></tr>`;
+				group.forEach(e => { html += renderRow(e, date); });
+			});
+		}
 	});
 	html += '</tbody></table></div>';
 	return html;
