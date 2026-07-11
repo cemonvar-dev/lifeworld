@@ -3614,7 +3614,15 @@ function renderOnceTasksCalendar() {
 			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 			html += `<tr class="cal-month-row"><td colspan="4" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
 		}
-		dateMap[date].forEach(e => {
+		// Within a date, order rows by tag (untagged last), then by name.
+		const tagSortKey = t => {
+			const id = (t.tag_ids && t.tag_ids.length) ? t.tag_ids[0] : '';
+			return id ? tagPath(id).toLowerCase() : '￿';
+		};
+		dateMap[date]
+			.sort((a, b) => tagSortKey(a.task).localeCompare(tagSortKey(b.task))
+				|| a.task.name.localeCompare(b.task.name))
+			.forEach(e => {
 			const t = e.task;
 			const kind = e.kind;
 			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
