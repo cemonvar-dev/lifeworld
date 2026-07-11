@@ -323,6 +323,34 @@ function getNextDueLabel(tileId) {
 	return '—';
 }
 
+// The next due DATE (local 'YYYY-MM-DD') for any task, or null if none.
+// Used by the Planned Tasks list to place routine tiles at their next occurrence.
+function nextDueDateStr(raw) {
+	if (!raw) return null;
+	const mode = raw.frequency_mode || 'daily';
+	const today = new Date(); today.setHours(0, 0, 0, 0);
+	const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	if (mode === 'once') return raw.end_date || null;
+	if (mode === 'daily') return iso(today);
+	if (mode === 'weekly') {
+		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
+		if (!freqDays.length) return null;
+		const todayDay = today.getDay();
+		for (let off = 0; off < 7; off++) {
+			if (freqDays.includes((todayDay + off) % 7)) {
+				const d = new Date(today); d.setDate(today.getDate() + off); return iso(d);
+			}
+		}
+		return null;
+	}
+	if (mode === 'monthly') {
+		let next = monthlyDateFor(raw, today.getFullYear(), today.getMonth());
+		if (next < today) next = monthlyDateFor(raw, today.getFullYear(), today.getMonth() + 1);
+		return iso(next);
+	}
+	return null;
+}
+
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	gallery.innerHTML = "";
@@ -3203,13 +3231,12 @@ function openCalendarPopup() {
 		});
 	}, 0);
 
-		       // Tag filter removed; only text filter and chips remain
-		       let selectedTags = []; // Keep for compatibility in filterCalendarRows, but will always be empty
-
-	       // Multi-term filter logic (chips)
+	       // Filter state: committed chips (Enter), the live input text, and the
+	       // routine/one-time kind. All are AND-combined; text matches by "contains".
 	       const filterInput = document.getElementById('calendarFilterInput');
 	       const filterChipsContainer = document.getElementById('calendarFilterChips');
 	       let filterTerms = [];
+	       let activeKind = 'once'; // default: one-time only
 
 	       function renderFilterChips() {
 		       filterChipsContainer.innerHTML = '';
@@ -3227,48 +3254,68 @@ function openCalendarPopup() {
 	       }
 
 	       if (filterInput) {
+		       // Live "contains" filtering as you type.
+		       filterInput.addEventListener('input', filterCalendarRows);
+		       // Enter commits the current text into a chip.
 		       filterInput.addEventListener('keydown', function(e) {
 			       if (e.key === 'Enter' && filterInput.value.trim()) {
 				       const val = filterInput.value.trim().toLowerCase();
-				       if (!filterTerms.includes(val)) {
-					       filterTerms.push(val);
-					       renderFilterChips();
-					       filterCalendarRows();
-				       }
+				       if (!filterTerms.includes(val)) filterTerms.push(val);
 				       filterInput.value = '';
+				       renderFilterChips();
+				       filterCalendarRows();
 				       e.preventDefault();
 			       }
 		       });
 	       }
 
+	       // Routine / One-time / All segmented control.
+	       function setKind(kind) {
+		       activeKind = kind;
+		       container.querySelectorAll('.cal-kind-btn').forEach(b => {
+			       const on = b.getAttribute('data-kind') === kind;
+			       b.classList.toggle('bg-slate-800', on);
+			       b.classList.toggle('text-white', on);
+			       b.classList.toggle('text-slate-600', !on);
+			       b.classList.toggle('hover:bg-slate-100', !on);
+		       });
+		       filterCalendarRows();
+	       }
+	       container.querySelectorAll('.cal-kind-btn').forEach(b =>
+		       b.addEventListener('click', () => setKind(b.getAttribute('data-kind'))));
+
 	       function filterCalendarRows() {
+		       const liveTerm = (filterInput && filterInput.value.trim().toLowerCase()) || '';
+		       const terms = liveTerm ? [...filterTerms, liveTerm] : [...filterTerms];
 		       const rows = container.querySelectorAll('tbody tr');
-			       rows.forEach(row => {
-				       if (row.classList.contains('cal-month-row')) { row.style.display = filterTerms.length ? 'none' : ''; return; }
-				       const date = row.getAttribute('data-date') || '';
-				       const shortDate = row.getAttribute('data-shortdate') || '';
-				       const tag = row.getAttribute('data-tag') || '';
-				       const task = row.getAttribute('data-task') || '';
-				       const rowTags = (row.getAttribute('data-tags') || '').split(',');
-				       // Tag filter: if 'all' is selected or nothing is selected, show all
-				       const tagMatch = (!selectedTags.length || selectedTags.includes('__all__')) || selectedTags.some(t => rowTags.includes(t));
-				       // Multi-term AND logic: all filterTerms must match date, shortDate, tag, or task
-				       const textMatch = filterTerms.length === 0 || filterTerms.every(term =>
-					       date.toLowerCase().includes(term) ||
-					       shortDate.includes(term) ||
-					       tag.includes(term) ||
-					       task.includes(term)
-				       );
-				       if (tagMatch && textMatch) {
-					       row.style.display = '';
-				       } else {
-					       row.style.display = 'none';
-				       }
-			       });
+		       // Track the current month header so it can be hidden when it has no visible rows.
+		       let monthRow = null, monthHasVisible = false;
+		       const finalizeMonth = () => { if (monthRow) monthRow.style.display = monthHasVisible ? '' : 'none'; };
+		       rows.forEach(row => {
+			       if (row.classList.contains('cal-month-row')) {
+				       finalizeMonth();
+				       monthRow = row; monthHasVisible = false;
+				       return;
+			       }
+			       const kind = row.getAttribute('data-kind') || 'once';
+			       const kindMatch = activeKind === 'all' || kind === activeKind;
+			       const date = (row.getAttribute('data-date') || '').toLowerCase();
+			       const shortDate = row.getAttribute('data-shortdate') || '';
+			       const tag = row.getAttribute('data-tag') || '';
+			       const task = row.getAttribute('data-task') || '';
+			       // Multi-term AND logic: every term must match date, shortDate, tag, or task.
+			       const textMatch = terms.every(term =>
+				       date.includes(term) || shortDate.includes(term) || tag.includes(term) || task.includes(term));
+			       const visible = kindMatch && textMatch;
+			       row.style.display = visible ? '' : 'none';
+			       if (visible) monthHasVisible = true;
+		       });
+		       finalizeMonth();
 	       }
 
-	       // Initial render of chips (empty)
+	       // Initial render: empty chips, default kind (one-time) applied.
 	       renderFilterChips();
+	       setKind(activeKind);
 }
 
 function closeCalendarPopup() {
@@ -3502,41 +3549,49 @@ async function applyAllReschedules() {
 }
 
 function renderOnceTasksCalendar() {
-	// Gather all once-frequency tasks with end_date, EXCLUDING those with status completed, failed, or cancelled
-	const onceTasks = Object.values(rawTiles).filter(t => {
-		if (t.frequency_mode !== 'once' || !t.end_date) return false;
-		const status = (t.status || '').toLowerCase();
-		return status !== 'completed' && status !== 'failed' && status !== 'cancelled';
+	const isActive = t => {
+		const s = (t.status || '').toLowerCase();
+		return s !== 'completed' && s !== 'failed' && s !== 'cancelled';
+	};
+	// One-time planned tasks (need an end_date) + routine tasks at their next due date.
+	const entries = [];
+	Object.values(rawTiles).forEach(t => {
+		if (!isActive(t)) return;
+		const mode = t.frequency_mode || 'daily';
+		if (mode === 'once') {
+			if (t.end_date) entries.push({ task: t, kind: 'once', date: t.end_date });
+		} else {
+			const date = nextDueDateStr(t);
+			if (date) entries.push({ task: t, kind: 'routine', date });
+		}
 	});
-	if (onceTasks.length === 0) {
-		return '<div class="text-center text-slate-400 py-8">No once-frequency tasks found.</div>';
+	if (entries.length === 0) {
+		return '<div class="text-center text-slate-400 py-8">No planned tasks found.</div>';
 	}
 
-
-	// Gather all unique tags from once-tasks
-	const tagSet = new Set();
-	onceTasks.forEach(t => (t.tag_ids || []).forEach(id => tagSet.add(tagName(id))));
-	const tagList = Array.from(tagSet).sort();
-
-	// Filtering UI: tag multi-select and text input
-			let html = `<div class="mb-4 flex flex-wrap items-center gap-2">
-			       <div id="calendarFilterChips" class="flex flex-wrap gap-1 w-full"></div>
-			       <div class="flex items-center gap-2 w-full justify-between flex-wrap">
+	// Filtering UI: kind segmented control (default One-time) + text input + chips.
+	const kindBtn = (k, label) =>
+		`<button type="button" class="cal-kind-btn px-3 py-1 rounded-full transition ${k === 'once' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}" data-kind="${k}">${label}</button>`;
+	let html = `<div class="mb-4 flex flex-col gap-2">
+		       <div id="calendarFilterChips" class="flex flex-wrap gap-1 w-full"></div>
+		       <div class="flex items-center gap-2 w-full justify-between flex-wrap">
+			       <div class="flex items-center gap-2 flex-wrap">
 				       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64"
-				   placeholder="Filter by task, tag, or date..." />
-				       <button id="autoRescheduleBtn" title="Let AI spread your planned tasks out sensibly" class="px-3.5 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-md shadow-purple-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all whitespace-nowrap">🤖 Auto Reschedule</button>
+			   placeholder="Filter by task, tag, or date..." />
+				       <div id="calendarKindFilter" class="inline-flex items-center rounded-full border border-slate-200 bg-white p-0.5 text-xs font-semibold">
+					       ${kindBtn('all', 'All')}${kindBtn('once', 'One-time')}${kindBtn('routine', 'Routine')}
+				       </div>
 			       </div>
-			</div>`;
+			       <button id="autoRescheduleBtn" title="Let AI spread your planned tasks out sensibly" class="px-3.5 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-md shadow-purple-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all whitespace-nowrap">🤖 Auto Reschedule</button>
+		       </div>
+		</div>`;
 
-	// Build a map: date string -> array of tasks
+	// Build a map: date string -> array of entries, sorted by date.
 	const dateMap = {};
-	onceTasks.forEach(task => {
-		if (!dateMap[task.end_date]) dateMap[task.end_date] = [];
-		dateMap[task.end_date].push(task);
-	});
-	// Get all unique dates, sorted
+	entries.forEach(e => { (dateMap[e.date] = dateMap[e.date] || []).push(e); });
 	const allDates = Object.keys(dateMap).sort();
-	// Render a table calendar grouped by month, with a select checkbox per row.
+
+	// Render a table calendar grouped by month, with a select checkbox per one-time row.
 	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
 		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
 		+ '<th class="px-3 py-2 text-left">Date</th><th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
@@ -3550,20 +3605,29 @@ function renderOnceTasksCalendar() {
 			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 			html += `<tr class="cal-month-row"><td colspan="4" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
 		}
-		dateMap[date].forEach(t => {
+		dateMap[date].forEach(e => {
+			const t = e.task;
+			const kind = e.kind;
 			const tagId = (t.tag_ids && t.tag_ids.length > 0) ? t.tag_ids[0] : '';
 			const tagLabel = tagId ? tagName(tagId) : '';
 			const desc = escapeHtml(t.name);
-			// Add all tags for multi-select filter
 			const allTags = (t.tag_ids || []).map(tagName).join(',');
-			// Compute weekday name
 			const d = new Date(date + 'T00:00:00');
 			const dayName = d.toLocaleDateString(undefined, { weekday: 'short' });
-			// Format date as DD-MM
 			const day = String(d.getDate()).padStart(2, '0');
 			const month = String(d.getMonth() + 1).padStart(2, '0');
 			const shortDate = `${day}-${month}`;
-				   html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}"><td class="border px-3 py-2 text-center"><input type="checkbox" class="cal-select" data-tile-id="${t.id}" /></td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a></td><td class="border px-4 py-2 whitespace-nowrap"><button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button></td></tr>`;
+			// Routine rows: a frequency badge, no select/complete/reschedule (open the tile instead).
+			const freqBadge = kind === 'routine'
+				? ` <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 align-middle">🔁 ${escapeHtml(t.frequency_mode)}</span>`
+				: '';
+			const selectCell = kind === 'once'
+				? `<input type="checkbox" class="cal-select" data-tile-id="${t.id}" />`
+				: '';
+			const actionsCell = kind === 'once'
+				? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
+				: '<span class="text-slate-300 text-xs">—</span>';
+			html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 		});
 	});
 	html += '</tbody></table></div>';
