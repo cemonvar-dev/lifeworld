@@ -649,6 +649,10 @@ function openTilePopup(tileId) {
 				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
 				<div id="reminderSelectMount"></div>
 			</div>
+			<div>
+				<div class="mb-1 text-xs font-semibold text-slate-500">Time of day</div>
+				<div id="timeOfDaySelectMount"></div>
+			</div>
 		</div>
 		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
 			${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
@@ -772,6 +776,22 @@ function openTilePopup(tileId) {
 			if (v === '') { await setTileReminder(activeTileId, null); openTilePopup(activeTileId); return; }
 			const when = computeReminderAt(v);
 			if (when) { await setTileReminder(activeTileId, when); openTilePopup(activeTileId); }
+		}
+	});
+
+	// Time of day — when during the day this task is meant to happen.
+	lwSelect(document.getElementById('timeOfDaySelectMount'), {
+		options: [
+			{ value: '', icon: '🕒', label: 'Any time' },
+			{ value: 'morning', icon: '🌅', label: 'Morning' },
+			{ value: 'afternoon', icon: '☀️', label: 'Afternoon' },
+			{ value: 'evening', icon: '🌇', label: 'Evening' },
+			{ value: 'night', icon: '🌙', label: 'Night' }
+		],
+		value: raw.time_of_day || '',
+		onSelect: async (v) => {
+			raw.time_of_day = v || null;
+			await updateTask(activeTileId, { time_of_day: v || null });
 		}
 	});
 
