@@ -1405,12 +1405,14 @@ function initNotifications() {
 
 // ---- Local notifications / reminders (native app only) ----
 // Reminders every 4 hours during waking hours (skips the 00:00 / 04:00 slots).
-const REMINDER_TIMES = [
-	{ hour: 8, minute: 0 },
-	{ hour: 12, minute: 0 },
-	{ hour: 16, minute: 0 },
-	{ hour: 20, minute: 0 }
+// Daily time-of-day summary notifications. 'Any time' tasks get no reminder.
+const SUMMARY_BUCKETS = [
+	{ key: 'morning', hour: 6, minute: 0, icon: '🌅', label: 'Morning' },
+	{ key: 'afternoon', hour: 11, minute: 30, icon: '☀️', label: 'Afternoon' },
+	{ key: 'evening', hour: 16, minute: 30, icon: '🌇', label: 'Evening' },
+	{ key: 'night', hour: 20, minute: 0, icon: '🌙', label: 'Night' }
 ];
+const SUMMARY_DAYS_AHEAD = 7; // schedule a week of summaries; re-armed on each app open
 
 // Rebuild all device reminders from the current cards. The OS fires them even
 // when the app is closed; we re-sync on app open and after schedule edits.
@@ -1489,37 +1491,53 @@ async function scheduleReminders() {
 		const notifications = [];
 		let id = 1;
 
+		const isActive = task => {
+			const s = (task.status || '').toLowerCase();
+			return s !== 'completed' && s !== 'cancelled' && s !== 'failed';
+		};
+
+		// Explicit per-tile reminders set from the tile detail — fire once.
 		Object.values(rawTiles).forEach(task => {
-			const status = (task.status || '').toLowerCase();
-			if (status === 'completed' || status === 'cancelled' || status === 'failed') return;
-			const mode = task.frequency_mode || 'daily';
-			const base = { title: `⏰ ${task.name}`, body: 'Time to take action.', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id } };
-
-			REMINDER_TIMES.forEach(t => {
-				if (mode === 'daily') {
-					notifications.push({ id: id++, ...base, schedule: { on: { hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
-				} else if (mode === 'weekly') {
-					(task.task_frequency_days || []).forEach(d => {
-						notifications.push({ id: id++, ...base, schedule: { on: { weekday: d.day_of_week + 1, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
-					});
-				} else if (mode === 'monthly') {
-					const dom = monthlyDom(task);
-					notifications.push({ id: id++, ...base, schedule: { on: { day: dom, hour: t.hour, minute: t.minute }, repeats: true, allowWhileIdle: true } });
-				} else if (mode === 'once' && task.end_date) {
-					const when = new Date(task.end_date + 'T00:00:00');
-					when.setHours(t.hour, t.minute, 0, 0);
-					if (when > now) notifications.push({ id: id++, ...base, schedule: { at: when, allowWhileIdle: true } });
-				}
-			});
-
-			// Explicit per-tile reminder set from the tile detail — fires once.
-			if (task.reminder_at) {
-				const rwhen = new Date(task.reminder_at);
-				if (!isNaN(rwhen.getTime()) && rwhen > now) {
-					notifications.push({ id: id++, title: `🔔 ${task.name}`, body: 'Reminder', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id }, schedule: { at: rwhen, allowWhileIdle: true } });
-				}
+			if (!task.reminder_at) return;
+			const rwhen = new Date(task.reminder_at);
+			if (!isNaN(rwhen.getTime()) && rwhen > now) {
+				notifications.push({ id: id++, title: `🔔 ${task.name}`, body: 'Reminder', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id }, schedule: { at: rwhen, allowWhileIdle: true } });
 			}
 		});
+
+		// Daily time-of-day summaries: one notification per bucket per day listing
+		// that bucket's due tasks. Scheduled a week ahead and re-armed on app open.
+		const activeTasks = Object.values(rawTiles).filter(isActive);
+		for (let dayOffset = 0; dayOffset < SUMMARY_DAYS_AHEAD; dayOffset++) {
+			const date = new Date(now); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() + dayOffset);
+			const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+			SUMMARY_BUCKETS.forEach(b => {
+				const when = new Date(date); when.setHours(b.hour, b.minute, 0, 0);
+				if (when <= now) return; // time already passed
+				const due = activeTasks.filter(t => {
+					if (tileTimeOfDay(t) !== b.key) return false;
+					if (!isTaskScheduledOnDate(t, date)) return false;
+					// For today, drop tasks already done/skipped.
+					if (dayOffset === 0) {
+						const st = statusOnDate(t, iso);
+						if (st === 'done' || st === 'skipped') return false;
+					}
+					return true;
+				});
+				if (!due.length) return;
+				const names = due.map(t => t.name);
+				const shown = names.slice(0, 6).join(', ');
+				const more = names.length > 6 ? `, +${names.length - 6} more` : '';
+				notifications.push({
+					id: id++,
+					title: `${b.icon} ${b.label} — ${names.length} task${names.length > 1 ? 's' : ''}`,
+					body: shown + more,
+					channelId: 'reminders',
+					schedule: { at: when, allowWhileIdle: true },
+					extra: { summary: b.key, date: iso }
+				});
+			});
+		}
 
 		if (notifications.length) await LN.schedule({ notifications });
 	} catch (e) {
@@ -2287,27 +2305,30 @@ function updateFilterBar() {
 	renderSearchChips();
 }
 
+// Is a task scheduled to occur on a specific date (by its frequency)?
+function isTaskScheduledOnDate(task, dateObj) {
+	const mode = task.frequency_mode || 'daily';
+	if (mode === 'daily') return true;
+	if (mode === 'monthly') {
+		// Due only on its day-of-month (clamped to the month's last day).
+		return monthlyDateFor(task, dateObj.getFullYear(), dateObj.getMonth()).getDate() === dateObj.getDate();
+	}
+	if (mode === 'weekly') {
+		const freqDays = (task.task_frequency_days || []).map(d => d.day_of_week);
+		return freqDays.includes(dateObj.getDay());
+	}
+	if (mode === 'once') {
+		if (!task.end_date) return false;
+		const iso = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+		return task.end_date === iso;
+	}
+	return true;
+}
+
 function isTileScheduledToday(tileId) {
 	const raw = rawTiles[tileId];
 	if (!raw) return false;
-	const mode = raw.frequency_mode || 'daily';
-	if (mode === 'daily') return true;
-	if (mode === 'monthly') {
-		// Due today only on its day-of-month (clamped to the month's last day).
-		const now = new Date();
-		return monthlyDateFor(raw, now.getFullYear(), now.getMonth()).getDate() === now.getDate();
-	}
-	if (mode === 'weekly') {
-		const todayDay = new Date().getDay(); // 0=Sun..6=Sat
-		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
-		return freqDays.includes(todayDay);
-	}
-	if (mode === 'once') {
-		if (!raw.end_date) return false;
-		const today = todayLocal();
-		return raw.end_date === today;
-	}
-	return true;
+	return isTaskScheduledOnDate(raw, new Date());
 }
 
 // Reflect the current timeline filter on its button (if present in the DOM).
