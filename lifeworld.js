@@ -2307,6 +2307,29 @@ function todaySummaryRow(t, hover) {
 	</button>`;
 }
 
+// Remaining tiles grouped by their (first) tag, groups in alphabetical order,
+// tiles within a group by name. Returns HTML (or an em-dash placeholder).
+function renderRemainingGrouped(remaining) {
+	if (!remaining.length) return '<div class="text-center text-slate-300 text-xs py-3">—</div>';
+	const groups = {};
+	remaining.forEach(t => {
+		const key = (t.tags && t.tags.length) ? t.tags[0] : '__untagged__';
+		(groups[key] = groups[key] || []).push(t);
+	});
+	const label = k => k === '__untagged__' ? 'Untagged' : tagPath(k);
+	return Object.keys(groups)
+		.sort((a, b) => label(a).localeCompare(label(b)))
+		.map(k => {
+			const rows = groups[k]
+				.sort((a, b) => a.name.localeCompare(b.name))
+				.map(t => todaySummaryRow(t, 'hover:bg-slate-50')).join('');
+			return `<div class="mb-2">
+				<div class="text-xs font-semibold text-slate-500 px-2 mb-0.5">${escapeHtml(label(k))}</div>
+				${rows}
+			</div>`;
+		}).join('');
+}
+
 function openTodaySummary(type) {
 	const overlay = document.getElementById('todaySummaryOverlay');
 	const titleEl = document.getElementById('todaySummaryTitle');
@@ -2337,7 +2360,7 @@ function openTodaySummary(type) {
 		titleEl.textContent = 'Remaining Today';
 		iconEl.textContent = '📋';
 		body.innerHTML = remaining.length
-			? remaining.map(t => todaySummaryRow(t, 'hover:bg-slate-50')).join('')
+			? renderRemainingGrouped(remaining)
 			: '<div class="text-center text-slate-400 py-12 text-sm">🎉 All done — nothing left for today!</div>';
 	}
 
@@ -2373,13 +2396,13 @@ function openTodaySummaryCombined() {
 		`<div class="flex flex-col gap-0.5"><div class="${headClass} text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">${head} (${items.length})</div>${listOr(items, hover)}</div>`;
 
 	body.innerHTML = `
-		<div class="mb-4">
-			<div class="bg-blue-100 text-blue-700 text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">📋 Remaining (${remaining.length})</div>
-			${listOr(remaining, 'hover:bg-slate-50')}
-		</div>
-		<div class="grid grid-cols-2 gap-3 items-start">
+		<div class="grid grid-cols-2 gap-3 items-start mb-4">
 			${col(done, '✅ Done', 'bg-green-100 text-green-700', 'hover:bg-green-50')}
 			${col(skipped, '⏭️ Skip', 'bg-yellow-100 text-yellow-700', 'hover:bg-yellow-50')}
+		</div>
+		<div>
+			<div class="bg-blue-100 text-blue-700 text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">📋 Remaining (${remaining.length})</div>
+			${renderRemainingGrouped(remaining)}
 		</div>`;
 	body.querySelectorAll('.today-summary-row').forEach(row => {
 		row.addEventListener('click', () => { closeTodaySummary(); openTilePopup(row.getAttribute('data-tile-id')); });
@@ -2566,13 +2589,13 @@ function applyFilters() {
 		if (activeFreqFilter) {
 			filtered = filtered.filter(t => ((rawTiles[t.id] && rawTiles[t.id].frequency_mode) || 'daily') === activeFreqFilter);
 		}
-		// Search: committed chips (Enter) plus the current uncommitted input,
-		// OR-matched — a tile shows if it matches ANY of the terms.
+		// Search: committed chips (Enter) plus the current uncommitted input.
+		// Each term NARROWS the result (AND) — a tile must match every term.
 		const q = (document.getElementById('searchBox').value || '').trim();
 		const terms = [...searchChips];
 		if (q) terms.push(q);
 		if (terms.length) {
-			filtered = filtered.filter(t => terms.some(term => matchesSearchTerm(t, term)));
+			filtered = filtered.filter(t => terms.every(term => matchesSearchTerm(t, term)));
 		}
 	renderGallery(filtered);
 }
