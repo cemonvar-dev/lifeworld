@@ -498,6 +498,8 @@ function openTilePopup(tileId) {
 	const lastUpdateStr = lastLog ? 'Last update: ' + new Date(lastLog.log_date || lastLog.created_at).toLocaleDateString() : '';
 
 	const freqMode = raw.frequency_mode || 'daily';
+	// Routine (recurring: daily/weekly/monthly) vs One-time (frequency 'once').
+	const isRoutine = freqMode !== 'once';
 	const timeOfDayArr = (typeof raw.time_of_day === 'string' && raw.time_of_day) ? raw.time_of_day.split(',').filter(Boolean) : [];
 	const currentTags = raw.tag_ids || [];
 	const freqDays = (raw.task_frequency_days || []).map(d => String(d.day_of_week));
@@ -572,12 +574,19 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		${tagDropdownHtml}
-		<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-			<div>
+		<div class="mb-3">
+			<div class="mb-1 text-xs font-semibold text-slate-500">Type</div>
+			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm">
+				<button type="button" class="routine-opt px-3 py-1.5 transition ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1">🔁 Routine</button>
+				<button type="button" class="routine-opt px-3 py-1.5 transition border-l border-slate-300 ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0">1️⃣ One-time</button>
+			</div>
+		</div>
+		<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+			<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
 				<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
 				<div id="freqSelectMount"></div>
 			</div>
-			<div>
+			<div id="reminderCell" style="display:${!isRoutine ? 'block' : 'none'}">
 				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
 				<div id="reminderSelectMount"></div>
 			</div>
@@ -603,9 +612,11 @@ function openTilePopup(tileId) {
 			<label class="text-xs text-slate-500">Reminder date &amp; time</label>
 			<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
 		</div>
-		<div class="mb-2 text-sm font-semibold">Time of Day</div>
-		<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
-			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
+		<div id="todSection" style="display:${isRoutine ? 'block' : 'none'}">
+			<div class="mb-2 text-sm font-semibold">Time of Day</div>
+			<div id="todBtns" class="flex flex-wrap gap-2 mb-8">
+				${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
+			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-2">
@@ -653,11 +664,21 @@ function openTilePopup(tileId) {
 		options: [
 			{ value: 'daily', icon: '🔁', label: 'Daily' },
 			{ value: 'weekly', icon: '📆', label: 'Weekly' },
-			{ value: 'monthly', icon: '🗓️', label: 'Monthly' },
-			{ value: 'once', icon: '1️⃣', label: 'Once' }
+			{ value: 'monthly', icon: '🗓️', label: 'Monthly' }
+			// 'once' is not a routine — it's the One-time toggle state below.
 		],
 		value: freqMode,
 		onSelect: (v) => setFrequency(v) // re-renders the popup, revealing the right sub-picker
+	});
+
+	// Routine ⟷ One-time toggle: routine = daily/weekly/monthly, one-time = 'once'.
+	document.querySelectorAll('.routine-opt').forEach(btn => {
+		btn.addEventListener('click', () => {
+			const wantRoutine = btn.dataset.routine === '1';
+			const cur = (rawTiles[activeTileId] && rawTiles[activeTileId].frequency_mode) || 'daily';
+			if (wantRoutine === (cur !== 'once')) return; // already in this mode
+			setFrequency(wantRoutine ? 'daily' : 'once'); // persists + re-renders
+		});
 	});
 
 	lwSelect(document.getElementById('lifecycleSelectMount'), {
