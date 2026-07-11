@@ -249,6 +249,7 @@ async function fetchTilesFromSupabase() {
 	await loadTags();
 	applyFilters(); // apply the default filters (e.g. 🔥 Active) on first paint
 	scheduleReminders();
+	if (typeof refreshNotifications === 'function') refreshNotifications(); // update the bell badge
 	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
 }
 
@@ -588,6 +589,22 @@ function openTilePopup(tileId) {
 			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
+		<div class="mb-2 text-sm font-semibold">Reminder</div>
+		<div class="flex flex-col gap-2 mb-8">
+			<select id="reminderPreset" class="rounded-lg border px-2 py-1.5 text-sm">
+				<option value="">No reminder</option>
+				<option value="1h">In 1 hour</option>
+				<option value="3h">In 3 hours</option>
+				<option value="eve">This evening (6:00 PM)</option>
+				<option value="tom9">Tomorrow morning (9:00 AM)</option>
+				<option value="tomeve">Tomorrow evening (6:00 PM)</option>
+				<option value="week">Next week (9:00 AM)</option>
+				<option value="custom">Custom date &amp; time…</option>
+			</select>
+			<input type="datetime-local" id="reminderCustom" class="rounded-lg border px-2 py-1.5 text-sm" style="display:none" />
+			<div id="reminderStatus" class="text-xs text-slate-500"></div>
+		</div>
+		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Lifecycle Status</div>
 		<div id="lifecycleBtns" class="flex flex-wrap gap-2 mb-8">
 			   ${[
@@ -630,6 +647,50 @@ function openTilePopup(tileId) {
 		});
 	}
 
+
+	// Reminder section logic (one-shot per-tile reminder → native notification)
+	const reminderPreset = document.getElementById('reminderPreset');
+	const reminderCustom = document.getElementById('reminderCustom');
+	const reminderStatus = document.getElementById('reminderStatus');
+	if (reminderPreset && reminderCustom && reminderStatus) {
+		const refreshReminderStatus = () => {
+			const iso = rawTiles[activeTileId] && rawTiles[activeTileId].reminder_at;
+			reminderStatus.innerHTML = iso
+				? `🔔 Set for <span class="font-semibold">${formatReminderAt(iso)}</span> &nbsp;<button id="clearReminderBtn" type="button" class="text-red-400 hover:text-red-600 underline">Clear</button>`
+				: 'No reminder set.';
+			const clr = document.getElementById('clearReminderBtn');
+			if (clr) clr.addEventListener('click', async () => {
+				await setTileReminder(activeTileId, null);
+				reminderPreset.value = '';
+				reminderCustom.style.display = 'none';
+				refreshReminderStatus();
+			});
+		};
+		refreshReminderStatus();
+		reminderPreset.addEventListener('change', async () => {
+			const v = reminderPreset.value;
+			if (v === 'custom') {
+				const existing = rawTiles[activeTileId] && rawTiles[activeTileId].reminder_at;
+				const seed = existing ? new Date(existing) : new Date(Date.now() + 3600000);
+				reminderCustom.value = toLocalInputValue(seed);
+				reminderCustom.style.display = 'block';
+				return;
+			}
+			reminderCustom.style.display = 'none';
+			if (v === '') { await setTileReminder(activeTileId, null); refreshReminderStatus(); return; }
+			const when = computeReminderAt(v);
+			if (when) { await setTileReminder(activeTileId, when); reminderPreset.value = ''; refreshReminderStatus(); }
+		});
+		reminderCustom.addEventListener('change', async () => {
+			if (!reminderCustom.value) return;
+			const when = new Date(reminderCustom.value); // datetime-local is parsed as local time
+			if (isNaN(when.getTime())) return;
+			await setTileReminder(activeTileId, when);
+			reminderPreset.value = '';
+			reminderCustom.style.display = 'none';
+			refreshReminderStatus();
+		});
+	}
 
 	// Multiselect dropdown logic
 	const tagDropdownBtn = document.getElementById('tagDropdownBtn');
@@ -966,6 +1027,146 @@ async function updateTask(taskId, updates) {
 	if (error) console.error('Update error:', error);
 }
 
+// ---- Per-tile reminder helpers ----
+// Turn a preset key into a concrete future Date (local time).
+function computeReminderAt(preset) {
+	const d = new Date();
+	if (preset === '1h') { d.setHours(d.getHours() + 1); return d; }
+	if (preset === '3h') { d.setHours(d.getHours() + 3); return d; }
+	if (preset === 'eve') { d.setHours(18, 0, 0, 0); if (d <= new Date()) d.setDate(d.getDate() + 1); return d; }
+	if (preset === 'tom9') { d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; }
+	if (preset === 'tomeve') { d.setDate(d.getDate() + 1); d.setHours(18, 0, 0, 0); return d; }
+	if (preset === 'week') { d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); return d; }
+	return null;
+}
+
+// Friendly local display of a stored reminder timestamp.
+function formatReminderAt(iso) {
+	if (!iso) return '';
+	const d = new Date(iso);
+	if (isNaN(d.getTime())) return '';
+	return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// Value for a <input type="datetime-local"> (local wall-clock, no timezone).
+function toLocalInputValue(d) {
+	const p = n => String(n).padStart(2, '0');
+	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+// Persist a tile's reminder (Date or null) and re-sync device notifications.
+async function setTileReminder(tileId, dateOrNull) {
+	const iso = dateOrNull ? dateOrNull.toISOString() : null;
+	if (rawTiles[tileId]) rawTiles[tileId].reminder_at = iso;
+	await supa.from('tasks').update({ reminder_at: iso }).eq('id', tileId);
+	if (typeof notifiedReminderIds !== 'undefined') notifiedReminderIds.delete(tileId); // allow re-notify if re-armed
+	scheduleReminders();
+	if (typeof refreshNotifications === 'function') refreshNotifications();
+}
+
+// ---- In-app notification center (the header bell) ----
+// LocalNotifications is native-only, so on the web the reminders surface here:
+// any tile whose one-shot reminder time has passed and that's still open.
+let notifiedReminderIds = new Set(); // browser Notifications already popped this session
+
+function dueReminders() {
+	const now = Date.now();
+	return Object.values(rawTiles)
+		.filter(t => {
+			if (!t.reminder_at) return false;
+			const st = (t.status || '').toLowerCase();
+			if (st === 'completed' || st === 'cancelled' || st === 'failed') return false;
+			const when = new Date(t.reminder_at).getTime();
+			return !isNaN(when) && when <= now;
+		})
+		.sort((a, b) => new Date(b.reminder_at) - new Date(a.reminder_at));
+}
+
+function refreshNotifications() {
+	const list = dueReminders();
+	const badge = document.getElementById('notifBadge');
+	if (badge) {
+		if (list.length) { badge.textContent = list.length > 9 ? '9+' : String(list.length); badge.classList.remove('hidden'); }
+		else badge.classList.add('hidden');
+	}
+	// Pop a real browser notification for any newly-due reminder (if allowed).
+	if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+		list.forEach(t => {
+			if (!notifiedReminderIds.has(t.id)) {
+				notifiedReminderIds.add(t.id);
+				try { new Notification('🔔 ' + t.name, { body: 'Reminder', tag: 'lw-' + t.id }); } catch (e) {}
+			}
+		});
+	}
+	const menu = document.getElementById('notifMenu');
+	if (menu && !menu.classList.contains('hidden')) renderNotifList();
+}
+
+function renderNotifList() {
+	const listEl = document.getElementById('notifList');
+	if (!listEl) return;
+	const list = dueReminders();
+	if (!list.length) {
+		listEl.innerHTML = '<div class="text-center text-slate-400 text-sm py-6">No reminders right now.</div>';
+		return;
+	}
+	listEl.innerHTML = list.map(t => `
+		<div class="flex items-start justify-between gap-2 px-2 py-2 rounded-xl hover:bg-slate-50 transition">
+			<button class="notif-open flex-1 text-left min-w-0" data-tile-id="${t.id}">
+				<div class="text-sm font-medium text-slate-700 truncate">${t.name}</div>
+				<div class="text-xs text-slate-400">🔔 ${formatReminderAt(t.reminder_at)}</div>
+			</button>
+			<button class="notif-dismiss text-slate-300 hover:text-red-500 text-lg leading-none px-1" data-tile-id="${t.id}" title="Dismiss">&times;</button>
+		</div>`).join('');
+	listEl.querySelectorAll('.notif-open').forEach(b => b.addEventListener('click', () => {
+		closeNotifMenu();
+		openTilePopup(b.getAttribute('data-tile-id'));
+	}));
+	listEl.querySelectorAll('.notif-dismiss').forEach(b => b.addEventListener('click', async (e) => {
+		e.stopPropagation();
+		await setTileReminder(b.getAttribute('data-tile-id'), null); // clears the reminder
+	}));
+}
+
+function openNotifMenu() {
+	const menu = document.getElementById('notifMenu');
+	const btn = document.getElementById('notifBellBtn');
+	if (!menu) return;
+	// First open on web: politely ask to enable browser notifications.
+	if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+		try { Notification.requestPermission(); } catch (e) {}
+	}
+	renderNotifList();
+	menu.classList.remove('hidden');
+	if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeNotifMenu() {
+	const menu = document.getElementById('notifMenu');
+	const btn = document.getElementById('notifBellBtn');
+	if (menu) menu.classList.add('hidden');
+	if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function initNotifications() {
+	const btn = document.getElementById('notifBellBtn');
+	const menu = document.getElementById('notifMenu');
+	const clearAll = document.getElementById('notifClearAll');
+	if (!btn || !menu) return;
+	btn.addEventListener('click', (e) => {
+		e.stopPropagation();
+		if (menu.classList.contains('hidden')) openNotifMenu(); else closeNotifMenu();
+	});
+	document.addEventListener('click', (e) => {
+		if (!menu.classList.contains('hidden') && !e.target.closest('#notifWrapper')) closeNotifMenu();
+	});
+	if (clearAll) clearAll.addEventListener('click', async () => {
+		for (const t of dueReminders()) await setTileReminder(t.id, null);
+	});
+	setInterval(refreshNotifications, 60000); // surface reminders as their time arrives
+	refreshNotifications();
+}
+
 // ---- Local notifications / reminders (native app only) ----
 // Reminders every 4 hours during waking hours (skips the 00:00 / 04:00 slots).
 const REMINDER_TIMES = [
@@ -1074,6 +1275,14 @@ async function scheduleReminders() {
 					if (when > now) notifications.push({ id: id++, ...base, schedule: { at: when, allowWhileIdle: true } });
 				}
 			});
+
+			// Explicit per-tile reminder set from the tile detail — fires once.
+			if (task.reminder_at) {
+				const rwhen = new Date(task.reminder_at);
+				if (!isNaN(rwhen.getTime()) && rwhen > now) {
+					notifications.push({ id: id++, title: `🔔 ${task.name}`, body: 'Reminder', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id }, schedule: { at: rwhen, allowWhileIdle: true } });
+				}
+			}
 		});
 
 		if (notifications.length) await LN.schedule({ notifications });
@@ -2412,6 +2621,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	initPopup();
 	initAddLogPopup();
 	initAiChat();
+	initNotifications();
 	fetchTilesFromSupabase();
 
 	document.getElementById('searchBox').addEventListener('input', () => applyFilters());

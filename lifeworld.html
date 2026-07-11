@@ -136,6 +136,16 @@
 				<button id="aiChatBtn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold whitespace-nowrap text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 border border-transparent shadow-md shadow-purple-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 active:translate-y-0">
 					🤖 AI
 				</button>
+				<div id="notifWrapper" class="relative">
+					<button id="notifBellBtn" data-keep-menu title="Reminders" aria-label="Reminders" aria-haspopup="true" aria-expanded="false" class="relative inline-flex items-center justify-center gap-1.5 px-3.5 py-2 w-full sm:w-auto rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">🔔<span class="sm:hidden ml-1">Reminders</span><span id="notifBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-[18px] text-center">0</span></button>
+					<div id="notifMenu" class="hidden absolute right-0 mt-2 w-72 rounded-2xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1.5 z-[55]">
+						<div class="flex items-center justify-between px-2 py-1.5">
+							<span class="text-sm font-semibold text-slate-700">Reminders</span>
+							<button id="notifClearAll" class="text-xs text-slate-400 hover:text-red-500 transition">Clear all</button>
+						</div>
+						<div id="notifList" class="max-h-72 overflow-y-auto"></div>
+					</div>
+				</div>
 				<button id="settingsBtn" title="Settings" aria-label="Settings" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">⚙️<span class="sm:hidden ml-1">Settings</span></button>
 			</div>
 		</header>
