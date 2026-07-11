@@ -47,10 +47,23 @@ installable Android APK from the same codebase.
 - Chat coach grounded in your task data (OpenAI, `gpt-4o-mini` by default).
 - Per-user **daily message quota** (default 25) enforced server-side; premium
   accounts bypass it.
+- Can **create, update, and delete tasks** on request.
 
-### Reminders (native Android)
-- Local notifications **twice a day (08:00 & 20:00)** for every active task,
-  with **Done / Skip** action buttons that log straight to Supabase.
+### Attachments (Premium)
+- Attach **photos, screenshots, and files** to any tile — thumbnails for
+  images, a file chip for other types; open in a new tab or delete.
+- Stored in a **private** Supabase Storage bucket (per-user RLS, short-lived
+  signed URLs). Images are compressed client-side; **10 MB** per-file cap.
+- **Premium-gated in RLS** (uploads require `app_metadata.premium`), not just
+  in the UI. See `scripts/attachments.sql`.
+
+### Reminders
+- **Native Android:** local notifications every **4 hours** during waking
+  hours for every active task, with **Done / Skip** action buttons that log
+  straight to Supabase.
+- **Per-tile reminder:** set a one-shot reminder (preset or custom date/time)
+  from a tile's detail; fires a native notification, and surfaces on the web
+  in the **🔔 bell** (with an optional browser notification).
 
 ### Settings
 - Voice-recognition **language** (English, German, Italian, Spanish, Turkish),
@@ -62,7 +75,8 @@ installable Android APK from the same codebase.
 - **Backend:** Vercel serverless functions in `api/` (dependency-free, e.g.
   `api/ai.js`). Secrets live in Vercel env vars.
 - **Data:** Supabase — `tasks`, `task_logs`, `task_frequency_days`, `tags`,
-  `ai_usage`. Row-Level Security scopes every row to its owner.
+  `ai_usage`, `ai_memory`, `task_attachments` (+ an `attachments` Storage
+  bucket). Row-Level Security scopes every row to its owner.
 - **Auth:** Supabase with Google OAuth (native PKCE + deep link on Android).
 - **Mobile:** Capacitor 7; the native Android project is generated and signed in
   GitHub Actions. Plugins: local notifications, speech recognition, social login.

@@ -12,9 +12,13 @@ not a commitment.
   (overdue-first, selective)
 - Filters: status, hierarchical tags, frequency, lifecycle (🔥 Active default), mood;
   Today filter; combined Today summary
-- **AI assistant** with long-term memory + per-user daily quota (premium bypass)
+- **AI assistant** with long-term memory + per-user daily quota (premium bypass);
+  can create/update/delete tasks on request
+- **Attachments (Premium)** — photos/screenshots/files per tile; private Supabase
+  Storage, RLS-gated on premium, client-side image compression + 10 MB cap
 - **Voice input** for tile titles (native + web) with language setting
-- Native Android reminders every 4h with Done/Skip actions
+- Native Android reminders every 4h with Done/Skip actions; **per-tile one-shot
+  reminders** (native push + web 🔔 bell)
 - Auth (Supabase + Google OAuth), Vercel web + CI-built Android APK, Lemon Squeezy premium
 
 ## 🧭 Direction: Items + Planning (capture now, plan later)
