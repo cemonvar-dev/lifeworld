@@ -36,9 +36,9 @@ let tiles = [];
 let rawTiles = {}; // full task objects keyed by uuid
 let activeTileId = null; // currently open tile
 let activeTagFilter = null; // currently active tag filter
-let activeTimelineFilter = null; // 'today' or null
-let activeStatusFilter = null; // null, 'done', 'skipped', 'noaction'
-let activeLifecycleFilter = 'active'; // binary: 'active' (not completed), 'all', 'completed'
+let activeTimelineFilter = 'today'; // 'today' or null — default: today
+let activeStatusFilter = 'noaction'; // null, 'done', 'skipped', 'noaction' — default: no action
+let activeLifecycleFilter = 'active'; // binary: 'active' (not completed), 'all', 'completed' — default: active
 let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
 let activeFreqFilter = null; // null = all, else 'daily' | 'weekly' | 'monthly' | 'once'
 let searchChips = []; // committed search terms (Enter in the search box); OR-matched
@@ -254,7 +254,11 @@ async function fetchTilesFromSupabase() {
 	       });
 
 	await loadTags();
-	applyFilters(); // apply the default filters (e.g. 🔥 Active) on first paint
+	applyFilters(); // apply the default filters (🔥 Active / 📅 Today / 💬 No Action) on first paint
+	syncLifecycleBtn();
+	syncTodayBtn();
+	syncStatusBtn();
+	updateFilterBar(); // surface the default filters as chips
 	scheduleReminders();
 	if (typeof refreshNotifications === 'function') refreshNotifications(); // update the bell badge
 	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
@@ -2231,19 +2235,28 @@ function isTileScheduledToday(tileId) {
 	return true;
 }
 
-function toggleTodayFilter() {
-	activeTimelineFilter = activeTimelineFilter === 'today' ? null : 'today';
+// Reflect the current timeline filter on its button (if present in the DOM).
+function syncTodayBtn() {
 	const btn = document.getElementById('todayFilterBtn');
-	if (btn) {
-		if (activeTimelineFilter === 'today') {
-			btn.classList.remove('bg-white');
-			btn.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
-		} else {
-			btn.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
-			btn.classList.add('bg-white');
-		}
+	if (!btn) return;
+	if (activeTimelineFilter === 'today') {
+		btn.classList.remove('bg-white');
+		btn.classList.add('bg-blue-100', 'border-blue-400', 'text-blue-700');
+	} else {
+		btn.classList.remove('bg-blue-100', 'border-blue-400', 'text-blue-700');
+		btn.classList.add('bg-white');
 	}
+}
+
+function setTimelineFilter(key) {
+	activeTimelineFilter = key;
+	syncTodayBtn();
 	applyFilters();
+	updateFilterBar();
+}
+
+function toggleTodayFilter() {
+	setTimelineFilter(activeTimelineFilter === 'today' ? null : 'today');
 }
 
 const STATUS_CYCLE = [
@@ -2419,18 +2432,30 @@ function closeCalendarMenu() { document.getElementById('calendarMenuOverlay').cl
 function openFilterMenu() { document.getElementById('filterMenuOverlay').classList.remove('hidden'); }
 function closeFilterMenu() { document.getElementById('filterMenuOverlay').classList.add('hidden'); }
 
+// Reflect the current status filter on its toolbar button.
+function syncStatusBtn() {
+	const cur = STATUS_CYCLE.find(s => s.key === activeStatusFilter) || STATUS_CYCLE[0];
+	const btn = document.getElementById('statusFilterBtn');
+	if (!btn) return;
+	btn.classList.remove('bg-white', 'bg-green-100', 'bg-yellow-100', 'bg-slate-100', 'border-slate-800', 'text-slate-800');
+	btn.classList.add(cur.bg);
+	if (cur.key) {
+		btn.classList.add('border-slate-800', 'text-slate-800');
+	}
+	btn.textContent = cur.label;
+}
+
+function setStatusFilter(key) {
+	activeStatusFilter = key;
+	syncStatusBtn();
+	applyFilters();
+	updateFilterBar();
+}
+
 function toggleStatusFilter() {
 	const idx = STATUS_CYCLE.findIndex(s => s.key === activeStatusFilter);
 	const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
-	activeStatusFilter = next.key;
-	const btn = document.getElementById('statusFilterBtn');
-	btn.classList.remove('bg-white', 'bg-green-100', 'bg-yellow-100', 'bg-slate-100', 'border-slate-800', 'text-slate-800');
-	btn.classList.add(next.bg);
-	if (next.key) {
-		btn.classList.add('border-slate-800', 'text-slate-800');
-	}
-	btn.textContent = next.label;
-	applyFilters();
+	setStatusFilter(next.key);
 }
 
 const LIFECYCLE_CYCLE = [
@@ -2439,14 +2464,30 @@ const LIFECYCLE_CYCLE = [
 		{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' }
 	];
 
+// Reflect the current lifecycle filter on its toolbar button.
+function syncLifecycleBtn() {
+	const cur = LIFECYCLE_CYCLE.find(s => s.key === activeLifecycleFilter) || LIFECYCLE_CYCLE[0];
+	const btn = document.getElementById('lifecycleFilterBtn');
+	if (!btn) return;
+	btn.className = `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 ${cur.bg}`;
+	btn.textContent = cur.label;
+}
+
 function toggleLifecycleFilter() {
 	const idx = LIFECYCLE_CYCLE.findIndex(s => s.key === activeLifecycleFilter);
 	const next = LIFECYCLE_CYCLE[(idx + 1) % LIFECYCLE_CYCLE.length];
 	activeLifecycleFilter = next.key;
-	const btn = document.getElementById('lifecycleFilterBtn');
-	btn.className = `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium whitespace-nowrap shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 ${next.bg}`;
-	btn.textContent = next.label;
+	syncLifecycleBtn();
 	applyFilters();
+	updateFilterBar();
+}
+
+// Set the lifecycle filter directly (used when removing its chip).
+function setLifecycleFilter(key) {
+	activeLifecycleFilter = key;
+	syncLifecycleBtn();
+	applyFilters();
+	updateFilterBar();
 }
 
 // ---- Frequency filter ----
@@ -2617,6 +2658,18 @@ function renderSearchChips() {
 	const chip = (inner, xClass, extra = '') =>
 		`<span class="inline-flex items-center gap-1 rounded-full bg-white/70 backdrop-blur border border-white/60 shadow-sm px-3 py-1 text-sm font-medium text-slate-600">${inner}<button class="${xClass} text-xs text-slate-400 hover:text-red-500 ml-1" ${extra} title="Remove">✕</button></span>`;
 	const parts = [];
+	// Default filters applied on load, shown as chips: 🔥 Active / 📅 Today / 💬 No Action.
+	if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
+		const lc = LIFECYCLE_CYCLE.find(s => s.key === activeLifecycleFilter);
+		if (lc) parts.push(chip(escapeHtml(lc.label), 'lifecycle-chip-x'));
+	}
+	if (activeTimelineFilter === 'today') {
+		parts.push(chip('📅 Today', 'today-chip-x'));
+	}
+	if (activeStatusFilter) {
+		const st = STATUS_CYCLE.find(s => s.key === activeStatusFilter);
+		if (st) parts.push(chip(escapeHtml(st.label), 'status-chip-x'));
+	}
 	if (activeTagFilter) {
 		const label = activeTagFilter === '__untagged__' ? '📦 Untagged' : '🏷️ ' + tagPath(activeTagFilter);
 		parts.push(chip(escapeHtml(label), 'tag-chip-x'));
@@ -2626,6 +2679,12 @@ function renderSearchChips() {
 	box.classList.remove('hidden');
 	box.innerHTML = parts.join('')
 		+ `<button id="clearAllChipsBtn" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>`;
+	const lifecycleX = box.querySelector('.lifecycle-chip-x');
+	if (lifecycleX) lifecycleX.addEventListener('click', () => setLifecycleFilter('all')); // show all lifecycles
+	const todayX = box.querySelector('.today-chip-x');
+	if (todayX) todayX.addEventListener('click', () => setTimelineFilter(null)); // show all days
+	const statusX = box.querySelector('.status-chip-x');
+	if (statusX) statusX.addEventListener('click', () => setStatusFilter(null)); // show all statuses
 	const tagX = box.querySelector('.tag-chip-x');
 	if (tagX) tagX.addEventListener('click', () => setTagFilter(null)); // remove tag only, keep searches
 	box.querySelectorAll('.search-chip-x').forEach(b => b.addEventListener('click', () => {
@@ -2641,6 +2700,12 @@ function clearAllChips() {
 	searchChips = [];
 	const sb = document.getElementById('searchBox');
 	if (sb) sb.value = '';
+	activeLifecycleFilter = 'all'; // drop the 🔥 Active chip too
+	activeTimelineFilter = null;   // drop the 📅 Today chip
+	activeStatusFilter = null;     // drop the 💬 No Action chip
+	syncLifecycleBtn();
+	syncTodayBtn();
+	syncStatusBtn();
 	renderSearchChips();
 	setTagFilter(null); // also runs applyFilters() + updateFilterBar()
 }
