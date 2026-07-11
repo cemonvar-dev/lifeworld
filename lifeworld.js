@@ -409,6 +409,15 @@ function renderGallery(filteredTiles) {
 				e.dataTransfer.dropEffect = 'move';
 				tileDiv.classList.add('ring-2', 'ring-blue-300');
 			});
+			tileDiv.addEventListener('dragleave', () => {
+				tileDiv.classList.remove('ring-2', 'ring-blue-300');
+			});
+			tileDiv.addEventListener('drop', (e) => {
+				e.preventDefault();
+				tileDiv.classList.remove('ring-2', 'ring-blue-300');
+				const draggedId = e.dataTransfer.getData('text/plain');
+				if (draggedId && draggedId !== tile.id) handleTileDrop(draggedId, tile.id, tag);
+			});
 
 			tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
 				e.stopPropagation();
