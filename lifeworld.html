@@ -31,6 +31,10 @@
 		*::-webkit-scrollbar-thumb { background: rgba(100,116,139,.30); border-radius: 9999px; }
 		*::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.5); }
 		*::-webkit-scrollbar-track { background: transparent; }
+		/* Tile status line ("take action now (n)"): hidden, fades in after a short
+		   hover dwell so the card stays clean until you pause on it. */
+		.tile .tile-status-line { opacity: 0; transition: opacity .25s ease; transition-delay: 0s; }
+		.tile:hover .tile-status-line { opacity: 1; transition-delay: 1.2s; }
 		/* Add-log calendar: tint days that already have a log (selection still wins) */
 		.flatpickr-day.lw-day-done:not(.selected) { background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.30); color: #166534; font-weight: 600; }
 		.flatpickr-day.lw-day-done:not(.selected):hover { background: rgba(34,197,94,.30); }

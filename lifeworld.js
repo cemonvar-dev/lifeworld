@@ -372,7 +372,7 @@ function renderGallery(filteredTiles) {
 					   <div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
 					   <div class="text-base text-right w-1/4">${tp.emoji}</div>
 				   </div>
-				   <div class="flex gap-2 mt-1">
+				   <div class="tile-status-line flex gap-2 mt-1">
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
 					   <span class="text-xs text-slate-500">(${tile.count})</span>
 				   </div>
