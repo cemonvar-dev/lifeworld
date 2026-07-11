@@ -603,6 +603,15 @@ function openTilePopup(tileId) {
 			${[{ key: 'morning', label: '🌅 Morning' }, { key: 'afternoon', label: '☀️ Afternoon' }, { key: 'evening', label: '🌇 Evening' }, { key: 'night', label: '🌙 Night' }].map(t => `<button class='tod-btn px-3 py-1 rounded-full text-xs border transition ${timeOfDayArr.includes(t.key) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-tod='${t.key}'>${t.label}</button>`).join('')}
 		</div>
 		<hr class="my-5 border-slate-200">
+		<div class="flex items-center justify-between mb-2">
+			<div class="text-sm font-semibold">Attachments</div>
+			<button id="addAttachmentBtn" type="button" class="text-blue-500 hover:text-blue-700 text-sm font-semibold transition">📎 Add</button>
+		</div>
+		<input type="file" id="attachmentInput" class="hidden" multiple accept="image/*,application/pdf" />
+		<div id="attachmentList" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
+			<div class="text-xs text-slate-400 col-span-full">Loading…</div>
+		</div>
+		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between mb-1">
 			<div class="text-md font-semibold">Log Timeline</div>
 			<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition">+</button>
@@ -828,6 +837,20 @@ function openTilePopup(tileId) {
 
 	// Wire up add log button
 	document.getElementById('addLogBtn').addEventListener('click', () => openAddLogPopup());
+
+	// Wire up attachments (photos / screenshots / files)
+	const addAttachmentBtn = document.getElementById('addAttachmentBtn');
+	const attachmentInput = document.getElementById('attachmentInput');
+	if (addAttachmentBtn && attachmentInput) {
+		addAttachmentBtn.addEventListener('click', () => attachmentInput.click());
+		attachmentInput.addEventListener('change', async () => {
+			if (attachmentInput.files && attachmentInput.files.length) {
+				await uploadAttachments(tileId, Array.from(attachmentInput.files), addAttachmentBtn);
+				attachmentInput.value = '';
+			}
+		});
+	}
+	renderAttachments(tileId);
 
 	overlay.classList.remove('hidden');
 }
@@ -1482,6 +1505,12 @@ async function deleteLog(logId) {
 // ---- Delete Tile ----
 async function deleteTile() {
 	if (!activeTileId) return;
+	// Remove any stored attachment files first (the metadata rows cascade with
+	// the task, but the storage objects must be cleared explicitly).
+	try {
+		const { data: atts } = await supa.from('task_attachments').select('path').eq('task_id', activeTileId);
+		if (atts && atts.length) await supa.storage.from('attachments').remove(atts.map(a => a.path));
+	} catch (e) { console.error('attachment cleanup error:', e); }
 	// Delete related records then task
 	await supa.from('task_logs').delete().eq('task_id', activeTileId);
 	await supa.from('task_frequency_days').delete().eq('task_id', activeTileId);
@@ -1491,6 +1520,96 @@ async function deleteTile() {
 	closeTilePopup();
 	renderGallery(tiles);
 	scheduleReminders();
+}
+
+// ---- Attachments (photos / screenshots / files) ----
+const ATTACH_BUCKET = 'attachments';
+
+function escapeHtml(s) {
+	return String(s == null ? '' : s)
+		.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Load and render a task's attachments into #attachmentList (uses signed URLs
+// because the bucket is private).
+async function renderAttachments(taskId) {
+	const listEl = document.getElementById('attachmentList');
+	if (!listEl) return;
+	const { data, error } = await supa
+		.from('task_attachments')
+		.select('*')
+		.eq('task_id', taskId)
+		.order('created_at', { ascending: false });
+	if (error) {
+		listEl.innerHTML = '<div class="text-xs text-red-400 col-span-full">Could not load attachments.</div>';
+		return;
+	}
+	if (!data || !data.length) {
+		listEl.innerHTML = '<div class="text-xs text-slate-400 col-span-full">No attachments yet.</div>';
+		return;
+	}
+	const items = await Promise.all(data.map(async att => {
+		let url = null;
+		try {
+			const { data: signed } = await supa.storage.from(ATTACH_BUCKET).createSignedUrl(att.path, 3600);
+			url = signed ? signed.signedUrl : null;
+		} catch (e) { /* leave url null */ }
+		return { att, url };
+	}));
+	listEl.innerHTML = items.map(({ att, url }) => {
+		const isImg = (att.mime || '').startsWith('image/');
+		const name = escapeHtml(att.name || 'file');
+		const inner = (isImg && url)
+			? `<img src="${url}" alt="${name}" class="w-full h-20 object-cover rounded-lg border border-slate-200" />`
+			: `<div class="w-full h-20 flex flex-col items-center justify-center rounded-lg bg-slate-100 border border-slate-200 text-slate-500"><span class="text-2xl leading-none">📄</span><span class="text-[10px] px-1 mt-1 truncate w-full text-center">${name}</span></div>`;
+		return `<div class="relative group">
+			<a href="${url || '#'}" target="_blank" rel="noopener" class="block">${inner}</a>
+			<button class="att-del absolute top-1 right-1 grid place-items-center bg-black/50 hover:bg-black/70 text-white rounded-full w-5 h-5 text-xs opacity-0 group-hover:opacity-100 transition" data-id="${att.id}" data-path="${escapeHtml(att.path)}" title="Delete">&times;</button>
+		</div>`;
+	}).join('');
+	listEl.querySelectorAll('.att-del').forEach(b => b.addEventListener('click', async (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (!confirm('Delete this attachment?')) return;
+		await deleteAttachment(b.dataset.id, b.dataset.path, taskId);
+	}));
+}
+
+// Upload one or more files for a task, then re-render the grid.
+async function uploadAttachments(taskId, files, btnEl) {
+	const { data: { session } } = await supa.auth.getSession();
+	if (!session) { alert('Please sign in to add attachments.'); return; }
+	const userId = session.user.id;
+	const origLabel = btnEl ? btnEl.textContent : '';
+	if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Uploading…'; }
+	try {
+		for (const file of files) {
+			const safe = (file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(-80);
+			const path = `${userId}/${taskId}/${crypto.randomUUID()}-${safe}`;
+			const { error: upErr } = await supa.storage.from(ATTACH_BUCKET).upload(path, file, {
+				contentType: file.type || 'application/octet-stream',
+				upsert: false
+			});
+			if (upErr) { console.error('upload error:', upErr); alert('Upload failed: ' + (upErr.message || 'unknown error')); continue; }
+			const { error: insErr } = await supa.from('task_attachments').insert({
+				task_id: taskId, user_id: userId, path, name: file.name, mime: file.type || null, size: file.size || null
+			});
+			if (insErr) {
+				console.error('metadata insert error:', insErr);
+				await supa.storage.from(ATTACH_BUCKET).remove([path]); // roll back the orphaned file
+			}
+		}
+	} finally {
+		if (btnEl) { btnEl.disabled = false; btnEl.textContent = origLabel; }
+	}
+	await renderAttachments(taskId);
+}
+
+async function deleteAttachment(id, path, taskId) {
+	try { await supa.storage.from(ATTACH_BUCKET).remove([path]); } catch (e) { console.error('storage remove error:', e); }
+	await supa.from('task_attachments').delete().eq('id', id);
+	await renderAttachments(taskId);
 }
 
 // ---- Add New Tile ----
