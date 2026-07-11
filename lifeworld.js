@@ -2207,18 +2207,8 @@ function setTagFilter(tag) {
 }
 
 function updateFilterBar() {
-	const bar = document.getElementById('activeFilterBar');
-	const label = document.getElementById('activeFilterLabel');
-	if (activeTagFilter === null) {
-		bar.classList.add('hidden');
-	} else {
-		bar.classList.remove('hidden');
-		if (activeTagFilter === '__untagged__') {
-			label.textContent = '📦 Untagged';
-		} else {
-			label.textContent = '🏷️ ' + tagPath(activeTagFilter);
-		}
-	}
+	// The tag filter now lives in the unified chip bar alongside search chips.
+	renderSearchChips();
 }
 
 function isTileScheduledToday(tileId) {
@@ -2617,25 +2607,31 @@ function matchesSearchTerm(t, rawTerm) {
 	return nameMatch || tagMatch;
 }
 
-// Render committed search chips (like the tag-filter chip). Empty -> hidden.
+// One unified chip bar: the active tag filter (if any) + all search chips,
+// each with its own ✕, plus a single "Clear all". Empty -> hidden.
 function renderSearchChips() {
 	const box = document.getElementById('searchChips');
 	if (!box) return;
-	if (!searchChips.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+	const chip = (inner, xClass, extra = '') =>
+		`<span class="inline-flex items-center gap-1 rounded-full bg-white/70 backdrop-blur border border-white/60 shadow-sm px-3 py-1 text-sm font-medium text-slate-600">${inner}<button class="${xClass} text-xs text-slate-400 hover:text-red-500 ml-1" ${extra} title="Remove">✕</button></span>`;
+	const parts = [];
+	if (activeTagFilter) {
+		const label = activeTagFilter === '__untagged__' ? '📦 Untagged' : '🏷️ ' + tagPath(activeTagFilter);
+		parts.push(chip(escapeHtml(label), 'tag-chip-x'));
+	}
+	searchChips.forEach((term, i) => parts.push(chip('🔍 ' + escapeHtml(term), 'search-chip-x', `data-idx="${i}"`)));
+	if (!parts.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 	box.classList.remove('hidden');
-	box.innerHTML = searchChips.map((term, i) => `
-		<span class="inline-flex items-center gap-1 rounded-full bg-white/70 backdrop-blur border border-white/60 shadow-sm px-3 py-1 text-sm font-medium text-slate-600">
-			🔍 ${escapeHtml(term)}
-			<button class="search-chip-x text-xs text-slate-400 hover:text-red-500 ml-1" data-idx="${i}" title="Remove">✕</button>
-		</span>`).join('')
-		+ `<button id="clearSearchChips" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>`;
+	box.innerHTML = parts.join('')
+		+ `<button id="clearAllChipsBtn" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>`;
+	const tagX = box.querySelector('.tag-chip-x');
+	if (tagX) tagX.addEventListener('click', () => setTagFilter(null)); // remove tag only, keep searches
 	box.querySelectorAll('.search-chip-x').forEach(b => b.addEventListener('click', () => {
 		searchChips.splice(parseInt(b.dataset.idx, 10), 1);
 		renderSearchChips();
 		applyFilters();
 	}));
-	const clr = document.getElementById('clearSearchChips');
-	if (clr) clr.addEventListener('click', clearAllChips);
+	box.querySelector('#clearAllChipsBtn').addEventListener('click', clearAllChips);
 }
 
 // Clear everything: the tag filter AND all search chips (one "Clear all").
@@ -2985,7 +2981,6 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('tagFilterOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('tagFilterOverlay')) closeTagFilterPopup();
 	});
-	document.getElementById('clearFilterBtn').addEventListener('click', clearAllChips);
 	document.getElementById('statusFilterBtn').addEventListener('click', toggleStatusFilter);
 	document.getElementById('freqFilterBtn').addEventListener('click', toggleFreqFilter);
 
