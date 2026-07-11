@@ -195,6 +195,15 @@ function getTodayStatus(logs) {
 	return 'noaction';
 }
 
+// Status of a task on a specific date ('YYYY-MM-DD'): 'done', 'skipped',
+// 'noaction' (date reached, nothing logged), or null (date still in the future).
+function statusOnDate(raw, dateStr) {
+	const log = (raw.task_logs || []).find(l => logDay(l) === dateStr &&
+		(l.status === 'done' || l.status === 'completed' || l.status === 'skipped'));
+	if (log) return log.status === 'skipped' ? 'skipped' : 'done';
+	return dateStr > todayLocal() ? null : 'noaction';
+}
+
 async function fetchTilesFromSupabase() {
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session || !session.user) {
@@ -3624,9 +3633,16 @@ function renderOnceTasksCalendar() {
 			const selectCell = kind === 'once'
 				? `<input type="checkbox" class="cal-select" data-tile-id="${t.id}" />`
 				: '';
+			// Routine rows show the occurrence's status instead of action buttons:
+			// done / skip / no action, or blank when the date hasn't arrived yet.
+			const statusLabels = {
+				done: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ done</span>',
+				skipped: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">⏭️ skip</span>',
+				noaction: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">💬 no action</span>',
+			};
 			const actionsCell = kind === 'once'
 				? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
-				: '<span class="text-slate-300 text-xs">—</span>';
+				: (statusLabels[statusOnDate(t, date)] || '');
 			html += `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-3 py-2 whitespace-nowrap"><div class="font-semibold">${shortDate}</div><div class="text-[11px] text-slate-400">${dayName}</div></td><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 		});
 	});
