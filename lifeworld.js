@@ -231,8 +231,8 @@ async function fetchTilesFromSupabase() {
 
 	       tiles = data.map(task => {
 		       const logs = task.task_logs || [];
-		       // Find the most recent 'done' log
-		       const lastDoneLog = logs.find(l => l.status === 'done');
+		       // Find the most recent 'done'/'completed' log (logs are newest-first)
+		       const lastDoneLog = logs.find(l => l.status === 'done' || l.status === 'completed');
 		       const lastLog = logs[0];
 		       const health = calculateHealth(task);
 		       const plant = healthToPlant(health);
@@ -248,6 +248,7 @@ async function fetchTilesFromSupabase() {
 			       healthColor: plant.color,
 			       count: logs.length,
 			       createdAt: task.created_at || null,
+			       lastDone: lastDoneLog ? (lastDoneLog.log_date || lastDoneLog.created_at) : null,
 			       lastUpdate: lastDoneLog ? (lastDoneLog.log_date || lastDoneLog.created_at) : (lastLog ? (lastLog.log_date || lastLog.created_at) : null)
 		       };
 	       });
@@ -364,6 +365,7 @@ function renderGallery(filteredTiles) {
 			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
+			const lastDone = tile.lastDone ? new Date(tile.lastDone).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
@@ -379,7 +381,7 @@ function renderGallery(filteredTiles) {
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex justify-between items-center w-full mt-1">
 					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
-					   <span class="text-xs text-slate-400">🕓 ${lastUpd}</span>
+					   <span class="text-xs text-slate-400" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   <div class="flex gap-2 mt-2 w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
