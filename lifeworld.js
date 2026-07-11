@@ -801,6 +801,7 @@ function openTilePopup(tileId) {
 			// Column is text[] — store [v] (or [] to clear).
 			raw.time_of_day = v ? [v] : [];
 			await updateTask(activeTileId, { time_of_day: v ? [v] : [] });
+			openTilePopup(activeTileId); // re-render so the dropdown shows the new choice
 		}
 	});
 
