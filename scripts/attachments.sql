@@ -2,10 +2,12 @@
 -- Supabase SQL editor. Files live in a PRIVATE storage bucket; the app shows
 -- them via short-lived signed URLs. Metadata rows link each file to a task.
 
--- 1) Private storage bucket.
-insert into storage.buckets (id, name, public)
-values ('attachments', 'attachments', false)
+-- 1) Private storage bucket, capped at 10 MB per file.
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('attachments', 'attachments', false, 10485760)
 on conflict (id) do nothing;
+-- Apply the cap even if the bucket already existed.
+update storage.buckets set file_size_limit = 10485760 where id = 'attachments';
 
 -- 2) Metadata table (one row per uploaded file).
 create table if not exists public.task_attachments (

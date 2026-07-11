@@ -1591,6 +1591,44 @@ async function renderAttachments(taskId) {
 	}));
 }
 
+const ATTACH_MAX_BYTES = 10 * 1024 * 1024; // 10 MB, mirrors the bucket cap
+
+// Downscale + re-encode large photos/screenshots before upload to save storage
+// and bandwidth. Non-images (and animated GIFs) pass through untouched; if
+// compression wouldn't help, the original is kept.
+async function compressImage(file, maxDim = 1600, quality = 0.82) {
+	if (!file.type || !file.type.startsWith('image/') || file.type === 'image/gif') return file;
+	try {
+		const dataUrl = await new Promise((resolve, reject) => {
+			const fr = new FileReader();
+			fr.onload = () => resolve(fr.result);
+			fr.onerror = reject;
+			fr.readAsDataURL(file);
+		});
+		const img = await new Promise((resolve, reject) => {
+			const im = new Image();
+			im.onload = () => resolve(im);
+			im.onerror = reject;
+			im.src = dataUrl;
+		});
+		const { width, height } = img;
+		// Already modest in both size and dimensions — no point re-encoding.
+		if (width <= maxDim && height <= maxDim && file.size < 1024 * 1024) return file;
+		const scale = Math.min(1, maxDim / Math.max(width, height));
+		const w = Math.round(width * scale), h = Math.round(height * scale);
+		const canvas = document.createElement('canvas');
+		canvas.width = w; canvas.height = h;
+		canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+		const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+		if (!blob || blob.size >= file.size) return file; // compression didn't help
+		const base = (file.name || 'photo').replace(/\.[^.]+$/, '');
+		return new File([blob], base + '.jpg', { type: 'image/jpeg', lastModified: file.lastModified || undefined });
+	} catch (e) {
+		console.error('image compress error:', e);
+		return file;
+	}
+}
+
 // Upload one or more files for a task, then re-render the grid.
 async function uploadAttachments(taskId, files, btnEl) {
 	const { data: { session } } = await supa.auth.getSession();
@@ -1604,7 +1642,12 @@ async function uploadAttachments(taskId, files, btnEl) {
 	const origLabel = btnEl ? btnEl.textContent : '';
 	if (btnEl) { btnEl.disabled = true; btnEl.textContent = '⏳ Uploading…'; }
 	try {
-		for (const file of files) {
+		for (const original of files) {
+			const file = await compressImage(original); // shrink big images first
+			if (file.size > ATTACH_MAX_BYTES) {
+				alert(`"${original.name}" is larger than 10 MB (even after compression) and was skipped.`);
+				continue;
+			}
 			const safe = (file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(-80);
 			const path = `${userId}/${taskId}/${crypto.randomUUID()}-${safe}`;
 			const { error: upErr } = await supa.storage.from(ATTACH_BUCKET).upload(path, file, {
