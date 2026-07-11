@@ -3726,7 +3726,7 @@ function renderOnceTasksCalendar() {
 			DAYPARTS.forEach(dp => {
 				const group = rows.filter(e => tileTimeOfDay(e.task) === dp.key);
 				if (!group.length) return;
-				html += `<tr class="cal-daypart-row"><td colspan="3" class="text-slate-500 text-xs font-semibold pl-8 pr-4 py-1">${dp.icon} ${dp.label}</td></tr>`;
+				html += `<tr class="cal-daypart-row"><td colspan="3" class="text-slate-500 text-xs font-semibold px-4 py-1">${dp.icon} ${dp.label}</td></tr>`;
 				group.forEach(e => { html += renderRow(e, date); });
 			});
 		}
