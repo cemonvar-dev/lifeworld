@@ -1691,7 +1691,7 @@ async function deleteTile() {
 	delete rawTiles[activeTileId];
 	tiles = tiles.filter(t => t.id !== activeTileId);
 	closeTilePopup();
-	renderGallery(tiles);
+	applyFilters(); // re-render honoring the active filters (not the full list)
 	scheduleReminders();
 }
 
