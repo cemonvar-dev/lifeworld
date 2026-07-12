@@ -1134,6 +1134,7 @@ async function submitLog(statusArg) {
 	closeAddLogPopup();
 	openTilePopup(activeTileId);
 	applyFilters();
+	scheduleReminders(); // re-arm summaries so logged items drop from today's carryover
 }
 
 function initAddLogPopup() {
@@ -1518,27 +1519,42 @@ async function scheduleReminders() {
 		for (let dayOffset = 0; dayOffset < SUMMARY_DAYS_AHEAD; dayOffset++) {
 			const date = new Date(now); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() + dayOffset);
 			const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+			const isToday = dayOffset === 0;
+			// Each bucket's still-to-do tasks for this date (today drops done/skipped).
+			const bucketDue = {};
 			SUMMARY_BUCKETS.forEach(b => {
-				const when = new Date(date); when.setHours(b.hour, b.minute, 0, 0);
-				if (when <= now) return; // time already passed
-				const due = activeTasks.filter(t => {
+				bucketDue[b.key] = activeTasks.filter(t => {
 					if (tileTimeOfDay(t) !== b.key) return false;
 					if (!isTaskScheduledOnDate(t, date)) return false;
-					// For today, drop tasks already done/skipped.
-					if (dayOffset === 0) {
+					if (isToday) {
 						const st = statusOnDate(t, iso);
 						if (st === 'done' || st === 'skipped') return false;
 					}
 					return true;
 				});
-				if (!due.length) return;
-				const names = due.map(t => t.name);
-				const shown = names.slice(0, 6).join(', ');
-				const more = names.length > 6 ? `, +${names.length - 6} more` : '';
+			});
+			const fmtNames = arr => arr.slice(0, 6).join(', ') + (arr.length > 6 ? `, +${arr.length - 6} more` : '');
+			SUMMARY_BUCKETS.forEach((b, idx) => {
+				const when = new Date(date); when.setHours(b.hour, b.minute, 0, 0);
+				if (when <= now) return; // time already passed
+				const own = bucketDue[b.key];
+				// Today only: accumulate still-pending items from all earlier buckets.
+				let pending = [];
+				if (isToday) for (let j = 0; j < idx; j++) pending = pending.concat(bucketDue[SUMMARY_BUCKETS[j].key]);
+				const total = own.length + pending.length;
+				if (!total) return;
+				let body;
+				if (pending.length) {
+					const lines = ['⏰ Still pending: ' + fmtNames(pending.map(t => t.name))];
+					if (own.length) lines.push(`${b.icon} ${b.label}: ` + fmtNames(own.map(t => t.name)));
+					body = lines.join('\n');
+				} else {
+					body = fmtNames(own.map(t => t.name));
+				}
 				notifications.push({
 					id: id++,
-					title: `${b.icon} ${b.label} — ${names.length} task${names.length > 1 ? 's' : ''}`,
-					body: shown + more,
+					title: `${b.icon} ${b.label} — ${total} to do`,
+					body,
 					channelId: 'reminders',
 					schedule: { at: when, allowWhileIdle: true },
 					extra: { summary: b.key, date: iso }
@@ -1668,6 +1684,7 @@ async function quickLog(tileId, status) {
 		displayTile.healthColor = plant.color;
 	}
 	applyFilters();
+	scheduleReminders(); // re-arm summaries so done items drop from today's carryover
 }
 
 async function deleteLog(logId) {
