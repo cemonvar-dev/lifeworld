@@ -17,8 +17,17 @@ not a commitment.
 - **Attachments (Premium)** — photos/screenshots/files per tile; private Supabase
   Storage, RLS-gated on premium, client-side image compression + 10 MB cap
 - **Voice input** for tile titles (native + web) with language setting
-- Native Android reminders every 4h with Done/Skip actions; **per-tile one-shot
-  reminders** (native push + web 🔔 bell)
+- **Time-of-day per tile** (Morning/Afternoon/Evening/Night) — drives the Planned
+  Tasks grouping and the summary reminders
+- Native Android **time-of-day summary reminders** (🌅 06:00 / ☀️ 11:30 / 🌇 16:30 /
+  🌙 20:00) listing each bucket's due tasks; undone items **roll forward** into later
+  summaries (night = everything left today). Any-time tasks get no reminder.
+  **Per-tile one-shot reminders** kept (Reminder dropdown + web 🔔 bell)
+- **Planned Tasks** modal — routine + one-time tiles, All/One-time/Routine filter,
+  live "contains" search, grouped **month → date → time-of-day** with per-occurrence
+  status; mobile-friendly (title-led, weekday under the date, no tag column)
+- Unified **chip bar** surfacing the active default filters (Active / Today / No Action);
+  one-time tiles default to today's date; date inputs display as **dd/MM/yyyy**
 - Auth (Supabase + Google OAuth), Vercel web + CI-built Android APK, Lemon Squeezy premium
 
 ## 🧭 Direction: Items + Planning (capture now, plan later)
@@ -52,19 +61,17 @@ auto-reschedule. Needs a web-search/browse capability in the AI backend.
 ## 🔜 Now (polish, low-effort / high-value)
 - **Tile due date shows the year** — the card footer's next-due label omits the year
   (e.g. "4 Tem" with no '26/'27); include it so far-off dates aren't ambiguous.
-- **Mobile-friendly long-term calendar** — show the weekday under the date, hide the
-  tag/category column, and lead with the task title (much better on phones).
-- **Notification settings UI** — let users pick reminder times/frequency and set
-  quiet hours, instead of the hardcoded 8/12/16/20. Per-tile enable/disable.
+- **Notification settings UI** — let users pick the summary times (currently fixed at
+  06:00 / 11:30 / 16:30 / 20:00) and set quiet hours; per-tile enable/disable.
 - **AI memory transparency** — view / edit / reset the long-term memory from Settings.
 - **Timezone fix in `calculateHealth()`** — it still iterates days in UTC, so health
   can be off-by-one at the day boundary (the rest of the app is already local).
 - **Onboarding** — a short first-run guide (create first tile, explain health/flags).
 - **Settings sync** — persist preferences (voice language, etc.) to the account, not
   just localStorage, so they follow the user across devices.
-- **Selectable date format** — date inputs are pinned to `dd/MM/yyyy` (via `lang="en-GB"`);
-  let users choose their preferred format (dd/MM/yyyy, MM/dd/yyyy, yyyy-MM-dd) from
-  Settings and apply it app-wide (native date/datetime inputs + display strings).
+- **Selectable date format** — 🟡 *partial*: inputs are pinned to `dd/MM/yyyy` (via
+  `lang="en-GB"`); still to do — let users choose the format (dd/MM/yyyy, MM/dd/yyyy,
+  yyyy-MM-dd) from Settings and apply it app-wide (inputs + display strings).
 
 ## 🌓 Next (meaningful features)
 - **Date ranges for tiles** — let a tile span a start–end date (e.g. 10–14 Jul)
@@ -78,8 +85,8 @@ auto-reschedule. Needs a web-search/browse capability in the AI backend.
   account, Sign in with Apple, APNs). Big lift; see earlier discussion.
 - **Insights / analytics** — streaks, trends, per-tag rollups, a weekly review screen.
 - **Proactive AI** — weekly summary + pattern-based nudges (e.g. "you skip X on Mondays").
-- **Per-tile reminders** — re-connect the Time-of-Day selector so reminders can be
-  tailored per tile (currently global).
+- **Per-tile reminders** — the Time-of-day selector now exists and routes a tile into a
+  bucket summary; next step is per-tile reminder **times/toggle** (still global today).
 - **Data export / backup** — CSV/JSON export of tasks + logs.
 - **Web push notifications** — reminders for the PWA to complement native Android.
 
