@@ -542,10 +542,12 @@ function closeTilePopup() {
 	document.getElementById('tileOverlay').classList.add('hidden');
 }
 
+let tilePopupOpenedAt = 0; // guards against click-through opening controls right after a re-render
 function openTilePopup(tileId) {
 	const raw = rawTiles[tileId];
 	if (!raw) return;
 	activeTileId = tileId;
+	tilePopupOpenedAt = Date.now();
 
 	const popupBody = document.getElementById('popupBody');
 	const overlay = document.getElementById('tileOverlay');
@@ -853,6 +855,10 @@ function openTilePopup(tileId) {
 
 	tagDropdownBtn.addEventListener('click', e => {
 		e.stopPropagation();
+		// Ignore a stray click that lands here right after a re-render (e.g. the
+		// tap that submitted a log via the Add-Log popup, which closes and lets the
+		// click fall through onto this button).
+		if (Date.now() - tilePopupOpenedAt < 400) return;
 		tagDropdownMenu.style.display = tagDropdownMenu.style.display === 'block' ? 'none' : 'block';
 		tagDropdownSearch.focus();
 	});
