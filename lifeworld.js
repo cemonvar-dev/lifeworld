@@ -6,7 +6,8 @@ async function createTileByName(name) {
 		.insert({
 			user_id: currentUserId,
 			name: name.trim(),
-			frequency_mode: 'once'
+			frequency_mode: 'once',
+			end_date: todayLocal() // one-time defaults to today
 		})
 		.select('*, task_logs(*), task_frequency_days(*)')
 		.single();
@@ -651,7 +652,7 @@ function openTilePopup(tileId) {
 			</div>
 			<div id="dateCell" style="display:${!isRoutine ? 'block' : 'none'}">
 				<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
-				<input type="date" id="onceDateInput" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
+				<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
 			</div>
 			<div>
 				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
@@ -1569,14 +1570,21 @@ async function setFrequency(mode) {
 	const raw = rawTiles[activeTileId];
 	if (!raw) return;
 	raw.frequency_mode = mode;
+	const update = { frequency_mode: mode };
 	if (mode !== 'weekly') {
 		// Clear frequency days from DB and local
 		await supa.from('task_frequency_days').delete().eq('task_id', activeTileId);
 		raw.task_frequency_days = [];
 	}
+	// One-time defaults its date to today; routine clears the date entirely.
+	if (mode === 'once') {
+		if (!raw.end_date) { raw.end_date = todayLocal(); update.end_date = raw.end_date; }
+	} else if (raw.end_date) {
+		raw.end_date = null; update.end_date = null;
+	}
 	openTilePopup(activeTileId);
 	applyFilters();
-	await updateTask(activeTileId, { frequency_mode: mode });
+	await updateTask(activeTileId, update);
 	scheduleReminders();
 }
 

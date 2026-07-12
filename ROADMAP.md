@@ -62,6 +62,9 @@ auto-reschedule. Needs a web-search/browse capability in the AI backend.
 - **Onboarding** — a short first-run guide (create first tile, explain health/flags).
 - **Settings sync** — persist preferences (voice language, etc.) to the account, not
   just localStorage, so they follow the user across devices.
+- **Selectable date format** — date inputs are pinned to `dd/MM/yyyy` (via `lang="en-GB"`);
+  let users choose their preferred format (dd/MM/yyyy, MM/dd/yyyy, yyyy-MM-dd) from
+  Settings and apply it app-wide (native date/datetime inputs + display strings).
 
 ## 🌓 Next (meaningful features)
 - **Date ranges for tiles** — let a tile span a start–end date (e.g. 10–14 Jul)
