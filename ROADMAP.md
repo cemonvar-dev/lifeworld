@@ -96,6 +96,13 @@ auto-reschedule. Needs a web-search/browse capability in the AI backend.
 - **UI internationalization (i18n)** — the app is used in Turkish; full multi-language UI.
 
 ## 🔧 Cross-cutting / tech health
+- **Offline launch via bundled assets + live updates** — today the Android app is a
+  WebView that loads `server.url` (lifeworld.vercel.app) at runtime, so it can't start
+  without a network and is exposed to remote-load flakiness (a likely factor in the
+  post-login auto-close). Bundle the web assets into the APK (drop `server.url`) so it
+  launches offline, and add a live-update layer (Capgo / Capacitor Live Updates) to keep
+  today's instant OTA deploys. Also improves iOS App Store review odds (Apple dislikes
+  remote-loaded code).
 - Error monitoring + basic analytics (know when the app or API fails)
 - A lightweight test pass on core logic (health, scheduling, filters)
 - Accessibility review (focus states, ARIA, contrast)
