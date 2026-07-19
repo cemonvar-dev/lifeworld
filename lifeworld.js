@@ -398,7 +398,7 @@ function renderGallery(filteredTiles) {
 		groupSection.className = 'mb-4';
 
 		const heading = document.createElement('div');
-		heading.className = 'text-xl font-bold mb-2 mt-8 pl-1';
+		heading.className = 'text-lg font-bold mb-2 mt-8 pl-1';
 		heading.textContent = groupLabel(tag);
 		groupSection.appendChild(heading);
 
@@ -421,7 +421,7 @@ function renderGallery(filteredTiles) {
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
 				   <div class="flex w-full justify-between items-start mb-2">
-					   <div class="font-semibold text-left truncate w-3/4">${tile.name}</div>
+					   <div class="text-sm font-semibold text-left truncate w-3/4">${tile.name}</div>
 					   <div class="text-base text-right w-1/4">${tp.emoji}</div>
 				   </div>
 				   <div class="tile-status-line flex gap-2 mt-1">
@@ -3312,7 +3312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (dest === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
 			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
 			else if (dest === 'ai') document.getElementById('aiChatBtn').click();
-			else if (dest === 'me') openTodaySummaryCombined(); // personal day overview (settings lives in the top bar)
+			else if (dest === 'me') openSettings(); // language preference etc.
 		});
 	});
 
@@ -3338,14 +3338,13 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 
-	// Relocate the real notification + settings controls into the mobile top bar so
-	// their existing handlers (dropdown, badge, modals) keep working untouched.
+	// Relocate the real notification control into the mobile top bar so its existing
+	// handlers (dropdown, unread badge) keep working untouched. Settings is reached
+	// via the bottom-nav "Me" tab, so it stays out of the top bar.
 	if (lwIsMobile) {
 		const mta = document.getElementById('mobileTopActions');
 		const nw = document.getElementById('notifWrapper');
-		const sb = document.getElementById('settingsBtn');
 		if (mta && nw) mta.appendChild(nw);
-		if (mta && sb) mta.appendChild(sb);
 		const iconify = (btn) => {
 			if (!btn) return;
 			btn.querySelectorAll('span.sm\\:hidden').forEach(s => s.classList.add('hidden')); // drop text labels
@@ -3353,7 +3352,6 @@ document.addEventListener('DOMContentLoaded', () => {
 			['grid', 'place-items-center', 'h-10', 'w-10', 'text-lg'].forEach(c => btn.classList.add(c));
 		};
 		iconify(nw && nw.querySelector('#notifBellBtn'));
-		iconify(sb);
 	}
 });
 
