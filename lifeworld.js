@@ -2334,6 +2334,8 @@ function setTagFilter(tag) {
 function updateFilterBar() {
 	// The tag filter now lives in the unified chip bar alongside search chips.
 	renderSearchChips();
+	// Keep the mobile filter button's count badge in sync.
+	if (window.updateFilterCountBadge) window.updateFilterCountBadge();
 }
 
 // Is a task scheduled to occur on a specific date (by its frequency)?
@@ -3281,6 +3283,78 @@ document.addEventListener('DOMContentLoaded', () => {
 	// Tag/Mood open their own popups — close the filter menu so they aren't hidden behind it.
 	document.getElementById('tagFilterBtn').addEventListener('click', closeFilterMenu);
 	document.getElementById('moodFilterBtn').addEventListener('click', closeFilterMenu);
+
+	// ---- Mobile chrome (redesigned home): top-bar icons, filter badge, bottom nav, FAB ----
+	const lwIsMobile = window.matchMedia('(max-width: 639px)').matches;
+
+	// Mobile filter button mirrors the 🔽 modal; its badge shows the active-filter count.
+	window.updateFilterCountBadge = function () {
+		const badge = document.getElementById('mobileFilterBadge');
+		if (!badge) return;
+		let n = 0;
+		if (activeStatusFilter) n++;
+		if (activeTagFilter) n++;
+		if (activeLifecycleFilter && activeLifecycleFilter !== 'all') n++;
+		if (activeTimelineFilter === 'today') n++;
+		if (activeMoodFilter) n++;
+		if (activeFreqFilter) n++;
+		badge.textContent = String(n);
+		badge.classList.toggle('hidden', n === 0);
+	};
+	const mobileFilterBtn = document.getElementById('mobileFilterBtn');
+	if (mobileFilterBtn) mobileFilterBtn.addEventListener('click', openFilterMenu);
+	updateFilterCountBadge();
+
+	// Bottom nav: proxy to the existing controls (each opens its own overlay).
+	document.querySelectorAll('#mobileBottomNav [data-nav]').forEach(btn => {
+		btn.addEventListener('click', () => {
+			const dest = btn.dataset.nav;
+			if (dest === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
+			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
+			else if (dest === 'ai') document.getElementById('aiChatBtn').click();
+			else if (dest === 'me') document.getElementById('settingsBtn').click();
+		});
+	});
+
+	// FAB: tap = add tile · long-press = add tile + start dictation.
+	const fab = document.getElementById('mobileFab');
+	if (fab) {
+		let lpTimer = null, longPressed = false;
+		const startLP = () => {
+			longPressed = false;
+			lpTimer = setTimeout(() => {
+				longPressed = true;
+				addNewTile();
+				setTimeout(startTileDictation, 300); // wait for the modal to mount
+			}, 500);
+		};
+		const cancelLP = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+		fab.addEventListener('touchstart', startLP, { passive: true });
+		fab.addEventListener('touchend', cancelLP);
+		fab.addEventListener('touchcancel', cancelLP);
+		fab.addEventListener('click', () => {
+			if (longPressed) { longPressed = false; return; } // long-press already handled it
+			addNewTile();
+		});
+	}
+
+	// Relocate the real notification + settings controls into the mobile top bar so
+	// their existing handlers (dropdown, badge, modals) keep working untouched.
+	if (lwIsMobile) {
+		const mta = document.getElementById('mobileTopActions');
+		const nw = document.getElementById('notifWrapper');
+		const sb = document.getElementById('settingsBtn');
+		if (mta && nw) mta.appendChild(nw);
+		if (mta && sb) mta.appendChild(sb);
+		const iconify = (btn) => {
+			if (!btn) return;
+			btn.querySelectorAll('span.sm\\:hidden').forEach(s => s.classList.add('hidden')); // drop text labels
+			['inline-flex', 'w-full', 'sm:w-auto', 'px-3.5', 'py-2', 'gap-1.5'].forEach(c => btn.classList.remove(c));
+			['grid', 'place-items-center', 'h-10', 'w-10', 'text-lg'].forEach(c => btn.classList.add(c));
+		};
+		iconify(nw && nw.querySelector('#notifBellBtn'));
+		iconify(sb);
+	}
 });
 
 // ---- Calendar Popup ----
