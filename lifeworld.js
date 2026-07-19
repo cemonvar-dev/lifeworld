@@ -3312,7 +3312,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			if (dest === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
 			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
 			else if (dest === 'ai') document.getElementById('aiChatBtn').click();
-			else if (dest === 'me') document.getElementById('settingsBtn').click();
+			else if (dest === 'me') openTodaySummaryCombined(); // personal day overview (settings lives in the top bar)
 		});
 	});
 
