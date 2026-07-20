@@ -326,16 +326,11 @@
 		</div>
 	</div>
 
-	<!-- Mobile FAB: tap = add tile · long-press = dictate -->
-	<button id="mobileFab" aria-label="Add tile (long-press to dictate)" title="Add tile · long-press to dictate" class="sm:hidden fixed z-40 right-5 bottom-[120px] grid place-items-center h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-3xl font-light leading-none shadow-xl shadow-blue-500/40 active:scale-95 transition select-none">
-		+
-		<span aria-hidden="true" class="absolute -bottom-1 -right-1 grid place-items-center h-6 w-6 rounded-full bg-white text-sm shadow-md">🎤</span>
-	</button>
-
-	<!-- Mobile bottom navigation -->
+	<!-- Mobile bottom navigation (center = create; tap = add tile · long-press = dictate) -->
 	<nav id="mobileBottomNav" aria-label="Primary" class="sm:hidden fixed z-40 inset-x-0 bottom-0 bg-white/85 backdrop-blur-xl border-t border-slate-200/80 flex px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
 		<button data-nav="today" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-indigo-600 active:scale-95 transition"><span class="text-[22px] leading-none">🏠</span>Today</button>
 		<button data-nav="plan" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-slate-400 active:scale-95 transition"><span class="text-[22px] leading-none">📆</span>Plan</button>
+		<button id="mobileFab" aria-label="Create tile (long-press to dictate)" title="Create · long-press to dictate" class="flex-1 flex flex-col items-center justify-center gap-1 select-none"><span class="grid place-items-center h-14 w-14 -mt-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-3xl font-light leading-none shadow-lg shadow-blue-500/40 ring-4 ring-white active:scale-95 transition">+</span><span class="text-[11px] font-semibold text-slate-400 -mt-1">Create</span></button>
 		<button data-nav="ai" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-slate-400 active:scale-95 transition"><span class="text-[22px] leading-none">🤖</span>AI</button>
 		<button data-nav="me" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-slate-400 active:scale-95 transition"><span class="text-[22px] leading-none">👤</span>Me</button>
 	</nav>
