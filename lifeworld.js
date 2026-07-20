@@ -3311,7 +3311,13 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.querySelectorAll('#mobileBottomNav [data-nav]').forEach(btn => {
 		btn.addEventListener('click', () => {
 			const dest = btn.dataset.nav;
-			if (dest === 'today') window.scrollTo({ top: 0, behavior: 'smooth' });
+			if (dest === 'today') {
+				// Return to the home/today view: dismiss any open modal, ensure the
+				// today filter is on (refreshes the gallery), and scroll to the top.
+				document.querySelectorAll('[id$="Overlay"]:not(.hidden)').forEach(o => o.classList.add('hidden'));
+				setTimelineFilter('today');
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			}
 			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
 			else if (dest === 'ai') document.getElementById('aiChatBtn').click();
 			else if (dest === 'me') openSettings(); // language preference etc.
