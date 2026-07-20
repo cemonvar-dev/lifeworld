@@ -8,6 +8,7 @@ on:
       - 'capacitor.config.ts'
       - 'package.json'
       - 'www/**'
+      - 'logo.png'
       - '.github/workflows/android.yml'
 
 jobs:
@@ -41,6 +42,14 @@ jobs:
           rm -rf android
           npx cap add android
           npx cap sync android
+
+      - name: Generate app icons + splash from logo
+        run: |
+          mkdir -p assets
+          cp logo.png assets/logo.png
+          npx @capacitor/assets generate --android \
+            --iconBackgroundColor '#f8fafc' --iconBackgroundColorDark '#0f172a' \
+            --splashBackgroundColor '#f8fafc' --splashBackgroundColorDark '#0f172a'
 
       - name: Add deep-link intent filter (for OAuth redirect)
         run: node scripts/patch-android-manifest.mjs
