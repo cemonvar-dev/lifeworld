@@ -81,6 +81,11 @@
 			padding: 12px 16px !important;
 			transform: none !important;
 		}
+
+		/* Keep content + the sticky header clear of the device status bar / notch.
+		   Uses the safe-area inset when reported, with an 18px minimum fallback. */
+		body { padding-top: max(18px, env(safe-area-inset-top)); }
+		main > header { top: max(18px, env(safe-area-inset-top)) !important; }
 	</style>
 </head>
 <body class="min-h-screen text-slate-900 antialiased bg-gradient-to-b from-indigo-50/50 via-slate-50 to-slate-100">
