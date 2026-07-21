@@ -162,9 +162,11 @@
 		<!-- Calendar Modal -->
 		<div id="calendarOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 			<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[95%] max-w-3xl max-h-[90vh] flex flex-col p-6 relative">
-				<button id="closeCalendar" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-				<span class="absolute top-3 left-4 text-lg">📆</span>
-				<div class="text-lg font-semibold text-slate-500 mb-3 text-center tracking-tight">Planned Tasks</div>
+				<div class="flex items-center gap-2 mb-3">
+					<span class="w-9 shrink-0 text-lg text-center">📆</span>
+					<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Planned Tasks</div>
+					<button id="closeCalendar" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+				</div>
 				<div id="calendarContainer" class="overflow-x-auto"></div>
 			</div>
 		</div>
@@ -177,9 +179,11 @@
 	<!-- Tag Filter Popup -->
 	<div id="tagFilterOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[95%] max-w-2xl max-h-[80vh] flex flex-col p-5 relative">
-			<button id="closeTagFilter" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span class="absolute top-3 left-4 text-lg">🏷️</span>
-			<div class="text-lg font-semibold text-slate-500 mb-3 text-center tracking-tight">Filter by Tag</div>
+			<div class="flex items-center gap-2 mb-3">
+				<span class="w-9 shrink-0 text-lg text-center">🏷️</span>
+				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Filter by Tag</div>
+				<button id="closeTagFilter" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div id="tagFilterGrid" class="flex flex-col gap-0.5 overflow-y-auto min-h-[200px] max-h-[60vh] px-2"></div>
 		</div>
 	</div>
@@ -187,9 +191,11 @@
 	<!-- Mood Filter Popup -->
 	<div id="moodFilterOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[95%] max-w-sm max-h-[80vh] flex flex-col p-5 relative">
-			<button id="closeMoodFilter" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span class="absolute top-3 left-4 text-lg">🌦️</span>
-			<div class="text-lg font-semibold text-slate-500 mb-3 text-center tracking-tight">Filter by Mood</div>
+			<div class="flex items-center gap-2 mb-3">
+				<span class="w-9 shrink-0 text-lg text-center">🌦️</span>
+				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Filter by Mood</div>
+				<button id="closeMoodFilter" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div id="moodFilterGrid" class="flex flex-col gap-1.5 overflow-y-auto px-1"></div>
 		</div>
 	</div>
@@ -197,9 +203,11 @@
 	<!-- Today Summary Popup (done/skipped & remaining) -->
 	<div id="todaySummaryOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[95%] max-w-md max-h-[80vh] flex flex-col p-5 relative">
-			<button id="closeTodaySummary" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span id="todaySummaryIcon" class="absolute top-3 left-4 text-lg">📋</span>
-			<div id="todaySummaryTitle" class="text-lg font-semibold text-slate-500 mb-3 text-center tracking-tight">Today</div>
+			<div class="flex items-center gap-2 mb-3">
+				<span id="todaySummaryIcon" class="w-9 shrink-0 text-lg text-center">📋</span>
+				<div id="todaySummaryTitle" class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Today</div>
+				<button id="closeTodaySummary" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div id="todaySummaryBody" class="flex flex-col gap-1 overflow-y-auto min-h-[120px] max-h-[60vh] px-1"></div>
 		</div>
 	</div>
@@ -236,9 +244,11 @@
 	<!-- Calendar menu (Long-term plan / Today's items / Today's summary) -->
 	<div id="calendarMenuOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
-			<button id="closeCalendarMenu" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span class="absolute top-3 left-4 text-lg">📆</span>
-			<div class="text-lg font-semibold text-slate-500 mb-5 text-center tracking-tight">Calendar</div>
+			<div class="flex items-center gap-2 mb-5">
+				<span class="w-9 shrink-0 text-lg text-center">📆</span>
+				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Calendar</div>
+				<button id="closeCalendarMenu" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div class="flex flex-col gap-2">
 				<button id="longTermPlanBtn" class="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition">🗓️ Long term plan</button>
 				<button id="todayItemsBtn" class="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold border bg-white text-slate-700 hover:bg-slate-50 transition">📅 Today's items</button>
@@ -250,9 +260,11 @@
 	<!-- Filter menu (the filter pills relocated here) -->
 	<div id="filterMenuOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
-			<button id="closeFilterMenu" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span class="absolute top-3 left-4 text-lg">🔽</span>
-			<div class="text-lg font-semibold text-slate-500 mb-5 text-center tracking-tight">Filters</div>
+			<div class="flex items-center gap-2 mb-5">
+				<span class="w-9 shrink-0 text-lg text-center">🔽</span>
+				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Filters</div>
+				<button id="closeFilterMenu" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div id="filterMenuList" class="flex flex-col gap-2"></div>
 		</div>
 	</div>
@@ -260,9 +272,11 @@
 	<!-- Settings Popup -->
 	<div id="settingsOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
 		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
-			<button id="closeSettings" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<span class="absolute top-3 left-4 text-lg">⚙️</span>
-			<div class="text-lg font-semibold text-slate-500 mb-5 text-center tracking-tight">Settings</div>
+			<div class="flex items-center gap-2 mb-5">
+				<span class="w-9 shrink-0 text-lg text-center">⚙️</span>
+				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Settings</div>
+				<button id="closeSettings" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+			</div>
 			<div class="mb-2">
 				<label for="settingsVoiceLang" class="text-sm font-semibold block mb-1">🎙️ Voice language</label>
 				<p class="text-xs text-slate-500 mb-2">Language used when dictating tile titles with the mic.</p>

@@ -3877,9 +3877,11 @@ function renderOnceTasksCalendar() {
 		// Done/Skip so it can be marked right here (for this row's date). One-time
 		// rows also keep a 📅 reschedule button.
 		const st = statusOnDate(t, date);
-		const markBtns = `<button class="cal-mark-done text-base leading-none px-2 py-1 rounded-lg bg-green-100 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" data-kind="${kind}" title="Mark done" aria-label="Mark done">✅</button><button class="cal-mark-skip text-base leading-none px-2 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" title="Skip" aria-label="Skip">⏭️</button>`;
+		const doneBtn = `<button class="cal-mark-done text-base leading-none px-2 py-1 rounded-lg bg-green-100 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" data-kind="${kind}" title="Mark done" aria-label="Mark done">✅</button>`;
+		// One-time tasks aren't "skipped" — they're either done or rescheduled.
+		const skipBtn = kind === 'once' ? '' : `<button class="cal-mark-skip text-base leading-none px-2 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" title="Skip" aria-label="Skip">⏭️</button>`;
 		const reschedBtn = kind === 'once' ? `<button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>` : '';
-		const actionsCell = (st === 'done' || st === 'skipped') ? CAL_STATUS_LABELS[st] : (markBtns + reschedBtn);
+		const actionsCell = (st === 'done' || st === 'skipped') ? CAL_STATUS_LABELS[st] : (doneBtn + skipBtn + reschedBtn);
 		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 	}
 
