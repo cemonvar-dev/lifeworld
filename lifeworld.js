@@ -398,7 +398,7 @@ function renderGallery(filteredTiles) {
 		groupSection.className = 'mb-4';
 
 		const heading = document.createElement('div');
-		heading.className = 'text-lg font-bold mb-2 mt-8 pl-1';
+		heading.className = 'text-lg font-semibold text-slate-500 mb-2 mt-8 pl-1';
 		heading.textContent = groupLabel(tag);
 		groupSection.appendChild(heading);
 
