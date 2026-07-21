@@ -3385,6 +3385,20 @@ function openCalendarPopup() {
 		container.querySelectorAll('.cal-reschedule-btn').forEach(btn => {
 			btn.addEventListener('click', () => rescheduleTaskFromCalendar(btn.getAttribute('data-tile-id'), btn));
 		});
+		// Mark done/skip straight from the table for that row's date.
+		container.querySelectorAll('.cal-mark-done, .cal-mark-skip').forEach(btn => {
+			btn.addEventListener('click', async () => {
+				const id = btn.getAttribute('data-tile-id');
+				const date = btn.getAttribute('data-date');
+				const isDone = btn.classList.contains('cal-mark-done');
+				// A one-time task marked done is completed (drops out) — full re-render.
+				if (isDone && btn.getAttribute('data-kind') === 'once') { completeTaskFromCalendar(id); return; }
+				const status = isDone ? 'done' : 'skipped';
+				await calMarkStatus(id, date, status);
+				const cell = btn.closest('td');
+				if (cell) cell.innerHTML = CAL_STATUS_LABELS[status];
+			});
+		});
 		const autoBtn = document.getElementById('autoRescheduleBtn');
 		if (autoBtn) autoBtn.addEventListener('click', autoRescheduleCalendar);
 
@@ -3522,6 +3536,37 @@ function closeCalendarPopup() {
 }
 
 // Mark a planned (once) task as completed straight from the calendar.
+// Log a done/skipped status for a task on a specific date (used by the planned
+// calendar's in-row Done/Skip buttons). Upserts one action log for that day.
+async function calMarkStatus(tileId, dateStr, status) {
+	const raw = rawTiles[tileId];
+	if (!raw || !dateStr) return;
+	raw.task_logs = raw.task_logs || [];
+	const existing = raw.task_logs.find(l => logDay(l) === dateStr &&
+		(l.status === 'done' || l.status === 'skipped' || l.status === 'completed'));
+	if (existing) {
+		existing.status = status;
+		const { error } = await supa.from('task_logs').update({ status }).eq('id', existing.id);
+		if (error) { console.error('calMarkStatus update error:', error); return; }
+	} else {
+		const { data, error } = await supa.from('task_logs')
+			.insert({ task_id: tileId, status, log_date: dateStr }).select().single();
+		if (error) { console.error('calMarkStatus insert error:', error); return; }
+		if (data) raw.task_logs.unshift(data);
+	}
+	// Reflect on the gallery tile (today's status + health).
+	const dt = tiles.find(t => t.id === tileId);
+	if (dt) {
+		dt.count = raw.task_logs.length;
+		if (dateStr === todayLocal()) dt.status = status;
+		const health = calculateHealth(raw);
+		const plant = healthToPlant(health);
+		dt.emoji = plant.emoji; dt.health = health; dt.healthLabel = plant.label; dt.healthColor = plant.color;
+	}
+	applyFilters();
+	scheduleReminders();
+}
+
 async function completeTaskFromCalendar(tileId) {
 	const raw = rawTiles[tileId];
 	if (!raw) return;
@@ -3747,6 +3792,14 @@ async function applyAllReschedules() {
 	openCalendarPopup();
 }
 
+// Status pills for the planned-tasks table (shared by the renderer and the
+// in-table Done/Skip handler).
+const CAL_STATUS_LABELS = {
+	done: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ done</span>',
+	skipped: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">⏭️ skip</span>',
+	noaction: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">💬 no action</span>'
+};
+
 function renderOnceTasksCalendar() {
 	const isActive = t => {
 		const s = (t.status || '').toLowerCase();
@@ -3792,8 +3845,7 @@ function renderOnceTasksCalendar() {
 
 	// Render a table calendar grouped by month, with a select checkbox per one-time row.
 	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
-		+ '<th class="px-3 py-2 text-left"><input type="checkbox" id="calSelectAll" title="Select all" /></th>'
-		+ '<th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Actions</th>'
+		+ '<th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Status</th>'
 		+ '</tr></thead><tbody>';
 	// Time-of-day buckets (display order); '' = no preference.
 	const DAYPARTS = [
@@ -3803,11 +3855,6 @@ function renderOnceTasksCalendar() {
 		{ key: 'night', icon: '🌙', label: 'Night' },
 		{ key: '', icon: '🕒', label: 'Any time' }
 	];
-	const statusLabels = {
-		done: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">✅ done</span>',
-		skipped: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">⏭️ skip</span>',
-		noaction: '<span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">💬 no action</span>'
-	};
 	// Order within a date/daypart: by tag path (untagged last), then name.
 	const tagSortKey = t => {
 		const id = (t.tag_ids && t.tag_ids.length) ? t.tag_ids[0] : '';
@@ -3827,28 +3874,22 @@ function renderOnceTasksCalendar() {
 		const freqBadge = kind === 'routine'
 			? ` <span class="ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 align-middle">🔁 ${escapeHtml(t.frequency_mode)}</span>`
 			: '';
-		const selectCell = kind === 'once' ? `<input type="checkbox" class="cal-select" data-tile-id="${t.id}" />` : '';
-		// Routine rows show the occurrence's status (done/skip/no action, or blank
-		// when the date hasn't arrived); one-time rows keep complete/reschedule.
-		const actionsCell = kind === 'once'
-			? `<button class="cal-complete-btn text-base px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" title="Mark completed" aria-label="Mark completed">✅</button><button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>`
-			: (statusLabels[statusOnDate(t, date)] || '');
-		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-3 py-2 text-center">${selectCell}</td><td class="border px-4 py-2 pl-6"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
+		// Last column: once done/skipped show the status pill; otherwise show
+		// Done/Skip so it can be marked right here (for this row's date). One-time
+		// rows also keep a 📅 reschedule button.
+		const st = statusOnDate(t, date);
+		const markBtns = `<button class="cal-mark-done text-xs font-semibold px-2 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" data-kind="${kind}">✅ Done</button><button class="cal-mark-skip text-xs font-semibold px-2 py-1 rounded-lg bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}">⏭️ Skip</button>`;
+		const reschedBtn = kind === 'once' ? `<button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>` : '';
+		const actionsCell = (st === 'done' || st === 'skipped') ? CAL_STATUS_LABELS[st] : (markBtns + reschedBtn);
+		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 	}
 
-	let currentMonthKey = '';
 	allDates.forEach(date => {
 		const dObj = new Date(date + 'T00:00:00');
-		const monthKey = `${dObj.getFullYear()}-${dObj.getMonth()}`;
-		if (monthKey !== currentMonthKey) {
-			currentMonthKey = monthKey;
-			const monthLabel = dObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-			html += `<tr class="cal-month-row"><td colspan="3" class="bg-slate-100 font-bold text-slate-700 px-4 py-2">${monthLabel}</td></tr>`;
-		}
 		// Date header: groups the day's rows (dayparts nest beneath it).
 		const dayName = dObj.toLocaleDateString(undefined, { weekday: 'short' });
 		const shortDate = `${String(dObj.getDate()).padStart(2, '0')}-${String(dObj.getMonth() + 1).padStart(2, '0')}`;
-		html += `<tr class="cal-date-row"><td colspan="3" class="bg-slate-50 font-semibold text-slate-700 px-4 py-1.5">${shortDate} · ${dayName}</td></tr>`;
+		html += `<tr class="cal-date-row"><td colspan="2" class="bg-slate-50 font-semibold text-slate-700 px-4 py-1.5">${shortDate} · ${dayName}</td></tr>`;
 		const rows = dateMap[date].slice().sort(bySort);
 		// Sub-group a date's rows by time of day — but only when at least one row
 		// has a time set, so one-time lists that don't use it stay flat.
@@ -3858,7 +3899,7 @@ function renderOnceTasksCalendar() {
 			DAYPARTS.forEach(dp => {
 				const group = rows.filter(e => tileTimeOfDay(e.task) === dp.key);
 				if (!group.length) return;
-				html += `<tr class="cal-daypart-row"><td colspan="3" class="text-slate-500 text-xs font-semibold px-4 py-1">${dp.icon} ${dp.label}</td></tr>`;
+				html += `<tr class="cal-daypart-row"><td colspan="2" class="text-slate-500 text-xs font-semibold px-4 py-1">${dp.icon} ${dp.label}</td></tr>`;
 				group.forEach(e => { html += renderRow(e, date); });
 			});
 		}
