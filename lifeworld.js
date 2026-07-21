@@ -2553,7 +2553,6 @@ function openCalendarMenu() {
 		t.classList.toggle('bg-blue-50', on);
 		t.classList.toggle('border-blue-300', on);
 		t.classList.toggle('text-blue-700', on);
-		t.textContent = on ? '📅 Today\'s items ✓' : '📅 Today\'s items';
 	}
 	document.getElementById('calendarMenuOverlay').classList.remove('hidden');
 }
