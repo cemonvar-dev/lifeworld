@@ -3834,7 +3834,6 @@ function renderOnceTasksCalendar() {
 					       ${kindBtn('all', 'All')}${kindBtn('once', 'One-time')}${kindBtn('routine', 'Routine')}
 				       </div>
 			       </div>
-			       <button id="autoRescheduleBtn" title="Let AI spread your planned tasks out sensibly" class="px-3.5 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 shadow-md shadow-purple-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all whitespace-nowrap">🤖 Auto Reschedule</button>
 		       </div>
 		</div>`;
 
@@ -3844,7 +3843,7 @@ function renderOnceTasksCalendar() {
 	const allDates = Object.keys(dateMap).sort();
 
 	// Render a table calendar grouped by month, with a select checkbox per one-time row.
-	html += '<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>'
+	html += '<div class="overflow-x-auto"><table class="min-w-full text-xs"><thead><tr>'
 		+ '<th class="px-4 py-2 text-left">Task</th><th class="px-3 py-2 text-left">Status</th>'
 		+ '</tr></thead><tbody>';
 	// Time-of-day buckets (display order); '' = no preference.
