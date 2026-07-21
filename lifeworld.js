@@ -2879,7 +2879,67 @@ function openAiChat() {
 }
 
 function closeAiChat() {
+	stopAiDictation();
 	document.getElementById('aiChatOverlay').classList.add('hidden');
+}
+
+// ---- AI Chat voice input (same speech engine as the New Tile mic) ----
+let aiSpeechRecognizer = null;
+function setAiMicActive(active) {
+	const btn = document.getElementById('aiMicBtn');
+	if (!btn) return;
+	btn.classList.toggle('bg-red-100', active);
+	btn.classList.toggle('border-red-300', active);
+	btn.classList.toggle('animate-pulse', active);
+}
+async function startAiDictation() {
+	if (aiSpeechRecognizer) { try { aiSpeechRecognizer.stop(); } catch (e) {} return; } // tap again to stop (web)
+	const cap = window.Capacitor;
+	const SR = cap && cap.Plugins && cap.Plugins.SpeechRecognition;
+	const input = document.getElementById('aiChatInput');
+	// Native plugin path (Android)
+	if (SR && cap.isNativePlatform && cap.isNativePlatform()) {
+		try {
+			const avail = await SR.available();
+			if (!(avail && (avail.available === true || avail === true))) return;
+			const perm = await SR.requestPermissions().catch(() => null);
+			if (perm && perm.speechRecognition && perm.speechRecognition !== 'granted') return;
+			setAiMicActive(true);
+			const res = await SR.start({ language: getVoiceLang(), maxResults: 1, partialResults: false, popup: false });
+			const text = res && res.matches && res.matches[0];
+			if (text && input) input.value = text;
+			setAiMicActive(false);
+			if (input) input.focus();
+		} catch (e) { console.error('AI dictation error:', e); setAiMicActive(false); }
+		return;
+	}
+	// Web fallback (Chrome / PWA)
+	const WebSR = window.SpeechRecognition || window.webkitSpeechRecognition;
+	if (!WebSR) { alert('Voice input isn\'t supported here — please type your message.'); return; }
+	try {
+		aiSpeechRecognizer = new WebSR();
+		aiSpeechRecognizer.lang = getVoiceLang();
+		aiSpeechRecognizer.interimResults = false;
+		aiSpeechRecognizer.maxAlternatives = 1;
+		setAiMicActive(true);
+		aiSpeechRecognizer.onresult = (ev) => {
+			const text = ev.results && ev.results[0] && ev.results[0][0] && ev.results[0][0].transcript;
+			if (text && input) input.value = text.trim();
+			if (input) input.focus();
+		};
+		aiSpeechRecognizer.onerror = () => { setAiMicActive(false); };
+		aiSpeechRecognizer.onend = () => { setAiMicActive(false); aiSpeechRecognizer = null; };
+		aiSpeechRecognizer.start();
+	} catch (e) { console.error('AI web dictation error:', e); setAiMicActive(false); aiSpeechRecognizer = null; }
+}
+function stopAiDictation() {
+	setAiMicActive(false);
+	try {
+		const cap = window.Capacitor;
+		const SR = cap && cap.Plugins && cap.Plugins.SpeechRecognition;
+		if (SR && cap.isNativePlatform && cap.isNativePlatform()) SR.stop().catch(() => {});
+	} catch (e) {}
+	if (aiSpeechRecognizer) { try { aiSpeechRecognizer.abort(); } catch (e) {} aiSpeechRecognizer = null; }
 }
 
 function clearAiChat() {
@@ -3139,6 +3199,7 @@ function initAiChat() {
 	document.getElementById('aiSendBtn').addEventListener('click', () => {
 		sendAiMessage(document.getElementById('aiChatInput').value);
 	});
+	document.getElementById('aiMicBtn').addEventListener('click', startAiDictation);
 	document.getElementById('aiChatInput').addEventListener('keydown', e => {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
