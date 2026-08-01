@@ -519,9 +519,10 @@
     </div>
   </footer>
 
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script>
     // Set year
-    document.getElementById('year').textContent = new Date().getFullYear();
+    $('#year').text(new Date().getFullYear());
 
     // Google OAuth Web client ID (Google Cloud Console). Native Google Sign-In
     // returns an ID token whose audience is this client ID, which is what Supabase
@@ -531,9 +532,7 @@
     const APP_URL = '/lifeworld.html';
 
     // Every "sign in" / "continue with Google" button on the page.
-    const signInButtons = ['navSignIn', 'heroSignIn', 'ctaSignIn']
-      .map(id => document.getElementById(id))
-      .filter(Boolean);
+    const $signInButtons = $('#navSignIn, #heroSignIn, #ctaSignIn');
 
     // If a session already exists, offer to jump straight into the app.
     // Native: go directly. Web: relabel the buttons to "Open app".
@@ -542,17 +541,13 @@
     window.supa.auth.getSession().then(({ data }) => {
       if (data && data.session) {
         if (IS_NATIVE) { goToApp(); return; }
-        signInButtons.forEach(btn => {
-          btn.textContent = 'Open app';
-          btn.onclick = goToApp;
-        });
+        $signInButtons.text('Open app').off('click').on('click', goToApp);
       }
     });
 
-    async function startGoogleSignIn(btn){
-      const original = btn.innerHTML;
-      btn.disabled = true;
-      btn.textContent = 'Redirecting…';
+    async function startGoogleSignIn($btn){
+      const original = $btn.html();
+      $btn.prop('disabled', true).text('Redirecting…');
       try {
         if (IS_NATIVE) {
           // Native Google Sign-In (no browser): get an ID token and hand it to Supabase.
@@ -572,22 +567,19 @@
         });
         if (error) {
           alert('Google login failed: ' + error.message);
-          btn.disabled = false;
-          btn.innerHTML = original;
+          $btn.prop('disabled', false).html(original);
         }
       } catch (e) {
         alert('Google login error: ' + (e.message || e));
-        btn.disabled = false;
-        btn.innerHTML = original;
+        $btn.prop('disabled', false).html(original);
       }
     }
 
-    signInButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // If we've relabeled to "Open app", the onclick handler above takes over.
-        if (btn.textContent === 'Open app') return;
-        startGoogleSignIn(btn);
-      });
+    $signInButtons.on('click', function () {
+      const $btn = $(this);
+      // If we've relabeled to "Open app", the handler bound above takes over.
+      if ($btn.text() === 'Open app') return;
+      startGoogleSignIn($btn);
     });
   </script>
 </body>
