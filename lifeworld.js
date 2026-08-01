@@ -222,6 +222,9 @@ async function fetchTilesFromSupabase() {
 	currentUserId = session.user.id;
 	currentUserIsPremium = !!(session.user.app_metadata && session.user.app_metadata.premium);
 
+	// Identify the signed-in user in PostHog analytics
+	if (window.posthogIdentify) window.posthogIdentify(session.user);
+
 	// Fetch tasks with related logs and frequency days
 	const { data, error } = await supa
 		.from("tasks")
@@ -1896,6 +1899,8 @@ async function signOut() {
 	} catch (e) {
 		console.error('Sign out error:', e);
 	}
+	// Clear the PostHog identity so the next user isn't merged with this one
+	if (window.posthogReset) window.posthogReset();
 	window.location.replace('index.html');
 }
 
