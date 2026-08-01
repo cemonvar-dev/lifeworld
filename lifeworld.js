@@ -1874,10 +1874,29 @@ function setVoiceLang(lang) {
 function openSettings() {
 	const sel = document.getElementById('settingsVoiceLang');
 	if (sel) sel.value = getVoiceLang();
+	// Show the signed-in account email
+	supa.auth.getSession().then(({ data }) => {
+		const el = document.getElementById('settingsAccountEmail');
+		if (!el) return;
+		const email = data && data.session && data.session.user && data.session.user.email;
+		el.textContent = email || 'Not signed in';
+	});
 	document.getElementById('settingsOverlay').classList.remove('hidden');
 }
 function closeSettings() {
 	document.getElementById('settingsOverlay').classList.add('hidden');
+}
+
+// Sign the user out and return to the landing / sign-in page.
+async function signOut() {
+	const btn = document.getElementById('signOutBtn');
+	if (btn) { btn.disabled = true; btn.textContent = 'Signing out…'; }
+	try {
+		await supa.auth.signOut();
+	} catch (e) {
+		console.error('Sign out error:', e);
+	}
+	window.location.replace('index.html');
 }
 
 function addNewTile() {
@@ -3267,6 +3286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
 	});
 	document.getElementById('settingsVoiceLang').addEventListener('change', e => setVoiceLang(e.target.value));
+	document.getElementById('signOutBtn').addEventListener('click', signOut);
 	document.getElementById('newTileOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
 	});
