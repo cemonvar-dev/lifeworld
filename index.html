@@ -18,7 +18,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="color-scheme" content="light" />
-  <title>Lifeworld — Sign in</title>
+  <title>Lifeworld — Calm, focused life organization</title>
+  <meta name="description" content="Lifeworld is a calm, focused way to organize the things that matter — tiles, calendar, plans, and an AI assistant that knows your tasks." />
 
   <style>
     :root{
@@ -58,66 +59,45 @@
       opacity: 0.06;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
       mix-blend-mode: multiply;
+      z-index: -1;
     }
 
-    .wrap{
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      padding: 28px 18px;
-    }
+    a{ color: inherit; }
 
-    .shell{
-      width: min(980px, 100%);
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 24px;
-      align-items: stretch;
+    /* ---------- Top nav ---------- */
+    .nav{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.55);
+      border-bottom: 1px solid var(--stroke);
     }
-
-    @media (max-width: 860px){
-      .shell{ grid-template-columns: 1fr; }
+    .nav-inner{
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
-
-    .hero{
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      padding: 34px 30px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(246,251,248,0.7) 100%);
-      box-shadow: 0 10px 30px rgba(15,46,31,0.08);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::after{
-      content:"";
-      position:absolute;
-      right:-120px; top:-120px;
-      width: 320px; height: 320px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 30%, rgba(191,231,210,0.9), rgba(191,231,210,0.0) 62%);
-      transform: rotate(18deg);
-      filter: blur(1px);
-    }
-
     .brand{
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 18px;
     }
-
     .mark{
-      width: 46px;
-      height: 46px;
-      border-radius: 14px;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
       background: linear-gradient(135deg, rgba(191,231,210,0.95), rgba(168,219,194,0.75));
       border: 1px solid rgba(26, 85, 52, 0.18);
       box-shadow: 0 10px 22px rgba(15,46,31,0.12);
       position: relative;
       overflow: hidden;
     }
-
     .mark::before{
       content:"";
       position:absolute;
@@ -126,103 +106,92 @@
       transform: rotate(20deg);
       opacity: 0.8;
     }
-
-    .brand h1{
-      font-size: 18px;
-      letter-spacing: 0.2px;
-      margin: 0;
-      font-weight: 650;
-    }
-
-    .hero h2{
-      margin: 12px 0 10px;
-      font-size: clamp(26px, 3.2vw, 34px);
-      line-height: 1.12;
-      letter-spacing: -0.5px;
-    }
-
-    .hero p{
-      margin: 0;
+    .brand strong{ font-size: 16px; font-weight: 650; letter-spacing: 0.2px; }
+    .nav-links{ display: flex; align-items: center; gap: 8px; }
+    .nav-links a.link{
+      font-size: 14px;
       color: var(--muted);
-      max-width: 54ch;
-      line-height: 1.55;
-      font-size: 15px;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: color .12s ease, background .12s ease;
+    }
+    .nav-links a.link:hover{ color: var(--text); background: rgba(255,255,255,0.7); }
+    @media (max-width: 680px){ .nav-links a.link{ display: none; } }
+
+    /* ---------- Layout ---------- */
+    .container{
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 0 20px;
     }
 
-    .bullets{
-      margin-top: 22px;
+    /* ---------- Hero ---------- */
+    .hero{
+      padding: 64px 0 40px;
       display: grid;
-      gap: 10px;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 40px;
+      align-items: center;
+    }
+    @media (max-width: 900px){
+      .hero{ grid-template-columns: 1fr; padding-top: 44px; }
     }
 
-    .bullet{
+    .eyebrow{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(26,85,52,0.14);
+      background: rgba(255,255,255,0.65);
+      font-size: 12.5px;
+      color: rgba(15,46,31,0.7);
+      margin-bottom: 18px;
+    }
+    .spark{
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: rgba(168,219,194,0.95);
+      box-shadow: 0 0 0 4px rgba(168,219,194,0.20);
+    }
+
+    .hero h1{
+      margin: 0 0 16px;
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.05;
+      letter-spacing: -1px;
+      font-weight: 720;
+    }
+    .hero h1 .grad{
+      background: linear-gradient(120deg, #2f8f63, #6bbf95);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .hero .lead{
+      margin: 0 0 26px;
+      color: var(--muted);
+      max-width: 52ch;
+      line-height: 1.6;
+      font-size: 17px;
+    }
+
+    .cta-row{
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      color: rgba(15,46,31,0.74);
-      font-size: 14px;
-      line-height: 1.45;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .trust{
+      margin-top: 16px;
+      font-size: 12.5px;
+      color: rgba(15,46,31,0.55);
     }
 
-    .dot{
-      flex: 0 0 auto;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(168,219,194,0.9);
-      border: 1px solid rgba(26,85,52,0.18);
-      margin-top: 4px;
-      box-shadow: 0 6px 14px rgba(15,46,31,0.10);
-    }
-
-    .card{
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      background: var(--card);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: var(--shadow);
-      padding: 26px;
-      display: grid;
-      align-content: center;
-      min-height: 360px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before{
-      content:"";
-      position:absolute;
-      left:-140px; bottom:-160px;
-      width: 340px; height: 340px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 40% 40%, rgba(191,231,210,0.75), rgba(191,231,210,0) 62%);
-      transform: rotate(-12deg);
-    }
-
-    .card h3{
-      margin: 0 0 8px;
-      font-size: 18px;
-      letter-spacing: -0.2px;
-      position: relative;
-    }
-
-    .card p{
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.55;
-      position: relative;
-    }
-
-    .actions{
-      display: grid;
-      gap: 10px;
-      position: relative;
-    }
-
+    /* ---------- Buttons ---------- */
     .btn{
-      width: 100%;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -231,112 +200,191 @@
       border: 1px solid rgba(26,85,52,0.18);
       background: rgba(255,255,255,0.85);
       color: var(--text);
-      padding: 12px 14px;
-      font-size: 14px;
+      padding: 13px 20px;
+      font-size: 14.5px;
       font-weight: 600;
       cursor: pointer;
       transition: transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
       text-decoration: none;
       user-select: none;
     }
-
     .btn:hover{
       transform: translateY(-1px);
       box-shadow: 0 14px 26px rgba(15,46,31,0.12);
       border-color: rgba(26,85,52,0.24);
       background: rgba(255,255,255,0.95);
     }
-
     .btn:active{ transform: translateY(0px); box-shadow: 0 10px 18px rgba(15,46,31,0.10); }
-
     .btn-primary{
-      background: linear-gradient(135deg, rgba(191,231,210,0.72), rgba(168,219,194,0.62));
+      background: linear-gradient(135deg, rgba(191,231,210,0.85), rgba(168,219,194,0.72));
       border-color: rgba(26,85,52,0.20);
     }
-
     .btn-primary:hover{
-      background: linear-gradient(135deg, rgba(191,231,210,0.85), rgba(168,219,194,0.75));
+      background: linear-gradient(135deg, rgba(191,231,210,0.95), rgba(168,219,194,0.85));
     }
+    .btn:disabled{ opacity: 0.7; cursor: default; transform: none; box-shadow: none; }
+    .google-icon{ width: 18px; height: 18px; flex: 0 0 auto; }
+    .btn:focus-visible{ outline: 3px solid rgba(168,219,194,0.55); outline-offset: 3px; }
 
-    .google-icon{
-      width: 18px;
-      height: 18px;
-      flex: 0 0 auto;
+    /* ---------- Hero preview card ---------- */
+    .preview{
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      position: relative;
+      overflow: hidden;
     }
-
-    .fineprint{
-      margin-top: 14px;
-      font-size: 12px;
-      color: rgba(15,46,31,0.56);
-      line-height: 1.5;
+    .preview::before{
+      content:"";
+      position:absolute;
+      right:-120px; top:-120px;
+      width: 300px; height: 300px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, rgba(191,231,210,0.8), rgba(191,231,210,0.0) 62%);
+    }
+    .preview-head{
+      display:flex; align-items:center; gap:8px;
+      padding: 4px 4px 14px;
+      color: var(--muted);
+      font-size: 12.5px;
       position: relative;
     }
-
-    .fineprint a{
-      color: rgba(15,46,31,0.78);
-      text-decoration: underline;
-      text-underline-offset: 3px;
+    .preview-head .os{ width:10px; height:10px; border-radius:999px; background: rgba(168,219,194,0.9); }
+    .tiles{
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      position: relative;
     }
-
-    .footer{
-      margin-top: 14px;
+    .tile{
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.75);
+      padding: 14px;
+      min-height: 92px;
       display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 12px;
-      color: rgba(15,46,31,0.50);
-      position: relative;
-    }
-
-    .pill{
-      display: inline-flex;
-      align-items: center;
+      flex-direction: column;
       gap: 8px;
-      padding: 6px 10px;
+      box-shadow: 0 8px 20px rgba(15,46,31,0.06);
+    }
+    .tile .emoji{ font-size: 22px; }
+    .tile .t-name{ font-size: 13.5px; font-weight: 600; }
+    .tile .t-meta{ font-size: 11.5px; color: var(--muted); margin-top: auto; }
+    .chip{
+      align-self: flex-start;
+      font-size: 10.5px;
+      padding: 2px 8px;
       border-radius: 999px;
+      background: rgba(191,231,210,0.55);
       border: 1px solid rgba(26,85,52,0.14);
-      background: rgba(255,255,255,0.65);
     }
 
-    .spark{
-      width: 8px; height: 8px;
-      border-radius: 999px;
-      background: rgba(168,219,194,0.95);
-      box-shadow: 0 0 0 4px rgba(168,219,194,0.20);
+    /* ---------- Features ---------- */
+    section.block{ padding: 40px 0; }
+    .section-head{ text-align: center; max-width: 60ch; margin: 0 auto 28px; }
+    .section-head h2{
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 32px);
+      letter-spacing: -0.5px;
     }
+    .section-head p{ margin: 0; color: var(--muted); line-height: 1.6; }
 
-    /* accessibility focus */
-    .btn:focus-visible{
-      outline: 3px solid rgba(168,219,194,0.55);
-      outline-offset: 3px;
+    .grid-features{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
+    @media (max-width: 900px){ .grid-features{ grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px){ .grid-features{ grid-template-columns: 1fr; } }
+
+    .feature{
+      border: 1px solid var(--stroke);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.7);
+      padding: 22px;
+      box-shadow: 0 10px 24px rgba(15,46,31,0.06);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .feature:hover{ transform: translateY(-2px); box-shadow: 0 16px 32px rgba(15,46,31,0.10); }
+    .feature .icon{
+      width: 44px; height: 44px;
+      display: grid; place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(191,231,210,0.8), rgba(168,219,194,0.6));
+      border: 1px solid rgba(26,85,52,0.16);
+      font-size: 22px;
+      margin-bottom: 14px;
+    }
+    .feature h3{ margin: 0 0 6px; font-size: 16.5px; letter-spacing: -0.2px; }
+    .feature p{ margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+    /* ---------- CTA band ---------- */
+    .cta-band{
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(191,231,210,0.55), rgba(255,255,255,0.7));
+      box-shadow: var(--shadow);
+      padding: 40px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-band h2{ margin: 0 0 10px; font-size: clamp(24px, 3vw, 32px); letter-spacing: -0.5px; }
+    .cta-band p{ margin: 0 auto 22px; color: var(--muted); max-width: 46ch; line-height: 1.6; }
+    .cta-band .cta-row{ justify-content: center; }
+
+    /* ---------- Footer ---------- */
+    footer{
+      padding: 34px 0 44px;
+      color: rgba(15,46,31,0.55);
+      font-size: 13px;
+    }
+    .footer-inner{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .footer-inner a{ color: rgba(15,46,31,0.7); text-decoration: none; }
+    .footer-inner a:hover{ text-decoration: underline; text-underline-offset: 3px; }
+    .footer-links{ display: flex; gap: 18px; flex-wrap: wrap; }
   </style>
 </head>
 
 <body>
-  <main class="wrap">
-    <section class="shell" aria-label="Lifeworld login">
-      <div class="hero" role="presentation">
-        <div class="brand" aria-label="Brand">
-          <div class="mark" aria-hidden="true"></div>
-          <h1>Lifeworld</h1>
-        </div>
-
-        <h2>Welcome back.</h2>
-        <p>
-          Sign in with Google to continue to your Lifeworld workspace.
-          Clean, calm, and designed for focus.
-        </p>
-
-
+  <!-- Top nav -->
+  <header class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <strong>Lifeworld</strong>
       </div>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="link" href="#features">Features</a>
+        <a class="link" href="#how">How it works</a>
+        <button class="btn btn-primary" type="button" id="navSignIn">Sign in</button>
+      </nav>
+    </div>
+  </header>
 
-      <div class="card" aria-label="Sign in card">
-        <h3>Sign in</h3>
-        <p>Use your Google account to authenticate.</p>
-
-        <div class="actions">
-          <button class="btn btn-primary" type="button" id="googleSignIn">
+  <main class="container">
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <span class="eyebrow"><span class="spark" aria-hidden="true"></span> Calm, focused life organization</span>
+        <h1>Everything that matters,<br><span class="grad">in one calm place.</span></h1>
+        <p class="lead">
+          Lifeworld turns the sprawl of your days into simple tiles you can track,
+          plan, and reflect on — with a calendar, logs, moods, and an AI assistant
+          that actually knows your tasks.
+        </p>
+        <div class="cta-row">
+          <button class="btn btn-primary" type="button" id="heroSignIn">
             <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
               <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.6-6.6C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.9 6.1C12.6 13.4 17.8 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.6c-.6 3-2.4 5.6-5.1 7.3l7.8 6.1c4.6-4.2 7.3-10.4 7.3-17.1z"/>
@@ -345,33 +393,139 @@
             </svg>
             Continue with Google
           </button>
+          <a class="btn" href="#features">See what's inside</a>
+        </div>
+        <p class="trust">Free to start · Sign in with Google · Your data stays yours.</p>
+      </div>
 
-          <!-- Option B: client-side popup flow (uncomment if you use it)
-          <button class="btn btn-primary" type="button" id="googlePopupBtn">
+      <!-- Preview card -->
+      <div class="preview" aria-hidden="true">
+        <div class="preview-head"><span class="os"></span> Your Lifeworld</div>
+        <div class="tiles">
+          <div class="tile">
+            <span class="emoji">🏃</span>
+            <span class="t-name">Morning run</span>
+            <span class="chip">habit</span>
+            <span class="t-meta">4-day streak · today</span>
+          </div>
+          <div class="tile">
+            <span class="emoji">📚</span>
+            <span class="t-name">Reading list</span>
+            <span class="chip">focus</span>
+            <span class="t-meta">3 in progress</span>
+          </div>
+          <div class="tile">
+            <span class="emoji">🌱</span>
+            <span class="t-name">Side project</span>
+            <span class="chip">plan</span>
+            <span class="t-meta">next: Fri</span>
+          </div>
+          <div class="tile">
+            <span class="emoji">💬</span>
+            <span class="t-name">Ask the AI</span>
+            <span class="chip">assistant</span>
+            <span class="t-meta">“What's left today?”</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="block" id="features">
+      <div class="section-head">
+        <h2>Built for the way life actually works</h2>
+        <p>Not another rigid to-do app. Lifeworld bends around your habits, projects, moods, and plans.</p>
+      </div>
+
+      <div class="grid-features">
+        <div class="feature">
+          <div class="icon" aria-hidden="true">🧩</div>
+          <h3>Tiles for anything</h3>
+          <p>Habits, projects, people, places — capture each as a tile and track it your own way. Add one by voice in a tap.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">📅</div>
+          <h3>Calendar &amp; logs</h3>
+          <p>See what's due and what you did. Log notes against any date and watch your streaks build over time.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">🏷️</div>
+          <h3>Tags &amp; moods</h3>
+          <p>Filter your world by tag or by mood, so you can zoom in on exactly what needs attention right now.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">🤖</div>
+          <h3>AI assistant</h3>
+          <p>Ask about your tasks in plain language — by voice or text. It knows your tiles and answers in context.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">🗺️</div>
+          <h3>Plans that stick</h3>
+          <p>Turn intentions into a long-term plan with clear next steps, and check items off as you go.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">🔔</div>
+          <h3>Gentle reminders</h3>
+          <p>Time-of-day summaries on your device keep today in view — without pinging you into the ground.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="block" id="how">
+      <div class="section-head">
+        <h2>Start in under a minute</h2>
+        <p>No setup, no forms. Sign in and your workspace is ready.</p>
+      </div>
+      <div class="grid-features">
+        <div class="feature">
+          <div class="icon" aria-hidden="true">1️⃣</div>
+          <h3>Sign in with Google</h3>
+          <p>One tap. No new password to remember, and your data is protected per account.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">2️⃣</div>
+          <h3>Add your first tiles</h3>
+          <p>Drop in the things on your mind. Type them or just say them out loud.</p>
+        </div>
+        <div class="feature">
+          <div class="icon" aria-hidden="true">3️⃣</div>
+          <h3>Let it come together</h3>
+          <p>Plan, log, filter, and ask the assistant. Lifeworld keeps the whole picture calm and clear.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA band -->
+    <section class="block">
+      <div class="cta-band">
+        <h2>Bring your world into focus</h2>
+        <p>Join and set up your first tiles today. It's free to start.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary" type="button" id="ctaSignIn">
             <svg class="google-icon" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-              ...same svg...
+              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.6-6.6C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.9 6.1C12.6 13.4 17.8 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-2.8-.4-4.1H24v7.8h12.6c-.6 3-2.4 5.6-5.1 7.3l7.8 6.1c4.6-4.2 7.3-10.4 7.3-17.1z"/>
+              <path fill="#FBBC05" d="M10.6 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C1 16.7 0 20.2 0 24s1 7.3 2.7 10.8l7.9-6.1z"/>
+              <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.8-6.1c-2.2 1.5-5 2.4-7.4 2.4-6.2 0-11.4-3.9-13.4-9.3l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/>
             </svg>
             Continue with Google
           </button>
-          -->
-
-          <a class="btn" href="/" aria-label="Back to home">
-            Back to site
-          </a>
-        </div>
-
-        <div class="fineprint">
-          By continuing, you agree to our
-          <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
-        </div>
-
-        <div class="footer" aria-label="Footer">
-          <span class="pill"><span class="spark" aria-hidden="true"></span> Pastel mode</span>
-          <span>© <span id="year"></span> Lifeworld</span>
         </div>
       </div>
     </section>
   </main>
+
+  <footer class="container">
+    <div class="footer-inner">
+      <span>© <span id="year"></span> Lifeworld</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="#features">Features</a>
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
+    </div>
+  </footer>
 
   <script>
     // Set year
@@ -379,51 +533,70 @@
 
     // Google OAuth Web client ID (Google Cloud Console). Native Google Sign-In
     // returns an ID token whose audience is this client ID, which is what Supabase
-    // validates. TODO: replace with your real Web client ID.
+    // validates.
     const GOOGLE_WEB_CLIENT_ID = '123532804532-m43p1nrqtun02isjoa5ju5nahi1knufb.apps.googleusercontent.com';
 
-    // Native: if a session already exists, go straight into the app.
-    if (IS_NATIVE) {
-      window.supa.auth.getSession().then(({ data }) => {
-        if (data && data.session) window.location.replace('/lifeworld.html');
-      });
+    const APP_URL = '/lifeworld.html';
+
+    // Every "sign in" / "continue with Google" button on the page.
+    const signInButtons = ['navSignIn', 'heroSignIn', 'ctaSignIn']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+
+    // If a session already exists, offer to jump straight into the app.
+    // Native: go directly. Web: relabel the buttons to "Open app".
+    function goToApp(){ window.location.replace(APP_URL); }
+
+    window.supa.auth.getSession().then(({ data }) => {
+      if (data && data.session) {
+        if (IS_NATIVE) { goToApp(); return; }
+        signInButtons.forEach(btn => {
+          btn.textContent = 'Open app';
+          btn.onclick = goToApp;
+        });
+      }
+    });
+
+    async function startGoogleSignIn(btn){
+      const original = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Redirecting…';
+      try {
+        if (IS_NATIVE) {
+          // Native Google Sign-In (no browser): get an ID token and hand it to Supabase.
+          const SL = window.Capacitor.Plugins.SocialLogin;
+          await SL.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID } });
+          const res = await SL.login({ provider: 'google', options: {} });
+          const idToken = res && res.result && res.result.idToken;
+          if (!idToken) throw new Error('No Google ID token returned');
+          const { error } = await window.supa.auth.signInWithIdToken({ provider: 'google', token: idToken });
+          if (error) throw error;
+          goToApp();
+          return;
+        }
+        const { error } = await window.supa.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin + APP_URL }
+        });
+        if (error) {
+          alert('Google login failed: ' + error.message);
+          btn.disabled = false;
+          btn.innerHTML = original;
+        }
+      } catch (e) {
+        alert('Google login error: ' + (e.message || e));
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
     }
 
-    // Supabase Google OAuth client-side
-    const googleBtn = document.getElementById('googleSignIn');
-    if (googleBtn) {
-      googleBtn.addEventListener('click', async () => {
-        googleBtn.disabled = true;
-        googleBtn.textContent = 'Redirecting...';
-        try {
-          if (IS_NATIVE) {
-            // Native Google Sign-In (no browser): get an ID token and hand it to Supabase.
-            const SL = window.Capacitor.Plugins.SocialLogin;
-            await SL.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT_ID } });
-            const res = await SL.login({ provider: 'google', options: {} });
-            const idToken = res && res.result && res.result.idToken;
-            if (!idToken) throw new Error('No Google ID token returned');
-            const { error } = await window.supa.auth.signInWithIdToken({ provider: 'google', token: idToken });
-            if (error) throw error;
-            window.location.replace('/lifeworld.html');
-            return;
-          }
-          const { error } = await window.supa.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: window.location.origin + '/lifeworld.html' }
-          });
-          if (error) {
-            alert('Google login failed: ' + error.message);
-            googleBtn.disabled = false;
-            googleBtn.textContent = 'Continue with Google';
-          }
-        } catch (e) {
-          alert('Google login error: ' + (e.message || e));
-          googleBtn.disabled = false;
-          googleBtn.textContent = 'Continue with Google';
-        }
+    signInButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // If we've relabeled to "Open app", the onclick handler above takes over.
+        if (btn.textContent === 'Open app') return;
+        startGoogleSignIn(btn);
       });
-    }
+    });
   </script>
 </body>
 </html>
