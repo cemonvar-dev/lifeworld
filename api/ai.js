@@ -1,4 +1,4 @@
-// LifeWorld AI endpoint — auth-gated + per-user daily quota.
+// Fiblia AI endpoint — auth-gated + per-user daily quota.
 //
 // Required env vars (set in Vercel project settings, NEVER in client code):
 //   OPENAI_API_KEY            - OpenAI secret key
@@ -138,7 +138,7 @@ export default async function handler(req, res) {
 			res.setHeader('X-AI-Quota-Limit', String(quota.day_limit));
 			res.setHeader('X-AI-Quota-Used', String(quota.used));
 			return res.status(429).json({
-				error: `You've reached your free limit of ${quota.day_limit} AI messages today. Upgrade to LifeWorld Premium for unlimited coaching.`,
+				error: `You've reached your free limit of ${quota.day_limit} AI messages today. Upgrade to Fiblia Premium for unlimited coaching.`,
 				code: 'quota_exceeded',
 				limit: quota.day_limit,
 				used: quota.used
@@ -153,7 +153,7 @@ export default async function handler(req, res) {
 	const isChat = !(responseFormat && responseFormat.type === 'json_object');
 	const memory = isChat ? await getMemory(user.id) : '';
 
-	const systemPrompt = `You are LifeWorld AI — a personal life coach and productivity assistant. You have access to the user's task/habit tracking data below. Use it to give specific, actionable advice.
+	const systemPrompt = `You are Fiblia AI — a personal life coach and productivity assistant. You have access to the user's task/habit tracking data below. Use it to give specific, actionable advice.
 
 Be encouraging but honest. Use emojis sparingly. Keep responses concise (2-4 paragraphs max unless asked for detail).
 

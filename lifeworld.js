@@ -2893,7 +2893,7 @@ function openAiChat() {
 	document.getElementById('aiChatOverlay').classList.remove('hidden');
 	document.getElementById('aiChatInput').focus();
 	if (aiChatHistory.length === 0) {
-		appendAiMessage('assistant', "Hi! I'm your LifeWorld AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!");
+		appendAiMessage('assistant', "Hi! I'm your Fiblia AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!");
 	}
 }
 
