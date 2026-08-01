@@ -8,8 +8,7 @@
 // already in the HTML). If the key is left as the placeholder, PostHog is a
 // no-op — the app keeps working normally.
 (function () {
-	// TODO: replace with your real PostHog project values.
-	var POSTHOG_KEY = 'phc_REPLACE_WITH_YOUR_PROJECT_KEY';
+	var POSTHOG_KEY = 'phc_oSqvAGCRyJs6cnsrpHamBeBZc82jdPGpZpYChMURgeoq';
 	var POSTHOG_HOST = 'https://us.i.posthog.com'; // EU cloud: https://eu.i.posthog.com
 
 	// Not configured yet → do nothing (never break the app for a missing key).
