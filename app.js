@@ -436,6 +436,7 @@ function renderGallery(filteredTiles) {
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
+					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   <div class="flex gap-2 mt-2 w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
@@ -640,7 +641,6 @@ function openTilePopup(tileId) {
 
 					
 				<div class="text-sm text-slate-500">${statusLabel}</div>
-				<div class="text-xs text-slate-400">${lastUpdateStr}</div>
 			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
