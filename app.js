@@ -625,7 +625,7 @@ function openTilePopup(tileId) {
 	// Multiselect dropdown for tags
 	const tagDropdownHtml = `
 	<div class="tagDropdown mb-8" style="min-width:220px;">
-		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-sm" tabindex="0">
+		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-xs" tabindex="0">
 			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(tagName).join(', ') : 'Select tags...'}</span>
 			<span class="ml-2">▼</span>
 		</button>
@@ -650,11 +650,11 @@ function openTilePopup(tileId) {
 		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between gap-2 mb-3">
-			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm">
+			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
 				<button type="button" class="routine-opt px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0">1️⃣ One-time</button>
 				<button type="button" class="routine-opt px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1">🔁 Routine</button>
 			</div>
-			<button id="completeToggleBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '✅ Completed' : '⬜ Mark completed'}</button>
+			<button id="completeToggleBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '✅ Completed' : '⬜ Mark completed'}</button>
 		</div>
 		<div class="grid grid-cols-2 gap-3 mb-3">
 			<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
@@ -1237,7 +1237,7 @@ function lwSelect(mount, config) {
 	const disp = config.display || sel || { icon: '', label: config.placeholder || 'Select…' };
 	mount.classList.add('relative', 'lw-select');
 	mount.innerHTML = `
-		<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-sm hover:bg-slate-50 transition">
+		<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-xs hover:bg-slate-50 transition">
 			<span class="flex items-center gap-2 min-w-0"><span class="text-base leading-none">${disp.icon || ''}</span><span class="truncate">${disp.label || ''}</span></span>
 			<span class="text-slate-400 text-xs">▼</span>
 		</button>
@@ -1290,7 +1290,7 @@ function lwMultiSelect(mount, config) {
 	};
 	const render = (keepOpen) => {
 		mount.innerHTML = `
-			<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-sm hover:bg-slate-50 transition">
+			<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-xs hover:bg-slate-50 transition">
 				<span class="min-w-0 truncate">${faceHtml()}</span>
 				<span class="text-slate-400 text-xs">▼</span>
 			</button>
