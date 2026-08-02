@@ -691,21 +691,27 @@ function openTilePopup(tileId) {
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		${tagDropdownHtml}
 		<hr class="my-5 border-slate-200">
-		<div class="flex items-center justify-between mb-2">
-			<div class="text-sm font-semibold">Attachments</div>
-			<button id="addAttachmentBtn" type="button" class="text-blue-500 hover:text-blue-700 text-sm font-semibold transition">📎 Add</button>
+		<!-- Tabbed view: Timeline (default) / Attachments -->
+		<div class="flex items-center gap-1 border-b border-slate-200 mb-3">
+			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
+			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<input type="file" id="attachmentInput" class="hidden" multiple accept="image/*,application/pdf" />
-		<div id="attachmentList" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
-			<div class="text-xs text-slate-400 col-span-full">Loading…</div>
+		<div id="tabPanelTimeline" class="detail-tab-panel">
+			<div class="flex items-center justify-end mb-1">
+				<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
+			</div>
+			<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
+			<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
 		</div>
-		<hr class="my-5 border-slate-200">
-		<div class="flex items-center justify-between mb-1">
-			<div class="text-sm font-semibold">Timeline</div>
-			<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition">+</button>
+		<div id="tabPanelAttachments" class="detail-tab-panel hidden">
+			<div class="flex items-center justify-end mb-2">
+				<button id="addAttachmentBtn" type="button" class="text-blue-500 hover:text-blue-700 text-sm font-semibold transition">📎 Add</button>
+			</div>
+			<input type="file" id="attachmentInput" class="hidden" multiple accept="image/*,application/pdf" />
+			<div id="attachmentList" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
+				<div class="text-xs text-slate-400 col-span-full">Loading…</div>
+			</div>
 		</div>
-		<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
-		<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
 		<hr class="my-5 border-slate-200">
 		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
@@ -976,6 +982,24 @@ function openTilePopup(tileId) {
 		}
 	}
 	renderAttachments(tileId);
+
+	// Timeline / Attachments tab switching.
+	document.querySelectorAll('.detail-tab').forEach(tabBtn => {
+		tabBtn.addEventListener('click', () => {
+			const tab = tabBtn.dataset.tab;
+			document.querySelectorAll('.detail-tab').forEach(b => {
+				const on = b.dataset.tab === tab;
+				b.classList.toggle('border-blue-500', on);
+				b.classList.toggle('text-blue-600', on);
+				b.classList.toggle('border-transparent', !on);
+				b.classList.toggle('text-slate-400', !on);
+			});
+			const tl = document.getElementById('tabPanelTimeline');
+			const at = document.getElementById('tabPanelAttachments');
+			if (tl) tl.classList.toggle('hidden', tab !== 'timeline');
+			if (at) at.classList.toggle('hidden', tab !== 'attachments');
+		});
+	});
 
 	overlay.classList.remove('hidden');
 }
