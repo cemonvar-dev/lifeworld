@@ -139,7 +139,7 @@ function calculateHealth(task) {
 }
 
 function healthToPlant(score) {
-	if (score >= 80) return { emoji: '⭐', label: 'Thriving', color: 'bg-green-50 border-green-200' };
+	if (score >= 80) return { emoji: '🌞', label: 'Thriving', color: 'bg-green-50 border-green-200' };
 	if (score >= 60) return { emoji: '☀️', label: 'Healthy', color: 'bg-emerald-50 border-emerald-200' };
 	if (score >= 40) return { emoji: '⛅', label: 'Growing', color: 'bg-yellow-50 border-yellow-200' };
 	if (score >= 20) return { emoji: '🌧️', label: 'Wilting', color: 'bg-orange-50 border-orange-200' };
@@ -2670,7 +2670,7 @@ function toggleFreqFilter() {
 // ---- Mood (health state) filter ----
 // Order/emoji mirror healthToPlant().
 const MOODS = [
-	{ label: 'Thriving', emoji: '⭐' },
+	{ label: 'Thriving', emoji: '🌞' },
 	{ label: 'Healthy', emoji: '☀️' },
 	{ label: 'Growing', emoji: '⛅' },
 	{ label: 'Wilting', emoji: '🌧️' },
