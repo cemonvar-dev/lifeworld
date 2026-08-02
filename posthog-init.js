@@ -19,7 +19,7 @@
 
 	// Strip Supabase OAuth tokens (and similar secrets) out of any URL before it
 	// leaves the browser — the sign-in redirect lands on
-	// lifeworld.html#access_token=…&refresh_token=… and we must not send those
+	// app.html#access_token=…&refresh_token=… and we must not send those
 	// to PostHog.
 	function scrubUrl(url) {
 		if (typeof url !== 'string') return url;

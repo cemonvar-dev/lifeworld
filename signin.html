@@ -387,7 +387,7 @@
     // Native: if a session already exists, go straight into the app.
     if (IS_NATIVE) {
       window.supa.auth.getSession().then(({ data }) => {
-        if (data && data.session) window.location.replace('/lifeworld.html');
+        if (data && data.session) window.location.replace('/app.html');
       });
     }
 
@@ -407,12 +407,12 @@
             if (!idToken) throw new Error('No Google ID token returned');
             const { error } = await window.supa.auth.signInWithIdToken({ provider: 'google', token: idToken });
             if (error) throw error;
-            window.location.replace('/lifeworld.html');
+            window.location.replace('/app.html');
             return;
           }
           const { error } = await window.supa.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin + '/lifeworld.html' }
+            options: { redirectTo: window.location.origin + '/app.html' }
           });
           if (error) {
             alert('Google login failed: ' + error.message);
