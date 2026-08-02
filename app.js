@@ -422,9 +422,16 @@ function renderGallery(filteredTiles) {
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
+			// Health meter: the weather/health emoji repeated 5×, filled to the
+			// health tier (same 5 tiers as the health label); empty ones faded.
+			// Finished tiles keep their single status icon instead.
+			const healthTier = tile.health >= 80 ? 5 : tile.health >= 60 ? 4 : tile.health >= 40 ? 3 : tile.health >= 20 ? 2 : 1;
+			const healthMeter = tp.finished
+				? `<span class="text-lg leading-none">${tp.emoji}</span>`
+				: Array.from({ length: 5 }, (_, i) => `<span class="text-sm leading-none${i < healthTier ? '' : ' opacity-20 grayscale'}">${tp.emoji}</span>`).join('');
 			tileDiv.innerHTML = `
-				   <div class="w-full flex justify-center items-center pb-2 mb-2 border-b border-slate-200/60">
-					   <span class="text-lg leading-none" title="${tp.label}">${tp.emoji}</span>
+				   <div class="w-full flex justify-center items-center gap-1 pb-2 mb-2 border-b border-slate-300" title="${tp.label}">
+					   ${healthMeter}
 				   </div>
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
 				   <div class="tile-status-line flex gap-2 mt-1">
