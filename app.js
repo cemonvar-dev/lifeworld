@@ -423,18 +423,18 @@ function renderGallery(filteredTiles) {
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
-				   <div class="flex w-full justify-between items-start mb-2">
-					   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
+				   <div class="w-full flex justify-center items-center pb-2 mb-2 border-b border-slate-200/60">
+					   <span class="text-lg leading-none" title="${tp.label}">${tp.emoji}</span>
 				   </div>
+				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
 				   <div class="tile-status-line flex gap-2 mt-1">
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
 					   <span class="text-xs text-slate-500">(${tile.count})</span>
 				   </div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
-				   <div class="flex justify-between items-center w-full mt-1">
-					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
-					   <span class="text-base leading-none" title="${tp.label}">${tp.emoji}</span>
-					   <span class="text-xs text-slate-400" title="Last done">✅ ${lastDone}</span>
+				   <div class="flex items-center justify-between w-full mt-1">
+					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
+					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   <div class="flex gap-2 mt-2 w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
