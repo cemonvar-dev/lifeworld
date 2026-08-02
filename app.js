@@ -640,7 +640,6 @@ function openTilePopup(tileId) {
 				</div>
 
 					
-				<div class="text-sm text-slate-500">${statusLabel}</div>
 			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
