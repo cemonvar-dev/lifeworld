@@ -668,7 +668,7 @@ function openTilePopup(tileId) {
 						<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
 					</div>
 					<div id="weeklyDays" class="flex flex-wrap gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-9 py-1 text-center rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
 					</div>
 					<div id="monthlyDayPicker" class="mt-2" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
 						<label class="text-xs text-slate-500">Day of month</label>
@@ -679,7 +679,7 @@ function openTilePopup(tileId) {
 				</div>
 				<!-- Right column: time of day, with reminder under it -->
 				<div>
-					<div class="mb-1 text-xs font-semibold text-slate-500">Time of day</div>
+					<div class="mb-1 text-xs font-semibold text-slate-500">Timing</div>
 					<div id="timeOfDaySelectMount"></div>
 					<div class="mt-2 mb-1 text-xs font-semibold text-slate-500">Reminder</div>
 					<div id="reminderSelectMount"></div>
@@ -690,7 +690,7 @@ function openTilePopup(tileId) {
 				</div>
 			</div>
 		<hr class="my-5 border-slate-200">
-		<div class="mb-2 text-sm font-semibold">Tags</div>
+		<div class="mb-1 text-xs font-semibold text-slate-500">Tags</div>
 		${tagDropdownHtml}
 		<hr class="my-5 border-slate-200">
 		<!-- Tabbed view: Timeline (default) / Attachments -->
@@ -698,23 +698,25 @@ function openTilePopup(tileId) {
 			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
 			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<div id="tabPanelTimeline" class="detail-tab-panel">
-			<div class="flex items-center justify-end mb-1">
-				<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
+		<div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+				<div id="tabPanelTimeline" class="detail-tab-panel">
+					<div class="flex items-center justify-end mb-1">
+						<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
+					</div>
+					<div>${timelineHtml}</div>
+					<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
+				</div>
+				<div id="tabPanelAttachments" class="detail-tab-panel hidden">
+					<div class="flex items-center justify-end mb-2">
+						<button id="addAttachmentBtn" type="button" class="text-blue-500 hover:text-blue-700 text-sm font-semibold transition">📎 Add</button>
+					</div>
+					<input type="file" id="attachmentInput" class="hidden" multiple accept="image/*,application/pdf" />
+					<div id="attachmentList" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
+						<div class="text-xs text-slate-400 col-span-full">Loading…</div>
+					</div>
+				</div>
 			</div>
-			<div class="max-h-64 overflow-y-auto">${timelineHtml}</div>
-			<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
-		</div>
-		<div id="tabPanelAttachments" class="detail-tab-panel hidden">
-			<div class="flex items-center justify-end mb-2">
-				<button id="addAttachmentBtn" type="button" class="text-blue-500 hover:text-blue-700 text-sm font-semibold transition">📎 Add</button>
-			</div>
-			<input type="file" id="attachmentInput" class="hidden" multiple accept="image/*,application/pdf" />
-			<div id="attachmentList" class="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
-				<div class="text-xs text-slate-400 col-span-full">Loading…</div>
-			</div>
-		</div>
-		<hr class="my-5 border-slate-200">
+			<hr class="my-5 border-slate-200">
 		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
 

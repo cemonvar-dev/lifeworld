@@ -216,9 +216,9 @@
 
 	<!-- Tile Detail Popup -->
 	<div id="tileOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-start justify-center pt-[5vh] overflow-y-auto">
-		<div id="tilePopup" class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-lg p-6 relative mb-10">
+		<div id="tilePopup" class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-lg p-6 relative mb-6 max-h-[90vh] flex flex-col">
 			<button id="closePopup" aria-label="Close" class="absolute top-3 right-4 grid place-items-center h-9 w-9 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
-			<div id="popupBody"></div>
+			<div id="popupBody" class="flex flex-1 flex-col min-h-0 overflow-hidden"></div>
 		</div>
 	</div>
 
