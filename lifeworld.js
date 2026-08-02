@@ -3916,7 +3916,7 @@ function renderOnceTasksCalendar() {
 				       <input id="calendarFilterInput" type="text" class="rounded-xl border p-2 w-full sm:w-64"
 			   placeholder="Filter by task, tag, or date..." />
 				       <div id="calendarKindFilter" class="inline-flex items-center rounded-full border border-slate-200 bg-white p-0.5 text-xs font-semibold">
-					       ${kindBtn('all', 'All')}${kindBtn('once', 'One-time')}${kindBtn('routine', 'Routine')}
+					       ${kindBtn('once', 'One-time')}${kindBtn('routine', 'Routine')}
 				       </div>
 			       </div>
 		       </div>
