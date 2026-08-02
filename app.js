@@ -433,14 +433,9 @@ function renderGallery(filteredTiles) {
 					   ${healthMeter}
 				   </div>
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
-				   <div class="tile-status-line flex gap-2 mt-1">
-					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
-					   <span class="text-xs text-slate-500">(${tile.count})</span>
-				   </div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
-					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   <div class="flex gap-2 mt-2 w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
@@ -791,7 +786,8 @@ function openTilePopup(tileId) {
 			{ value: 'custom', icon: '✏️', label: 'Custom date & time…' }
 		],
 		value: '',
-		display: remIso ? { icon: '🔔', label: formatReminderAt(remIso) } : { icon: '🔕', label: 'No reminder' },
+		compact: true, // reminder labels are long — drop icons + smaller text so they're readable
+		display: remIso ? { label: formatReminderAt(remIso) } : { label: 'No reminder' },
 		onSelect: async (v) => {
 			const wrap = document.getElementById('reminderCustomWrap');
 			const ci = document.getElementById('reminderCustom');
@@ -1237,19 +1233,20 @@ function toLocalInputValue(d) {
 function lwSelect(mount, config) {
 	if (!mount) return;
 	const opts = config.options || [];
+	const compact = !!config.compact; // no icons, smaller text, no truncation
 	const sel = opts.find(o => o.value === config.value);
 	const disp = config.display || sel || { icon: '', label: config.placeholder || 'Select…' };
 	mount.classList.add('relative', 'lw-select');
 	mount.innerHTML = `
 		<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-xs hover:bg-slate-50 transition">
-			<span class="flex items-center gap-2 min-w-0"><span class="text-base leading-none">${disp.icon || ''}</span><span class="truncate">${disp.label || ''}</span></span>
+			<span class="flex items-center gap-2 min-w-0">${compact ? '' : `<span class="text-base leading-none">${disp.icon || ''}</span>`}<span class="truncate">${disp.label || ''}</span></span>
 			<span class="text-slate-400 text-xs">▼</span>
 		</button>
 		<div class="lw-select-menu hidden absolute left-0 right-0 mt-1 rounded-xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1 z-[60] max-h-60 overflow-y-auto">
 			${opts.map(o => `
-				<button type="button" class="lw-opt w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left hover:bg-slate-100 transition ${o.value === config.value ? 'bg-slate-50 font-semibold' : ''}" data-value="${String(o.value).replace(/"/g, '&quot;')}">
-					<span class="text-base w-5 text-center leading-none">${o.icon || ''}</span>
-					<span class="flex-1 min-w-0 truncate">${o.label}</span>
+				<button type="button" class="lw-opt w-full flex items-center gap-3 px-3 py-2 rounded-lg ${compact ? 'text-xs' : 'text-sm'} text-left hover:bg-slate-100 transition ${o.value === config.value ? 'bg-slate-50 font-semibold' : ''}" data-value="${String(o.value).replace(/"/g, '&quot;')}">
+					${compact ? '' : `<span class="text-base w-5 text-center leading-none">${o.icon || ''}</span>`}
+					<span class="flex-1 min-w-0 ${compact ? '' : 'truncate'}">${o.label}</span>
 					${o.value === config.value ? '<span class="text-emerald-500">✓</span>' : ''}
 				</button>`).join('')}
 		</div>`;
