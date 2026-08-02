@@ -651,42 +651,44 @@ function openTilePopup(tileId) {
 		<hr class="my-5 border-slate-200">
 		<div class="flex items-center justify-between gap-2 mb-3">
 			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
-				<button type="button" class="routine-opt px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0">1️⃣ One-time</button>
-				<button type="button" class="routine-opt px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1">🔁 Routine</button>
+				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
+				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
 			</div>
-			<button id="completeToggleBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '✅ Completed' : '⬜ Mark completed'}</button>
+			<button id="completeToggleBtn" type="button" class="inline-flex flex-col items-center leading-tight gap-0.5 px-4 py-2 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '<span>✅</span><span>Completed</span>' : '<span>⬜</span><span>Mark completed</span>'}</button>
 		</div>
-		<div class="grid grid-cols-2 gap-3 mb-3">
-			<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
-				<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
-				<div id="freqSelectMount"></div>
+		<div class="grid grid-cols-2 gap-3 mb-3 items-start">
+				<!-- Left column: recurrence / date, with the weekly / monthly pickers under it -->
+				<div>
+					<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
+						<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
+						<div id="freqSelectMount"></div>
+					</div>
+					<div id="dateCell" style="display:${!isRoutine ? 'block' : 'none'}">
+						<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
+						<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
+					</div>
+					<div id="weeklyDays" class="flex flex-wrap gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
+						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+					</div>
+					<div id="monthlyDayPicker" class="mt-2" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
+						<label class="text-xs text-slate-500">Day of month</label>
+						<select id="monthlyDaySelect" class="ml-2 rounded-lg border px-2 py-1 text-sm">
+							${Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}" ${monthlyDom(raw) === d ? 'selected' : ''}>${ordinal(d)}</option>`).join('')}
+						</select>
+					</div>
+				</div>
+				<!-- Right column: time of day, with reminder under it -->
+				<div>
+					<div class="mb-1 text-xs font-semibold text-slate-500">Time of day</div>
+					<div id="timeOfDaySelectMount"></div>
+					<div class="mt-2 mb-1 text-xs font-semibold text-slate-500">Reminder</div>
+					<div id="reminderSelectMount"></div>
+					<div id="reminderCustomWrap" class="mt-2" style="display:none">
+						<label class="text-xs text-slate-500">Reminder date &amp; time</label>
+						<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
+					</div>
+				</div>
 			</div>
-			<div id="dateCell" style="display:${!isRoutine ? 'block' : 'none'}">
-				<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
-				<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
-			</div>
-			<div>
-				<div class="mb-1 text-xs font-semibold text-slate-500">Reminder</div>
-				<div id="reminderSelectMount"></div>
-			</div>
-			<div>
-				<div class="mb-1 text-xs font-semibold text-slate-500">Time of day</div>
-				<div id="timeOfDaySelectMount"></div>
-			</div>
-		</div>
-		<div id="weeklyDays" class="flex flex-wrap gap-1 mb-3" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-			${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn px-2 py-1 rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
-		</div>
-		<div id="monthlyDayPicker" class="mb-3" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
-			<label class="text-xs text-slate-500">Day of month</label>
-			<select id="monthlyDaySelect" class="ml-2 rounded-lg border px-2 py-1 text-sm">
-				${Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}" ${monthlyDom(raw) === d ? 'selected' : ''}>${ordinal(d)}</option>`).join('')}
-			</select>
-		</div>
-		<div id="reminderCustomWrap" class="mb-3" style="display:none">
-			<label class="text-xs text-slate-500">Reminder date &amp; time</label>
-			<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
-		</div>
 		<hr class="my-5 border-slate-200">
 		<div class="mb-2 text-sm font-semibold">Tags</div>
 		${tagDropdownHtml}
