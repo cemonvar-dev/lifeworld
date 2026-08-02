@@ -424,8 +424,7 @@ function renderGallery(filteredTiles) {
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
 			tileDiv.innerHTML = `
 				   <div class="flex w-full justify-between items-start mb-2">
-					   <div class="text-sm font-semibold text-left truncate w-3/4">${tile.name}</div>
-					   <div class="text-base text-right w-1/4">${tp.emoji}</div>
+					   <div class="text-sm font-semibold text-left truncate w-full">${tile.name}</div>
 				   </div>
 				   <div class="tile-status-line flex gap-2 mt-1">
 					   <span class="text-xs ${tile.status === 'noaction' ? 'text-amber-500 font-semibold' : 'text-slate-500'}">${tile.status === 'noaction' ? 'take action now' : tile.status}</span>
@@ -434,6 +433,7 @@ function renderGallery(filteredTiles) {
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex justify-between items-center w-full mt-1">
 					   <span class="text-xs ${nextDueClass}">🔔 ${nextDue}</span>
+					   <span class="text-base leading-none" title="${tp.label}">${tp.emoji}</span>
 					   <span class="text-xs text-slate-400" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   <div class="flex gap-2 mt-2 w-full">
