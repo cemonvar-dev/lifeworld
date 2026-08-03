@@ -34,6 +34,8 @@
 		person_profiles: 'identified_only', // only create person profiles for identified (logged-in) users
 		capture_pageview: true,             // automatic pageview on each page load
 		capture_pageleave: true,
+		disable_session_recording: true,    // no screen/session replay — pageviews + events only
+
 		// Runs on every event: redact auth tokens from URL-bearing properties.
 		sanitize_properties: function (properties) {
 			['$current_url', '$referrer', '$pathname', '$initial_current_url'].forEach(function (k) {
