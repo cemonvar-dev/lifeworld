@@ -141,7 +141,11 @@ function calculateHealth(task) {
 // Health icon sets — user-selectable in Settings (weather vs plants).
 const HEALTH_ICON_SETS = {
 	weather: { Thriving: '🌞', Healthy: '☀️', Growing: '⛅', Wilting: '🌧️', Dying: '⚡' },
-	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' }
+	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' },
+	// Understated / professional sets:
+	minimal: { Thriving: '🟢', Healthy: '🟡', Growing: '🟠', Wilting: '🔴', Dying: '⚫' }, // status dots
+	moon:    { Thriving: '🌕', Healthy: '🌔', Growing: '🌗', Wilting: '🌘', Dying: '🌑' }, // moon phases
+	gems:    { Thriving: '💎', Healthy: '🔷', Growing: '🔹', Wilting: '▪️', Dying: '⬛' }  // gemstone → fade
 };
 function getHealthIconStyle() {
 	try { return localStorage.getItem('lw_health_icons') || 'weather'; } catch (e) { return 'weather'; }
