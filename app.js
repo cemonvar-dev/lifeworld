@@ -138,12 +138,34 @@ function calculateHealth(task) {
 	return Math.round((fulfilled / expected) * 100);
 }
 
+// Health icon sets — user-selectable in Settings (weather vs plants).
+const HEALTH_ICON_SETS = {
+	weather: { Thriving: '🌞', Healthy: '☀️', Growing: '⛅', Wilting: '🌧️', Dying: '⚡' },
+	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' }
+};
+function getHealthIconStyle() {
+	try { return localStorage.getItem('lw_health_icons') || 'weather'; } catch (e) { return 'weather'; }
+}
+function setHealthIconStyle(style) {
+	try { localStorage.setItem('lw_health_icons', style); } catch (e) {}
+}
+// Emoji for a health label in the user's chosen style.
+function healthEmoji(label) {
+	const set = HEALTH_ICON_SETS[getHealthIconStyle()] || HEALTH_ICON_SETS.weather;
+	return set[label] || '';
+}
+
+const HEALTH_COLOR = {
+	Thriving: 'bg-green-50 border-green-200',
+	Healthy: 'bg-emerald-50 border-emerald-200',
+	Growing: 'bg-yellow-50 border-yellow-200',
+	Wilting: 'bg-orange-50 border-orange-200',
+	Dying: 'bg-red-50 border-red-200'
+};
+
 function healthToPlant(score) {
-	if (score >= 80) return { emoji: '🌞', label: 'Thriving', color: 'bg-green-50 border-green-200' };
-	if (score >= 60) return { emoji: '☀️', label: 'Healthy', color: 'bg-emerald-50 border-emerald-200' };
-	if (score >= 40) return { emoji: '⛅', label: 'Growing', color: 'bg-yellow-50 border-yellow-200' };
-	if (score >= 20) return { emoji: '🌧️', label: 'Wilting', color: 'bg-orange-50 border-orange-200' };
-	return { emoji: '⚡', label: 'Dying', color: 'bg-red-50 border-red-200' };
+	const label = score >= 80 ? 'Thriving' : score >= 60 ? 'Healthy' : score >= 40 ? 'Growing' : score >= 20 ? 'Wilting' : 'Dying';
+	return { emoji: healthEmoji(label), label, color: HEALTH_COLOR[label] };
 }
 
 // Visuals for a tile. Finished lifecycle states get a status icon (🏁 finish
@@ -1907,6 +1929,8 @@ function setVoiceLang(lang) {
 function openSettings() {
 	const sel = document.getElementById('settingsVoiceLang');
 	if (sel) sel.value = getVoiceLang();
+	const iconSel = document.getElementById('settingsHealthIcons');
+	if (iconSel) iconSel.value = getHealthIconStyle();
 	// Show the signed-in account email
 	supa.auth.getSession().then(({ data }) => {
 		const el = document.getElementById('settingsAccountEmail');
@@ -2714,7 +2738,7 @@ const MOOD_CHIP = {
 function moodChipsHtml(counts) {
 	return MOODS
 		.filter(m => (counts[m.label] || 0) > 0)
-		.map(m => `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${MOOD_CHIP[m.label]}" title="${m.label}">${m.emoji}<span class="tabular-nums">${counts[m.label]}</span></span>`)
+		.map(m => `<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${MOOD_CHIP[m.label]}" title="${m.label}">${healthEmoji(m.label)}<span class="tabular-nums">${counts[m.label]}</span></span>`)
 		.join('');
 }
 
@@ -2740,7 +2764,7 @@ function openMoodFilterPopup() {
 	MOODS.forEach(m => {
 		const btn = document.createElement('button');
 		btn.className = rowClass(activeMoodFilter === m.label);
-		btn.innerHTML = `<span class="font-medium"><span class="text-lg mr-1.5">${m.emoji}</span>${m.label}</span><span class="text-xs font-semibold text-slate-500">${counts[m.label]}</span>`;
+		btn.innerHTML = `<span class="font-medium"><span class="text-lg mr-1.5">${healthEmoji(m.label)}</span>${m.label}</span><span class="text-xs font-semibold text-slate-500">${counts[m.label]}</span>`;
 		btn.addEventListener('click', () => setMoodFilter(m.label));
 		grid.appendChild(btn);
 	});
@@ -2764,7 +2788,7 @@ function updateMoodFilterBtn() {
 	if (!btn) return;
 	if (activeMoodFilter) {
 		const m = MOODS.find(x => x.label === activeMoodFilter);
-		btn.textContent = `${m ? m.emoji : '🌦️'} ${activeMoodFilter}`;
+		btn.textContent = `${m ? healthEmoji(m.label) : '🌦️'} ${activeMoodFilter}`;
 		btn.classList.remove('bg-white');
 		btn.classList.add('bg-sky-100', 'border-sky-300', 'text-sky-700');
 	} else {
@@ -3321,6 +3345,11 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
 	});
 	document.getElementById('settingsVoiceLang').addEventListener('change', e => setVoiceLang(e.target.value));
+	document.getElementById('settingsHealthIcons').addEventListener('change', e => {
+		setHealthIconStyle(e.target.value);
+		applyFilters(); // re-render the gallery with the new icon set
+		if (activeTileId && !document.getElementById('tileOverlay').classList.contains('hidden')) openTilePopup(activeTileId);
+	});
 	document.getElementById('signOutBtn').addEventListener('click', signOut);
 	document.getElementById('newTileOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
