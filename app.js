@@ -3443,6 +3443,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	document.getElementById('signOutBtn').addEventListener('click', signOut);
 	// Data export + account deletion
+	const _footerYear = document.getElementById('footerYear');
+	if (_footerYear) _footerYear.textContent = new Date().getFullYear();
 	document.getElementById('exportJsonBtn').addEventListener('click', () => exportUserData('json'));
 	document.getElementById('exportCsvBtn').addEventListener('click', () => exportUserData('csv'));
 	document.getElementById('deleteAccountBtn').addEventListener('click', openDeleteAccount);
