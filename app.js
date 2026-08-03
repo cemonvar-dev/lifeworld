@@ -451,11 +451,12 @@ function renderGallery(filteredTiles) {
 			// Health header: the weather/health emoji repeated 5×, all fully
 			// visible. The emoji type conveys the health level; finished tiles
 			// keep their single status icon instead.
+			const meterJustify = tp.finished ? 'justify-center' : 'justify-between';
 			const healthMeter = tp.finished
 				? `<span class="text-lg leading-none">${tp.emoji}</span>`
-				: Array.from({ length: 5 }, (_, i) => `<span class="text-base leading-none" style="transform:translateY(${i % 2 ? '6px' : '-6px'})">${tp.emoji}</span>`).join('');
+				: Array.from({ length: 7 }, (_, i) => `<span class="text-sm leading-none" style="transform:translateY(${i % 2 ? '5px' : '-5px'})">${tp.emoji}</span>`).join('');
 			tileDiv.innerHTML = `
-				   <div class="w-full flex justify-center items-center gap-1.5 py-3 mb-2 border-b border-slate-300" title="${tp.label}">
+				   <div class="w-full flex ${meterJustify} items-center pt-0.5 pb-1.5 mb-2 border-b border-slate-300" title="${tp.label}">
 					   ${healthMeter}
 				   </div>
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
