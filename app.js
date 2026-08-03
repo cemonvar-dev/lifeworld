@@ -1958,6 +1958,92 @@ async function signOut() {
 	window.location.replace('index.html');
 }
 
+// ---- Data export ----
+function downloadBlob(filename, mime, content) {
+	const blob = new Blob([content], { type: mime });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url; a.download = filename;
+	document.body.appendChild(a); a.click(); a.remove();
+	setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvCell(v) {
+	if (v === null || v === undefined) return '';
+	const s = Array.isArray(v) ? v.join('; ') : String(v);
+	return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function csvRows(rows) { return rows.map(r => r.map(csvCell).join(',')).join('\r\n'); }
+
+async function exportUserData(format) {
+	if (!currentUserId) { alert('Please sign in first.'); return; }
+	const { data: tasks, error: tErr } = await supa
+		.from('tasks').select('*, task_logs(*), task_frequency_days(*)').eq('user_id', currentUserId);
+	const { data: tags } = await supa.from('tags').select('*').eq('user_id', currentUserId);
+	if (tErr) { alert('Export failed: ' + tErr.message); return; }
+	const stamp = todayLocal();
+
+	if (format === 'json') {
+		const payload = { exported_at: new Date().toISOString(), user_id: currentUserId, tags: tags || [], tasks: tasks || [] };
+		downloadBlob(`fiblia-export-${stamp}.json`, 'application/json', JSON.stringify(payload, null, 2));
+		return;
+	}
+	// CSV: one file for tiles, one for logs (both human-readable in a spreadsheet).
+	const tileRows = [['id', 'name', 'frequency_mode', 'status', 'end_date', 'day_of_month', 'time_of_day', 'created_at']];
+	(tasks || []).forEach(t => tileRows.push([t.id, t.name, t.frequency_mode, t.status, t.end_date, t.day_of_month, t.time_of_day, t.created_at]));
+	downloadBlob(`fiblia-tiles-${stamp}.csv`, 'text/csv', csvRows(tileRows));
+
+	const nameById = {}; (tasks || []).forEach(t => { nameById[t.id] = t.name; });
+	const logRows = [['tile', 'log_date', 'status', 'note', 'created_at']];
+	(tasks || []).forEach(t => (t.task_logs || []).forEach(l => logRows.push([nameById[t.id], l.log_date, l.status, l.note, l.created_at])));
+	setTimeout(() => downloadBlob(`fiblia-logs-${stamp}.csv`, 'text/csv', csvRows(logRows)), 400);
+}
+
+// ---- Account deletion ----
+function openDeleteAccount() {
+	const note = document.getElementById('deleteAccountPremiumNote');
+	if (note) note.classList.toggle('hidden', !isPremiumUser());
+	const input = document.getElementById('deleteConfirmInput');
+	const confirm = document.getElementById('confirmDeleteAccount');
+	const err = document.getElementById('deleteAccountError');
+	if (input) input.value = '';
+	if (confirm) { confirm.disabled = true; confirm.textContent = 'Delete forever'; }
+	if (err) { err.classList.add('hidden'); err.textContent = ''; }
+	document.getElementById('deleteAccountOverlay').classList.remove('hidden');
+	setTimeout(() => { if (input) input.focus(); }, 50);
+}
+function closeDeleteAccount() {
+	document.getElementById('deleteAccountOverlay').classList.add('hidden');
+}
+async function confirmDeleteAccount() {
+	const btn = document.getElementById('confirmDeleteAccount');
+	const err = document.getElementById('deleteAccountError');
+	const showErr = (m) => { if (err) { err.textContent = m; err.classList.remove('hidden'); } };
+	if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+	try {
+		const { data: { session } } = await supa.auth.getSession();
+		const token = session && session.access_token;
+		if (!token) { showErr('Session expired — please sign in again.'); if (btn) btn.textContent = 'Delete forever'; return; }
+		const resp = await fetch(`${API_BASE}/api/delete-account`, {
+			method: 'POST',
+			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+		});
+		if (!resp.ok) {
+			let msg = 'Deletion failed. Please try again or contact info@fiblia.com.';
+			try { const j = await resp.json(); if (j && j.message) msg = j.message; } catch (e) {}
+			showErr(msg);
+			if (btn) { btn.disabled = false; btn.textContent = 'Delete forever'; }
+			return;
+		}
+		if (window.posthogReset) window.posthogReset();
+		try { await supa.auth.signOut(); } catch (e) {}
+		window.location.replace('index.html');
+	} catch (e) {
+		showErr('Network error — please try again.');
+		if (btn) { btn.disabled = false; btn.textContent = 'Delete forever'; }
+	}
+}
+
 function addNewTile() {
 	if (!currentUserId) return;
 	stopTileDictation();
@@ -3351,6 +3437,18 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (activeTileId && !document.getElementById('tileOverlay').classList.contains('hidden')) openTilePopup(activeTileId);
 	});
 	document.getElementById('signOutBtn').addEventListener('click', signOut);
+	// Data export + account deletion
+	document.getElementById('exportJsonBtn').addEventListener('click', () => exportUserData('json'));
+	document.getElementById('exportCsvBtn').addEventListener('click', () => exportUserData('csv'));
+	document.getElementById('deleteAccountBtn').addEventListener('click', openDeleteAccount);
+	document.getElementById('cancelDeleteAccount').addEventListener('click', closeDeleteAccount);
+	document.getElementById('confirmDeleteAccount').addEventListener('click', confirmDeleteAccount);
+	document.getElementById('deleteConfirmInput').addEventListener('input', e => {
+		document.getElementById('confirmDeleteAccount').disabled = e.target.value.trim() !== 'DELETE';
+	});
+	document.getElementById('deleteAccountOverlay').addEventListener('click', e => {
+		if (e.target === document.getElementById('deleteAccountOverlay')) closeDeleteAccount();
+	});
 	document.getElementById('newTileOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('newTileOverlay')) closeNewTileModal();
 	});
