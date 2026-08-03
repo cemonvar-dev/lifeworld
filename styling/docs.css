@@ -1,0 +1,45 @@
+/* Shared styles for Fiblia info/documentation pages (About, Contact, Security).
+   Loaded alongside landing.css, which provides the base theme, nav and footer. */
+.doc {
+	width: min(760px, 100%);
+	margin: 0 auto;
+	padding: 48px 20px 64px;
+}
+.doc-card {
+	border: 1px solid var(--stroke);
+	border-radius: var(--radius);
+	background: var(--card);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	box-shadow: var(--shadow);
+	padding: clamp(24px, 4vw, 40px);
+}
+.doc h1 {
+	font-size: clamp(28px, 4vw, 40px);
+	letter-spacing: -0.5px;
+	line-height: 1.1;
+	margin: 0 0 6px;
+}
+.doc .updated {
+	color: var(--muted);
+	font-size: 13px;
+	margin: 0 0 26px;
+}
+.doc h2 {
+	font-size: 19px;
+	letter-spacing: -0.2px;
+	margin: 28px 0 8px;
+}
+.doc p,
+.doc li {
+	color: rgba(15, 46, 31, 0.82);
+	line-height: 1.65;
+	font-size: 15.5px;
+}
+.doc p { margin: 0 0 14px; }
+.doc ul { margin: 0 0 14px; padding-left: 20px; }
+.doc li { margin: 4px 0; }
+.doc a { color: #2f8f63; text-decoration: underline; text-underline-offset: 3px; }
+.doc a:hover { color: #256f4d; }
+.doc .lede { font-size: 17px; color: var(--muted); line-height: 1.6; }
+.doc .back { display: inline-block; margin-top: 26px; font-size: 14px; }

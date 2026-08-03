@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Contact — Fiblia</title>
+  <meta name="description" content="Get in touch with the Fiblia team." />
+  <link rel="icon" href="logo.png" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <link rel="stylesheet" href="styling/landing.css" />
+  <link rel="stylesheet" href="styling/docs.css" />
+  <script src="posthog-init.js"></script>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" style="text-decoration:none;">
+        <img class="mark" src="logo.png" alt="Fiblia logo" />
+        <strong>Fiblia</strong>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="link" href="/about.html">About</a>
+        <a class="link" href="/security.html">Security</a>
+        <a class="btn btn-primary" href="/">Sign in</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="doc">
+    <div class="doc-card">
+      <h1>Contact</h1>
+      <p class="updated">Last updated 2 Aug 2026</p>
+
+      <p class="lede">We read every message. Reach us and we’ll get back to you.</p>
+
+      <h2>General &amp; support</h2>
+      <p><a href="mailto:info@fiblia.com">info@fiblia.com</a></p>
+
+      <h2>Security</h2>
+      <p>To report a security issue, please email <a href="mailto:info@fiblia.com">info@fiblia.com</a>. See our <a href="/security.html">Security</a> page for responsible-disclosure details.</p>
+
+      <a class="back" href="/">← Back to home</a>
+    </div>
+  </main>
+
+  <footer class="container">
+    <div class="footer-inner">
+      <span>© <span id="year"></span> Fiblia</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/security.html">Security</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
