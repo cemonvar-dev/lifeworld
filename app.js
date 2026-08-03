@@ -1945,8 +1945,8 @@ function setSettingsTab(tab) {
 	if (acc) acc.classList.toggle('hidden', tab !== 'account');
 }
 
-function openSettings() {
-	setSettingsTab('app'); // always open on the App tab
+function openSettings(initialTab) {
+	setSettingsTab(initialTab === 'account' ? 'account' : 'app');
 	const sel = document.getElementById('settingsVoiceLang');
 	if (sel) sel.value = getVoiceLang();
 	const iconSel = document.getElementById('settingsHealthIcons');
@@ -3445,7 +3445,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('newTileMicBtn').addEventListener('click', startTileDictation);
 
 	// Settings popup (voice language, …)
-	document.getElementById('settingsBtn').addEventListener('click', openSettings);
+	document.getElementById('settingsBtn').addEventListener('click', () => openSettings());
 	document.getElementById('closeSettings').addEventListener('click', closeSettings);
 	document.getElementById('settingsOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
@@ -3585,7 +3585,7 @@ document.addEventListener('DOMContentLoaded', () => {
 			}
 			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
 			else if (dest === 'ai') document.getElementById('aiChatBtn').click();
-			else if (dest === 'me') openSettings(); // language preference etc.
+			else if (dest === 'me') openSettings('account'); // account: sign out, export, delete
 		});
 	});
 
