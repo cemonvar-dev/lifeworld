@@ -305,16 +305,24 @@ section.block{ padding: 40px 0; }
 
 /* ---------- Footer ---------- */
 footer{
-  padding: 34px 0 44px;
+  padding: 24px 0 40px;
   color: rgba(15,46,31,0.55);
   font-size: 13px;
 }
+/* Frosted bar to match the app footer */
 .footer-inner{
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 14px 20px;
 }
 .footer-inner a{ color: rgba(15,46,31,0.7); text-decoration: none; }
 .footer-inner a:hover{ text-decoration: underline; text-underline-offset: 3px; }
