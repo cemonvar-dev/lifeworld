@@ -1931,7 +1931,22 @@ function setVoiceLang(lang) {
 }
 
 // ---- Settings ----
+function setSettingsTab(tab) {
+	document.querySelectorAll('.settings-tab').forEach(b => {
+		const on = b.dataset.stab === tab;
+		b.classList.toggle('border-blue-500', on);
+		b.classList.toggle('text-blue-600', on);
+		b.classList.toggle('border-transparent', !on);
+		b.classList.toggle('text-slate-400', !on);
+	});
+	const app = document.getElementById('stabApp');
+	const acc = document.getElementById('stabAccount');
+	if (app) app.classList.toggle('hidden', tab !== 'app');
+	if (acc) acc.classList.toggle('hidden', tab !== 'account');
+}
+
 function openSettings() {
+	setSettingsTab('app'); // always open on the App tab
 	const sel = document.getElementById('settingsVoiceLang');
 	if (sel) sel.value = getVoiceLang();
 	const iconSel = document.getElementById('settingsHealthIcons');
@@ -3443,6 +3458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	});
 	document.getElementById('signOutBtn').addEventListener('click', signOut);
 	// Data export + account deletion
+	document.querySelectorAll('.settings-tab').forEach(b => b.addEventListener('click', () => setSettingsTab(b.dataset.stab)));
 	const _footerYear = document.getElementById('footerYear');
 	if (_footerYear) _footerYear.textContent = new Date().getFullYear();
 	document.getElementById('exportJsonBtn').addEventListener('click', () => exportUserData('json'));
