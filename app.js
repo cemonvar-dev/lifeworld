@@ -2970,10 +2970,9 @@ function renderSearchChips() {
 	const chip = (inner, xClass, extra = '') =>
 		`<span class="inline-flex items-center gap-1 rounded-full bg-white/70 backdrop-blur border border-white/60 shadow-sm px-3 py-1 text-sm font-medium text-slate-600">${inner}<button class="${xClass} text-xs text-slate-400 hover:text-red-500 ml-1" ${extra} title="Remove">✕</button></span>`;
 	const parts = [];
-	// Default filters shown as chips: 📅 Today / 💬 No Action. The 'active' lifecycle
-	// (hide completed) is the invisible baseline — only show a chip when it deviates
-	// (📊 All = include completed, ✅ Completed = only completed).
-	if (activeLifecycleFilter && activeLifecycleFilter !== 'active') {
+	// Show the lifecycle filter as a chip whenever one is applied (🔥 Active /
+	// ✅ Completed). '📊 All' means no lifecycle restriction, so no chip then.
+	if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
 		const lc = LIFECYCLE_CYCLE.find(s => s.key === activeLifecycleFilter);
 		if (lc) parts.push(chip(escapeHtml(lc.label), 'lifecycle-chip-x'));
 	}
@@ -2994,7 +2993,7 @@ function renderSearchChips() {
 	box.innerHTML = parts.join('')
 		+ `<button id="clearAllChipsBtn" class="text-xs px-2 py-1 rounded-full bg-slate-200/80 hover:bg-slate-300 transition">Clear all</button>`;
 	const lifecycleX = box.querySelector('.lifecycle-chip-x');
-	if (lifecycleX) lifecycleX.addEventListener('click', () => setLifecycleFilter('active')); // back to baseline (hide completed)
+	if (lifecycleX) lifecycleX.addEventListener('click', () => setLifecycleFilter('all')); // remove filter → show all
 	const todayX = box.querySelector('.today-chip-x');
 	if (todayX) todayX.addEventListener('click', () => setTimelineFilter(null)); // show all days
 	const statusX = box.querySelector('.status-chip-x');
