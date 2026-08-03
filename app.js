@@ -453,9 +453,9 @@ function renderGallery(filteredTiles) {
 			// keep their single status icon instead.
 			const healthMeter = tp.finished
 				? `<span class="text-lg leading-none">${tp.emoji}</span>`
-				: Array.from({ length: 5 }, () => `<span class="text-sm leading-none">${tp.emoji}</span>`).join('');
+				: Array.from({ length: 5 }, (_, i) => `<span class="text-base leading-none" style="transform:translateY(${i % 2 ? '6px' : '-6px'})">${tp.emoji}</span>`).join('');
 			tileDiv.innerHTML = `
-				   <div class="w-full flex justify-center items-center gap-1 pb-2 mb-2 border-b border-slate-300" title="${tp.label}">
+				   <div class="w-full flex justify-center items-center gap-1.5 py-3 mb-2 border-b border-slate-300" title="${tp.label}">
 					   ${healthMeter}
 				   </div>
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
