@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Privacy Policy — Fiblia</title>
+  <meta name="description" content="How Fiblia collects, uses, and protects your personal information." />
+  <link rel="icon" href="logo.png" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <link rel="stylesheet" href="styling/landing.css" />
+  <link rel="stylesheet" href="styling/docs.css" />
+  <script src="posthog-init.js"></script>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" style="text-decoration:none;">
+        <img class="mark" src="logo.png" alt="Fiblia logo" />
+        <strong>Fiblia</strong>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="link" href="/about.html">About</a>
+        <a class="link" href="/terms.html">Terms</a>
+        <a class="btn btn-primary" href="/">Sign in</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="doc">
+    <div class="doc-card">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated 2 Aug 2026</p>
+
+      <p class="lede">This policy explains what we collect, why, and how we protect it. In short: we collect what’s needed to run Fiblia, and we never sell your personal information.</p>
+
+      <h2>What we collect</h2>
+      <ul>
+        <li><strong>Account details</strong> — your name and email address, provided by Google when you sign in. We never see or store your Google password.</li>
+        <li><strong>Your content</strong> — the tiles, tasks, logs, and related data you create in the app.</li>
+        <li><strong>Usage &amp; device data</strong> — basic analytics such as pages viewed and actions taken, plus standard technical data like browser type, to help us understand and improve the product.</li>
+      </ul>
+
+      <h2>How we use it</h2>
+      <ul>
+        <li>To provide and operate Fiblia and store your data across your devices.</li>
+        <li>To improve features, reliability, and usability.</li>
+        <li>To respond to your messages and support requests.</li>
+      </ul>
+
+      <h2>Service providers</h2>
+      <p>We rely on a small set of trusted providers to run Fiblia:</p>
+      <ul>
+        <li><strong>Google</strong> — sign-in (authentication).</li>
+        <li><strong>Supabase</strong> — database and storage of your account and content.</li>
+        <li><strong>Vercel</strong> — website and app hosting.</li>
+        <li><strong>PostHog</strong> — product analytics.</li>
+        <li><strong>Lemon Squeezy</strong> — payments and subscriptions.</li>
+      </ul>
+      <p>These providers process data on our behalf to deliver the service. We do not sell your personal information.</p>
+
+      <h2>Cookies &amp; local storage</h2>
+      <p>Fiblia uses your browser’s storage to keep you signed in and to support analytics. You can clear this at any time in your browser settings, though doing so may sign you out.</p>
+
+      <h2>Data retention &amp; deletion</h2>
+      <p>We keep your data while your account is active. You can request deletion of your account and associated data by emailing <a href="mailto:info@fiblia.com">info@fiblia.com</a>.</p>
+
+      <h2>Security</h2>
+      <p>Your data is transmitted over HTTPS and protected with per-account access controls. See our <a href="/security.html">Security</a> page for details.</p>
+
+      <h2>Your rights</h2>
+      <p>Depending on where you live, you may have rights to access, correct, or delete your personal information. Contact us and we’ll help.</p>
+
+      <h2>Children</h2>
+      <p>Fiblia isn’t intended for children under the age required by law in their country, and we don’t knowingly collect their data.</p>
+
+      <h2>Changes</h2>
+      <p>We may update this policy; we’ll revise the “last updated” date above when we do.</p>
+
+      <h2>Contact</h2>
+      <p>Questions about privacy? Email <a href="mailto:info@fiblia.com">info@fiblia.com</a>.</p>
+
+      <a class="back" href="/">← Back to home</a>
+    </div>
+  </main>
+
+  <footer class="container">
+    <div class="footer-inner">
+      <span>© <span id="year"></span> Fiblia</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/security.html">Security</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
