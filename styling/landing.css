@@ -304,25 +304,25 @@ section.block{ padding: 40px 0; }
 .cta-band .cta-row{ justify-content: center; }
 
 /* ---------- Footer ---------- */
+/* Full-width bar mirroring the header (.nav): same bg, grey divider, height. */
 footer{
-  padding: 24px 0 40px;
-  color: rgba(15,46,31,0.55);
+  margin-top: 56px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--stroke);
+  color: rgba(15,46,31,0.6);
   font-size: 13px;
 }
-/* Frosted bar to match the app footer */
 .footer-inner{
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
-  background: var(--card);
-  border: 1px solid var(--stroke);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  padding: 14px 20px;
 }
 .footer-inner a{ color: rgba(15,46,31,0.7); text-decoration: none; }
 .footer-inner a:hover{ text-decoration: underline; text-underline-offset: 3px; }
