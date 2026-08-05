@@ -452,8 +452,8 @@ function renderGallery(filteredTiles) {
 			// (thriving → dying). Finished tiles show their status flag instead.
 			const tierLabel = tile.health >= 80 ? 'thriving' : tile.health >= 60 ? 'healthy' : tile.health >= 40 ? 'growing' : tile.health >= 20 ? 'wilting' : 'dying';
 			const healthHeader = tp.finished
-				? `<div class="-mt-4 -mx-4 mb-3 h-16 rounded-t-xl border-b border-slate-300 bg-slate-100 flex items-center justify-center text-3xl" title="${tp.label}">${tp.emoji}</div>`
-				: `<div class="-mt-4 -mx-4 mb-3 h-16 rounded-t-xl border-b border-slate-300 bg-cover bg-center" style="background-image:url('styling/icons/weather/${tierLabel}.jpg')" title="${tp.label}"></div>`;
+				? `<div class="w-full h-16 mb-3 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center text-3xl" title="${tp.label}">${tp.emoji}</div>`
+				: `<div class="w-full h-16 mb-3 rounded-xl border border-slate-200 bg-cover bg-center" style="background-image:url('styling/icons/weather/${tierLabel}.jpg')" title="${tp.label}"></div>`;
 			tileDiv.innerHTML = `
 				   ${healthHeader}
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
