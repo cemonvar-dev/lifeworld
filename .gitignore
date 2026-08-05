@@ -9,3 +9,4 @@ package-lock.json
 *.jks
 keystore.base64.txt
 key.properties
+styling/icons/weather/*.png

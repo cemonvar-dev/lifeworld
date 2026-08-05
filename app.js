@@ -448,17 +448,14 @@ function renderGallery(filteredTiles) {
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
-			// Health header: the weather/health emoji repeated 5×, all fully
-			// visible. The emoji type conveys the health level; finished tiles
-			// keep their single status icon instead.
-			const meterJustify = tp.finished ? 'justify-center' : 'justify-between';
-			const healthMeter = tp.finished
-				? `<span class="text-lg leading-none">${tp.emoji}</span>`
-				: Array.from({ length: 7 }, (_, i) => `<span class="text-sm leading-none" style="transform:translateY(${i % 2 ? '5px' : '-5px'})">${tp.emoji}</span>`).join('');
+			// Health shown as a weather-landscape banner across the tile header
+			// (thriving → dying). Finished tiles show their status flag instead.
+			const tierLabel = tile.health >= 80 ? 'thriving' : tile.health >= 60 ? 'healthy' : tile.health >= 40 ? 'growing' : tile.health >= 20 ? 'wilting' : 'dying';
+			const healthHeader = tp.finished
+				? `<div class="-mt-4 -mx-4 mb-3 h-16 rounded-t-xl border-b border-slate-300 bg-slate-100 flex items-center justify-center text-3xl" title="${tp.label}">${tp.emoji}</div>`
+				: `<div class="-mt-4 -mx-4 mb-3 h-16 rounded-t-xl border-b border-slate-300 bg-cover bg-center" style="background-image:url('styling/icons/weather/${tierLabel}.jpg')" title="${tp.label}"></div>`;
 			tileDiv.innerHTML = `
-				   <div class="w-full flex ${meterJustify} items-center pt-0.5 pb-1.5 mb-2 border-b border-slate-300" title="${tp.label}">
-					   ${healthMeter}
-				   </div>
+				   ${healthHeader}
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
