@@ -439,7 +439,7 @@ function renderGallery(filteredTiles) {
 			const tp = tilePlant({ status: tile.taskStatus }, tile.health);
 			const tileColor = tp.color || tile.healthColor || 'bg-white';
 			// Remove color class from tile, use data attribute for gradient
-			tileDiv.className = `tile rounded-xl shadow border p-4 flex flex-col items-center justify-between gap-2 hover:shadow-lg transition cursor-pointer`;
+			tileDiv.className = `tile rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.setAttribute('data-tilecolor', tileColor);
 			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
@@ -462,7 +462,7 @@ function renderGallery(filteredTiles) {
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
 					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
-				   <div class="flex gap-2 mt-2 w-full">
+				   <div class="flex gap-2 mt-auto w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
 					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				   </div>
