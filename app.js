@@ -662,6 +662,7 @@ function openTilePopup(tileId) {
 	const isRoutine = freqMode !== 'once';
 	// Status is binary: completed vs not (everything else counts as "not completed").
 	const isCompleted = (raw.status || 'in progress') === 'completed';
+	const isCancelled = raw.status === 'cancelled';
 	const currentTags = raw.tag_ids || [];
 	const freqDays = (raw.task_frequency_days || []).map(d => String(d.day_of_week));
 
@@ -731,14 +732,15 @@ function openTilePopup(tileId) {
 			</div>
 		</div>
 		<hr class="my-5 border-slate-200">
-		<div class="flex items-center justify-between gap-2 mb-3">
+		<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
 			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
 				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
 				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
 			</div>
 			<div class="flex gap-2">
 			<button id="tilePinBtn" type="button" aria-pressed="${!!raw.pinned}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${raw.pinned ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${raw.pinned ? '' : 'grayscale'}">📌</span><span>${raw.pinned ? 'Pinned' : 'Pin'}</span></button>
-			<button id="completeToggleBtn" type="button" class="inline-flex flex-col items-center leading-tight gap-0.5 px-4 py-2 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '<span>✅</span><span>Completed</span>' : '<span>⬜</span><span>Mark completed</span>'}</button>
+			<button data-status-toggle="completed" type="button" aria-pressed="${isCompleted}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span>${isCompleted ? '✅' : '⬜'}</span><span>Completed</span></button>
+			<button data-status-toggle="cancelled" type="button" aria-pressed="${isCancelled}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${isCancelled ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${isCancelled ? '' : 'grayscale'}">🚫</span><span>Cancelled</span></button>
 			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3 mb-3 items-start">
@@ -857,19 +859,27 @@ function openTilePopup(tileId) {
 		});
 	});
 
-	// Completed toggle — status is binary (completed ⟷ not completed).
-	const completeToggleBtn = document.getElementById('completeToggleBtn');
-	if (completeToggleBtn) {
-		completeToggleBtn.addEventListener('click', async () => {
-			const newStatus = (raw.status === 'completed') ? 'in progress' : 'completed';
-			raw.status = newStatus;
-			const displayTile = tiles.find(t => t.id === tileId);
-			if (displayTile) displayTile.taskStatus = newStatus;
-			openTilePopup(tileId);
-			applyFilters();
-			await updateTask(tileId, { status: newStatus });
+	// Completed / Cancelled toggles; pressing the active one reopens the tile.
+	const setPopupStatus = status => {
+		raw.status = status;
+		const displayTile = tiles.find(t => t.id === tileId);
+		if (displayTile) displayTile.taskStatus = status;
+		openTilePopup(tileId);
+		applyFilters();
+	};
+	document.querySelectorAll('[data-status-toggle]').forEach(btn => {
+		btn.addEventListener('click', async () => {
+			const previous = raw.status;
+			const target = btn.dataset.statusToggle;
+			const newStatus = previous === target ? 'in progress' : target;
+			setPopupStatus(newStatus);
+			const { error } = await supa.from('tasks').update({ status: newStatus }).eq('id', tileId);
+			if (error) {
+				console.error('Status update error:', error);
+				setPopupStatus(previous);
+			}
 		});
-	}
+	});
 
 	const remIso = raw.reminder_at;
 	lwSelect(document.getElementById('reminderSelectMount'), {
@@ -1339,7 +1349,7 @@ function staleSuggestion(raw, doneLogs, lastDone) {
 	if (raw.frequency_mode === 'daily') {
 		actions.push({ id: 'schedule', label: 'Try 3 days a week', days: suggestedThreeDays(doneLogs) });
 	}
-	actions.push({ id: 'complete', label: 'Mark completed' });
+	actions.push({ id: 'complete', label: 'Completed' });
 	return {
 		kind: 'stale',
 		text: lastDone ? `No activity since ${since}. Restart it today, or close this tile if it no longer matters.` : `You haven't started this yet. Do it once today, or close this tile if it no longer matters.`,
@@ -2916,7 +2926,7 @@ function getTodaySummary() {
 			(l.status === 'done' || l.status === 'completed' || l.status === 'skipped'));
 		if (todayLog) {
 			(todayLog.status === 'skipped' ? skipped : done).push(t);
-		} else if (t.taskStatus !== 'completed' && isTileScheduledToday(t.id)) {
+		} else if (!['completed', 'cancelled', 'failed'].includes(t.taskStatus) && isTileScheduledToday(t.id)) {
 			remaining.push(t); // scheduled today, not completed, no action yet
 		}
 	});
@@ -3097,7 +3107,8 @@ function toggleStatusFilter() {
 const LIFECYCLE_CYCLE = [
 		{ key: 'active', label: '🔥 Active', bg: 'bg-orange-100 text-orange-700 border-orange-300' },
 		{ key: 'all', label: '📊 All', bg: 'bg-white text-slate-700 border-slate-300' },
-		{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' }
+		{ key: 'completed', label: '✅ Completed', bg: 'bg-emerald-100 text-emerald-700 border-emerald-300' },
+		{ key: 'cancelled', label: '🚫 Cancelled', bg: 'bg-rose-100 text-rose-700 border-rose-300' }
 	];
 
 // Reflect the current lifecycle filter on its toolbar button.
@@ -3247,9 +3258,9 @@ function applyFilters() {
 	   // Lifecycle filter
 	   if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
 		   if (activeLifecycleFilter === 'active') {
-			   filtered = filtered.filter(t => t.taskStatus !== 'completed'); // not completed
+			   filtered = filtered.filter(t => !['completed', 'cancelled', 'failed'].includes(t.taskStatus));
 		   } else {
-			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter); // 'completed'
+			   filtered = filtered.filter(t => t.taskStatus === activeLifecycleFilter); // 'completed' or 'cancelled'
 		   }
 	   }
 		       if (activeMoodFilter) {
