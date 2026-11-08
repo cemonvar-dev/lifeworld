@@ -88,6 +88,21 @@ function logDay(log) {
 	return log.log_date || (log.created_at ? log.created_at.split('T')[0] : '');
 }
 
+// Was a one-time task done for its current date? Reschedules aren't recorded, so
+// a done log counts only from a week before the due date onward; an older one
+// belongs to an earlier date.
+const ONCE_EARLY_DONE_DAYS = 7;
+function isOnceDoneForDue(task) {
+	const doneDays = (task.task_logs || [])
+		.filter(l => l.status === 'done' || l.status === 'completed')
+		.map(logDay);
+	if (!task.end_date) return doneDays.length > 0;
+	const cutoff = new Date(String(task.end_date).slice(0, 10) + 'T00:00:00');
+	cutoff.setDate(cutoff.getDate() - ONCE_EARLY_DONE_DAYS);
+	const cutoffDay = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+	return doneDays.some(day => day >= cutoffDay);
+}
+
 function calculateHealth(task) {
 	const logs = task.task_logs || [];
 	const mode = task.frequency_mode || 'daily';
@@ -109,7 +124,7 @@ function calculateHealth(task) {
 	});
 
 	if (mode === 'once') {
-		if (doneDates.size > 0) return 100;
+		if (isOnceDoneForDue(task)) return 100;
 		// Compare calendar days: a task due today isn't overdue yet.
 		if (task.end_date && String(task.end_date).slice(0, 10) < todayLocal()) return 0;
 		return 50; // not yet due
@@ -347,7 +362,7 @@ function getNextDueLabel(tileId) {
 		if (!raw.end_date) return '—';
 		const d = new Date(raw.end_date + 'T00:00:00');
 		const diff = Math.round((d - today) / 86400000);
-		if (diff < 0) return 'overdue';
+		if (diff < 0) return isOnceDoneForDue(raw) ? '—' : 'overdue';
 		if (diff === 0) return 'today';
 		if (diff === 1) return 'tomorrow';
 		if (diff <= 7) return `in ${diff} days`;
