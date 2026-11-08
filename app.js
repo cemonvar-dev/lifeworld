@@ -4125,6 +4125,33 @@ function openCalendarPopup() {
 		       finalizeMonth();
 	       }
 
+	       // Scroll to a date, or the next visible date that has tasks.
+	       function jumpToCalendarDate(day) {
+		       const note = document.getElementById('calendarJumpNote');
+		       const target = [...container.querySelectorAll('.cal-date-row')]
+			       .find(row => row.style.display !== 'none' && row.dataset.day >= day);
+		       const label = new Date(day + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+		       if (!target) {
+			       note.textContent = `Nothing planned on or after ${label}.`;
+			       return;
+		       }
+		       note.textContent = target.dataset.day === day ? '' : `Nothing on ${label}. Showing the next planned date.`;
+		       const toolbarHeight = document.getElementById('calendarToolbar').offsetHeight;
+		       container.scrollTop += target.getBoundingClientRect().top - container.getBoundingClientRect().top - toolbarHeight;
+		       target.style.outline = '2px solid #60a5fa';
+		       setTimeout(() => { target.style.outline = ''; }, 1500);
+	       }
+	       document.getElementById('calendarJumpToday')?.addEventListener('click', () => jumpToCalendarDate(todayLocal()));
+	       document.getElementById('calendarJumpTomorrow')?.addEventListener('click', () => {
+		       const tomorrow = new Date();
+		       tomorrow.setDate(tomorrow.getDate() + 1);
+		       jumpToCalendarDate(suggestionDayKey(tomorrow));
+	       });
+	       const jumpDateInput = document.getElementById('calendarJumpDate');
+	       jumpDateInput?.addEventListener('change', () => {
+		       if (jumpDateInput.value) jumpToCalendarDate(jumpDateInput.value);
+	       });
+
 	       // Initial render: empty chips, default kind (one-time) applied.
 	       renderFilterChips();
 	       setKind(activeKind);
@@ -4423,7 +4450,8 @@ function renderOnceTasksCalendar() {
 	// Filtering UI: kind segmented control (default One-time) + text input + chips.
 	const kindBtn = (k, label) =>
 		`<button type="button" class="cal-kind-btn px-3 py-1 rounded-full transition ${k === 'once' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}" data-kind="${k}">${label}</button>`;
-	let html = `<div class="mb-4 flex flex-col gap-2">
+	const jumpBtn = 'px-3 py-1.5 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition';
+	let html = `<div id="calendarToolbar" class="sticky top-0 z-20 bg-white pb-3 mb-1 flex flex-col gap-2">
 		       <div id="calendarFilterChips" class="flex flex-wrap gap-1 w-full"></div>
 		       <div class="flex items-center gap-2 w-full justify-between flex-wrap">
 			       <div class="flex items-center gap-2 flex-wrap">
@@ -4433,6 +4461,12 @@ function renderOnceTasksCalendar() {
 					       ${kindBtn('once', 'One-time')}${kindBtn('routine', 'Routine')}
 				       </div>
 			       </div>
+		       </div>
+		       <div class="flex items-center gap-2 flex-wrap">
+			       <button type="button" id="calendarJumpToday" class="${jumpBtn}">Today</button>
+			       <button type="button" id="calendarJumpTomorrow" class="${jumpBtn}">Tomorrow</button>
+			       <input type="date" id="calendarJumpDate" lang="en-GB" aria-label="Go to date" title="Go to date" class="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600" />
+			       <span id="calendarJumpNote" class="text-xs text-slate-500" role="status"></span>
 		       </div>
 		</div>`;
 
@@ -4489,7 +4523,7 @@ function renderOnceTasksCalendar() {
 		// Date header: groups the day's rows (dayparts nest beneath it).
 		const dayName = dObj.toLocaleDateString(undefined, { weekday: 'short' });
 		const shortDate = `${String(dObj.getDate()).padStart(2, '0')}-${String(dObj.getMonth() + 1).padStart(2, '0')}`;
-		html += `<tr class="cal-date-row"><td colspan="2" class="bg-slate-50 font-semibold text-slate-700 px-4 py-1.5">${shortDate} · ${dayName}</td></tr>`;
+		html += `<tr class="cal-date-row" data-day="${date}"><td colspan="2" class="bg-slate-50 font-semibold text-slate-700 px-4 py-1.5">${shortDate} · ${dayName}</td></tr>`;
 		const rows = dateMap[date].slice().sort(bySort);
 		// Sub-group a date's rows by time of day — but only when at least one row
 		// has a time set, so one-time lists that don't use it stay flat.
