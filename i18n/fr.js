@@ -311,5 +311,10 @@ window.I18N_MESSAGES.fr = {
 	"Apply changes": "Appliquer",
 	"Update": "Modifier",
 	"Name": "Nom",
-	"Days": "Jours"
+	"Days": "Jours",
+	"Copy": "Copier",
+	"Copied": "Copié",
+	"Couldn't copy": "Échec de la copie",
+	"Copy chat": "Copier le chat",
+	"You": "Vous"
 };

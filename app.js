@@ -3511,6 +3511,34 @@ function stopAiDictation() {
 	if (aiSpeechRecognizer) { try { aiSpeechRecognizer.abort(); } catch (e) {} aiSpeechRecognizer = null; }
 }
 
+async function copyText(text) {
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch (e) { /* older WebViews: fall back below */ }
+	const area = document.createElement('textarea');
+	area.value = text;
+	area.style.position = 'fixed';
+	area.style.opacity = '0';
+	document.body.appendChild(area);
+	area.select();
+	let copied = false;
+	try { copied = document.execCommand('copy'); } catch (e) {}
+	area.remove();
+	return copied;
+}
+
+function showCopyResult(button, result, original) {
+	button.textContent = result;
+	setTimeout(() => { button.textContent = original; }, 1500);
+}
+
+async function copyAiChat(button) {
+	if (!aiChatHistory.length) return;
+	const text = aiChatHistory.map(m => `${m.role === 'user' ? _t('You') : 'Fiblia AI'}: ${m.content}`).join('\n\n');
+	showCopyResult(button, await copyText(text) ? '✅' : '⚠️', '📋');
+}
+
 function clearAiChat() {
 	aiChatHistory = [];
 	document.getElementById('aiChatMessages').innerHTML = '';
@@ -3524,8 +3552,13 @@ function appendAiMessage(role, content) {
 		bubble.className = 'flex justify-end';
 		bubble.innerHTML = `<div translate="no" class="bg-purple-500 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>`;
 	} else if (role === 'assistant') {
-		bubble.className = 'flex justify-start';
-		bubble.innerHTML = `<div translate="no" class="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${formatAiResponse(content)}</div>`;
+		bubble.className = 'flex flex-col items-start';
+		bubble.innerHTML = `<div translate="no" class="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${formatAiResponse(content)}</div><button type="button" data-ai-copy class="mt-0.5 ml-1 text-[11px] text-slate-400 hover:text-slate-600 transition">📋 Copy</button>`;
+		const copyBtn = bubble.querySelector('[data-ai-copy]');
+		copyBtn.addEventListener('click', async () => {
+			const copied = await copyText(content);
+			showCopyResult(copyBtn, copied ? `✅ ${_t('Copied')}` : `⚠️ ${_t("Couldn't copy")}`, `📋 ${_t('Copy')}`);
+		});
 	} else if (role === 'loading') {
 		bubble.className = 'flex justify-start';
 		bubble.id = 'aiLoadingBubble';
@@ -3811,6 +3844,7 @@ function initAiChat() {
 	document.getElementById('aiChatBtn').addEventListener('click', openAiChat);
 	document.getElementById('closeAiChat').addEventListener('click', closeAiChat);
 	document.getElementById('clearChatBtn').addEventListener('click', clearAiChat);
+	document.getElementById('copyChatBtn').addEventListener('click', e => copyAiChat(e.currentTarget));
 	document.getElementById('aiChatOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('aiChatOverlay')) closeAiChat();
 	});

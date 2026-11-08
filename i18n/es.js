@@ -311,5 +311,10 @@ window.I18N_MESSAGES.es = {
 	"Apply changes": "Aplicar cambios",
 	"Update": "Actualizar",
 	"Name": "Nombre",
-	"Days": "Días"
+	"Days": "Días",
+	"Copy": "Copiar",
+	"Copied": "Copiado",
+	"Couldn't copy": "No se pudo copiar",
+	"Copy chat": "Copiar chat",
+	"You": "Tú"
 };

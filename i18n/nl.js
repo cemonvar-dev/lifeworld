@@ -311,5 +311,10 @@ window.I18N_MESSAGES.nl = {
 	"Apply changes": "Wijzigingen toepassen",
 	"Update": "Bijwerken",
 	"Name": "Naam",
-	"Days": "Dagen"
+	"Days": "Dagen",
+	"Copy": "Kopiëren",
+	"Copied": "Gekopieerd",
+	"Couldn't copy": "Kopiëren mislukt",
+	"Copy chat": "Chat kopiëren",
+	"You": "Jij"
 };

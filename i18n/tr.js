@@ -311,5 +311,10 @@ window.I18N_MESSAGES.tr = {
 	"Apply changes": "Değişiklikleri uygula",
 	"Update": "Güncelle",
 	"Name": "Ad",
-	"Days": "Günler"
+	"Days": "Günler",
+	"Copy": "Kopyala",
+	"Copied": "Kopyalandı",
+	"Couldn't copy": "Kopyalanamadı",
+	"Copy chat": "Sohbeti kopyala",
+	"You": "Siz"
 };
