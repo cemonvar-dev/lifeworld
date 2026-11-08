@@ -3041,7 +3041,7 @@ function buildTaskContext() {
 	const skippedToday = tiles.filter(t => t.status === 'skipped').length;
 	const noActionToday = tiles.filter(t => t.status === 'noaction').length;
 
-	return `Date: ${new Date().toLocaleDateString()}
+	return `Today: ${todayLocal()} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })}), timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 Total tasks: ${tiles.length}
 Overall avg health: ${overallHealth}%
 Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} pending
@@ -3330,7 +3330,7 @@ async function sendAiMessage(text) {
 
 		if (!response.ok) {
 			const err = await response.json().catch(() => ({}));
-			if (response.status === 429 || err.code === 'quota_exceeded') {
+			if (err.code === 'quota_exceeded') {
 				appendAiMessage('assistant', '🔒 ' + (err.error || "You've hit today's free AI limit. Upgrade to Premium for unlimited coaching."));
 				appendUpgradeButton();
 				return;

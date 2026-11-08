@@ -17,6 +17,12 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '25', 10);
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
+// Request limits: keep one call's OpenAI cost bounded.
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 8000;
+const MAX_JSON_PROMPT_CHARS = 40000; // auto-reschedule embeds the event list
+const MAX_TASK_CONTEXT_CHARS = 30000;
+
 async function getUserFromToken(token) {
 	if (!token || !SUPABASE_ANON_KEY) return null;
 	try {
@@ -127,8 +133,27 @@ export default async function handler(req, res) {
 		return res.status(401).json({ error: 'Please sign in to use the AI assistant.' });
 	}
 
+	// --- Validate the body before spending quota. Only user/assistant turns are
+	// forwarded, so a caller can't supply its own system prompt. ---
+	const body = req.body || {};
+	const { responseFormat } = body;
+	if (!Array.isArray(body.messages)) return res.status(400).json({ error: 'messages required' });
+	const jsonMode = responseFormat?.type === 'json_object';
+	const turns = body.messages
+		.filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+		.slice(-MAX_HISTORY_MESSAGES);
+	if (!turns.length) return res.status(400).json({ error: 'messages required' });
+	if (jsonMode && turns.some(m => m.content.length > MAX_JSON_PROMPT_CHARS)) {
+		return res.status(400).json({ error: 'That request is too large. Please select fewer items and try again.' });
+	}
+	// Chat turns are trimmed rather than rejected: history is resent every time,
+	// so rejecting one long message would fail every later message too.
+	const messages = turns.map(m => ({ role: m.role, content: jsonMode ? m.content : m.content.slice(0, MAX_MESSAGE_CHARS) }));
+	const taskContext = typeof body.taskContext === 'string' ? body.taskContext.slice(0, MAX_TASK_CONTEXT_CHARS) : '';
+
 	// --- Quota gate: premium bypasses, everyone else gets a daily limit ---
-	const isPremium = !!(user.app_metadata?.premium || user.user_metadata?.premium);
+	// Only app_metadata counts: users can edit their own user_metadata.
+	const isPremium = !!user.app_metadata?.premium;
 	if (!isPremium) {
 		const quota = await consumeQuota(user.id, AI_DAILY_LIMIT);
 		if (!quota) {
@@ -145,9 +170,6 @@ export default async function handler(req, res) {
 			});
 		}
 	}
-
-	const { messages, taskContext, responseFormat } = req.body;
-	if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'messages required' });
 
 	// Long-term memory only applies to normal chat (not the reschedule JSON call).
 	const isChat = !(responseFormat && responseFormat.type === 'json_object');
@@ -211,8 +233,9 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 
 		if (!response.ok) {
 			const errData = await response.json().catch(() => ({}));
-			console.error('OpenAI error:', errData);
-			return res.status(response.status).json({ error: errData.error?.message || 'OpenAI API error' });
+			console.error('OpenAI error:', response.status, errData);
+			// Never forward OpenAI's status: its 429 would look like the user's own quota.
+			return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable' });
 		}
 
 		const data = await response.json();
