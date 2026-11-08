@@ -2962,7 +2962,7 @@ function toggleTodaySummaryMenu(forceOpen) {
 // A row button that links to a tile's detail popup.
 function todaySummaryRow(t, hover) {
 	return `<button class="today-summary-row w-full flex items-center gap-2 px-2.5 py-2 rounded-lg ${hover} text-left transition" data-tile-id="${t.id}">
-		<span class="text-lg shrink-0">${t.emoji}</span>
+		<span class="text-lg shrink-0">${healthEmoji(t.healthLabel) || t.emoji}</span>
 		<span translate="no" class="flex-1 text-sm font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
 	</button>`;
 }
