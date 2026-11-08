@@ -520,7 +520,7 @@ function renderGallery(filteredTiles) {
 			tileDiv.innerHTML = `
 				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
-				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
+				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${escapeHtml(tile.name)}</div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
@@ -717,7 +717,7 @@ function openTilePopup(tileId) {
 				   timeStr = createdAtDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 			   }
 			   const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
-			   const noteHtml = log.note ? `<div translate="no" class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
+			   const noteHtml = log.note ? `<div translate="no" class="text-xs text-slate-500 mt-1 italic">${escapeHtml(log.note)}</div>` : '';
 			   timelineHtml += `
 				   <div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
 					   <div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
@@ -739,7 +739,7 @@ function openTilePopup(tileId) {
 	const tagDropdownHtml = `
 	<div class="tagDropdown mb-8" style="min-width:220px;">
 		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-xs" tabindex="0">
-			<span id="tagDropdownSelected">${currentTags.length ? currentTags.map(tagName).join(', ') : 'Select tags...'}</span>
+			<span id="tagDropdownSelected">${currentTags.length ? escapeHtml(currentTags.map(tagName).join(', ')) : 'Select tags...'}</span>
 			<span class="ml-2">▼</span>
 		</button>
 		<div id="tagDropdownMenu" class="tagDropdownMenu" style="max-height:220px;overflow-y:auto;">
@@ -993,7 +993,7 @@ function openTilePopup(tileId) {
 				const checked = sel.includes(at.key);
 				const btn = document.createElement('button');
 				btn.className = 'tagBtn flex items-center gap-2 w-full px-3 py-1 text-left text-sm' + (checked ? ' active' : '');
-				btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${tagPath(at.key)}`;
+				btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${escapeHtml(tagPath(at.key))}`;
 				btn.addEventListener('click', async e => {
 					e.preventDefault();
 					await toggleTag(at.key);
@@ -1602,14 +1602,14 @@ function lwSelect(mount, config) {
 	mount.classList.add('relative', 'lw-select');
 	mount.innerHTML = `
 		<button type="button" class="lw-select-btn w-full flex items-center justify-between gap-2 border border-slate-300 px-3 py-2 rounded-lg bg-white text-xs hover:bg-slate-50 transition">
-			<span class="flex items-center gap-2 min-w-0">${compact ? '' : `<span class="text-base leading-none">${disp.icon || ''}</span>`}<span class="truncate">${disp.label || ''}</span></span>
+			<span class="flex items-center gap-2 min-w-0">${compact ? '' : `<span class="text-base leading-none">${disp.icon || ''}</span>`}<span class="truncate">${escapeHtml(disp.label || '')}</span></span>
 			<span class="text-slate-400 text-xs">▼</span>
 		</button>
 		<div class="lw-select-menu hidden absolute left-0 right-0 mt-1 rounded-xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1 z-[60] max-h-60 overflow-y-auto">
 			${opts.map(o => `
 				<button type="button" class="lw-opt w-full flex items-center gap-3 px-3 py-2 rounded-lg ${compact ? 'text-xs' : 'text-sm'} text-left hover:bg-slate-100 transition ${o.value === config.value ? 'bg-slate-50 font-semibold' : ''}" data-value="${String(o.value).replace(/"/g, '&quot;')}">
 					${compact ? '' : `<span class="text-base w-5 text-center leading-none">${o.icon || ''}</span>`}
-					<span class="flex-1 min-w-0 ${compact ? '' : 'truncate'}">${o.label}</span>
+					<span class="flex-1 min-w-0 ${compact ? '' : 'truncate'}">${escapeHtml(o.label)}</span>
 					${o.value === config.value ? '<span class="text-emerald-500">✓</span>' : ''}
 				</button>`).join('')}
 		</div>`;
@@ -1778,7 +1778,7 @@ function renderNotifList() {
 	listEl.innerHTML = list.map(t => `
 		<div class="flex items-start justify-between gap-2 px-2 py-2 rounded-xl hover:bg-slate-50 transition">
 			<button class="notif-open flex-1 text-left min-w-0" data-tile-id="${t.id}">
-				<div translate="no" class="text-sm font-medium text-slate-700 truncate">${t.name}</div>
+				<div translate="no" class="text-sm font-medium text-slate-700 truncate">${escapeHtml(t.name)}</div>
 				<div class="text-xs text-slate-400">🔔 ${formatReminderAt(t.reminder_at)}</div>
 			</button>
 			<button class="notif-dismiss text-slate-300 hover:text-red-500 text-lg leading-none px-1" data-tile-id="${t.id}" title="Dismiss">&times;</button>
@@ -2606,7 +2606,7 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 			}`;
 		btn.innerHTML =
 			`<span class="text-base shrink-0">🏷️</span>` +
-			`<span translate="no" class="flex-1 truncate">${tagObj.label}</span>` +
+			`<span translate="no" class="flex-1 truncate">${escapeHtml(tagObj.label)}</span>` +
 			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>`;
 		btn.addEventListener('click', () => { if (!tagManageMode) setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
@@ -3513,12 +3513,6 @@ function appendAiMessage(role, content) {
 	container.scrollTop = container.scrollHeight;
 }
 
-function escapeHtml(text) {
-	const div = document.createElement('div');
-	div.textContent = text;
-	return div.innerHTML;
-}
-
 function formatAiResponse(text) {
 	// Basic markdown-like formatting
 	return escapeHtml(text)
@@ -4087,7 +4081,7 @@ function openCalendarPopup() {
 		       filterTerms.forEach((term, idx) => {
 			       const chip = document.createElement('button');
 			       chip.className = 'bg-blue-100 text-blue-700 rounded-full px-3 py-1 text-xs font-semibold mr-1 mb-1 flex items-center';
-			       chip.innerHTML = `${term} <span class="ml-1 text-blue-500 cursor-pointer">&times;</span>`;
+			       chip.innerHTML = `${escapeHtml(term)} <span class="ml-1 text-blue-500 cursor-pointer">&times;</span>`;
 			       chip.addEventListener('click', () => {
 				       filterTerms.splice(idx, 1);
 				       renderFilterChips();
