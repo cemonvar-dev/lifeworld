@@ -145,7 +145,8 @@ function calculateHealth(task) {
 // Health icon sets — user-selectable in Settings (weather vs plants).
 const HEALTH_ICON_SETS = {
 	weather: { Thriving: '🌞', Healthy: '☀️', Growing: '⛅', Wilting: '🌧️', Dying: '⚡' },
-	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' }
+	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' },
+	ocean:   { Thriving: '🐠', Healthy: '🐟', Growing: '🪸', Wilting: '🫧', Dying: '🦴' }
 };
 function getHealthIconStyle() {
 	// A stored value may name a set that no longer exists.
@@ -159,9 +160,10 @@ function setHealthIconStyle(style) {
 }
 // Tile header banner for a health tier, matching the chosen icon set.
 function healthBannerSrc(tier) {
-	return getHealthIconStyle() === 'plants'
-		? `styling/icons/plants/${tier}.svg`
-		: `styling/icons/weather/${tier}.jpg`;
+	const style = getHealthIconStyle();
+	return style === 'weather'
+		? `styling/icons/weather/${tier}.jpg`
+		: `styling/icons/${style}/${tier}.svg`;
 }
 // Emoji for a health label in the user's chosen style.
 function healthEmoji(label) {
