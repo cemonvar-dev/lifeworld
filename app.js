@@ -789,7 +789,7 @@ function openTilePopup(tileId) {
 			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
 			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<div class="flex-1 shrink-0 min-h-[10rem] overflow-y-auto -mx-1 px-1">
+		<div class="h-44 shrink-0 overflow-y-auto overscroll-contain -mx-1 px-1">
 				<div id="tabPanelTimeline" class="detail-tab-panel">
 					<div class="flex items-center justify-end mb-1">
 						<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
