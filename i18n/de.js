@@ -36,7 +36,7 @@ window.I18N_MESSAGES.de = {
 	"Language": "Sprache",
 	"Language used across the app.": "Sprache der App.",
 	"Voice language": "Sprachsteuerung",
-	"Language used when dictating tile titles with the mic.": "Sprache beim Diktieren von Kacheltiteln.",
+	"Language the microphone listens for, for tile titles and AI chat.": "Sprache, auf die das Mikrofon bei Kacheltiteln und im KI-Chat hört.",
 	"Health icons": "Gesundheits-Symbole",
 	"Icon set used to show a tile's health.": "Symbole für den Zustand einer Kachel.",
 	"Weather": "Wetter",

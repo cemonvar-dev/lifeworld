@@ -282,6 +282,8 @@ async function fetchTilesFromSupabase() {
 	currentUserIsPremium = !!(session.user.app_metadata && session.user.app_metadata.premium);
 	const accountLanguage = session.user.user_metadata && session.user.user_metadata.language;
 	if (accountLanguage && accountLanguage !== i18n.lang) i18n.setLanguage(accountLanguage);
+	const accountVoice = session.user.user_metadata && session.user.user_metadata.voice_language;
+	if (accountVoice) setVoiceLang(accountVoice);
 
 	// Identify the signed-in user in PostHog analytics
 	if (window.posthogIdentify) window.posthogIdentify(session.user);
@@ -3799,7 +3801,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('settingsOverlay').addEventListener('click', e => {
 		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
 	});
-	document.getElementById('settingsVoiceLang').addEventListener('change', e => setVoiceLang(e.target.value));
+	document.getElementById('settingsVoiceLang').addEventListener('change', async e => {
+		const voiceLanguage = e.target.value;
+		setVoiceLang(voiceLanguage);
+		const { error } = await supa.auth.updateUser({ data: { voice_language: voiceLanguage } });
+		if (error) console.error('Voice language save error:', error);
+	});
 	document.getElementById('settingsLanguage').addEventListener('change', async e => {
 		const language = e.target.value;
 		await i18n.setLanguage(language);

@@ -36,7 +36,7 @@ window.I18N_MESSAGES.it = {
 	"Language": "Lingua",
 	"Language used across the app.": "Lingua usata nell’app.",
 	"Voice language": "Lingua vocale",
-	"Language used when dictating tile titles with the mic.": "Lingua usata per dettare i titoli delle schede con il microfono.",
+	"Language the microphone listens for, for tile titles and AI chat.": "Lingua ascoltata dal microfono per i titoli delle schede e la chat IA.",
 	"Health icons": "Icone di salute",
 	"Icon set used to show a tile's health.": "Set di icone che mostra la salute di una scheda.",
 	"Weather": "Meteo",

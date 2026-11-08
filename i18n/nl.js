@@ -36,7 +36,7 @@ window.I18N_MESSAGES.nl = {
 	"Language": "Taal",
 	"Language used across the app.": "Taal van de app.",
 	"Voice language": "Spraaktaal",
-	"Language used when dictating tile titles with the mic.": "Taal voor het inspreken van tegeltitels.",
+	"Language the microphone listens for, for tile titles and AI chat.": "Taal waarnaar de microfoon luistert bij tegeltitels en AI-chat.",
 	"Health icons": "Gezondheidsiconen",
 	"Icon set used to show a tile's health.": "Iconen die de gezondheid van een tegel tonen.",
 	"Weather": "Weer",

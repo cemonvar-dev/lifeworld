@@ -36,7 +36,7 @@ window.I18N_MESSAGES.tr = {
 	"Language": "Dil",
 	"Language used across the app.": "Uygulamada kullanılan dil.",
 	"Voice language": "Ses dili",
-	"Language used when dictating tile titles with the mic.": "Kart başlıklarını mikrofonla söylerken kullanılan dil.",
+	"Language the microphone listens for, for tile titles and AI chat.": "Kart başlıkları ve yapay zekâ sohbetinde mikrofonun dinlediği dil.",
 	"Health icons": "Sağlık simgeleri",
 	"Icon set used to show a tile's health.": "Bir kartın sağlığını gösteren simge seti.",
 	"Weather": "Hava durumu",

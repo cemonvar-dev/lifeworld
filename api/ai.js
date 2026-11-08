@@ -207,7 +207,7 @@ For anything that is NOT an explicit task change, reply normally as a coach (pla
 text), never JSON.
 
 LANGUAGE
-The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Write all user-facing text in that language, including "message" and "reason" values, unless the user writes to you in another language. Keep JSON keys and enum values in English.
+The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Always write all user-facing text in that language, including "message" and "reason" values, even when the user writes or speaks in another language. Only use a different language if the user explicitly asks you to. Keep JSON keys and enum values in English.
 
 USER'S TASK DATA:
 ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOUT THIS USER (learned from past chats — durable context, may be outdated; the task data above is authoritative for current stats):\n${memory}` : ''}`;
