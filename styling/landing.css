@@ -280,6 +280,7 @@ section.block{ padding: 40px 0; }
   transition: transform .12s ease, box-shadow .12s ease;
 }
 .feature:hover{ transform: translateY(-2px); box-shadow: 0 16px 32px rgba(15,46,31,0.10); }
+.feature .icon svg{ width: 24px; height: 24px; color: #1a5534; }
 .feature .icon{
   width: 44px; height: 44px;
   display: grid; place-items: center;

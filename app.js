@@ -3410,6 +3410,7 @@ function clearAllChips() {
 }
 
 // ---- AI Chat ----
+const AI_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" class="inline-block w-4 h-4 align-[-2px]" aria-hidden="true"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>';
 let aiChatHistory = []; // { role: 'user'|'assistant', content: string }
 
 function buildTaskContext() {
@@ -3443,7 +3444,7 @@ function openAiChat() {
 	document.getElementById('aiChatOverlay').classList.remove('hidden');
 	document.getElementById('aiChatInput').focus();
 	if (aiChatHistory.length === 0) {
-		appendAiMessage('assistant', _t("Hi! I'm your Fiblia AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!"));
+		appendAiMessage('assistant', _t("Hi! I'm your Fiblia AI coach\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!"));
 	}
 }
 
@@ -3542,7 +3543,7 @@ async function copyAiChat(button) {
 function clearAiChat() {
 	aiChatHistory = [];
 	document.getElementById('aiChatMessages').innerHTML = '';
-	appendAiMessage('assistant', _t("Chat cleared! Ask me anything about your tasks 🤖"));
+	appendAiMessage('assistant', _t("Chat cleared! Ask me anything about your tasks"));
 }
 
 function appendAiMessage(role, content) {
@@ -4159,7 +4160,7 @@ function openCalendarPopup() {
 		const updateAutoLabel = () => {
 			const n = container.querySelectorAll('.cal-select:checked').length;
 			const ab = document.getElementById('autoRescheduleBtn');
-			if (ab) ab.innerHTML = n ? `🤖 Reschedule ${n} selected` : '🤖 Auto Reschedule';
+			if (ab) ab.innerHTML = n ? `${AI_ICON} Reschedule ${n} selected` : `${AI_ICON} Auto Reschedule`;
 		};
 		container.querySelectorAll('.cal-select').forEach(cb => cb.addEventListener('change', updateAutoLabel));
 		const selectAll = document.getElementById('calSelectAll');
@@ -4436,7 +4437,7 @@ async function autoRescheduleCalendar() {
 
 	const btn = document.getElementById('autoRescheduleBtn');
 	const orig = btn ? btn.innerHTML : '';
-	if (btn) { btn.disabled = true; btn.innerHTML = '🤖 Thinking…'; }
+	if (btn) { btn.disabled = true; btn.innerHTML = `${AI_ICON} Thinking…`; }
 
 	try {
 		const { data: { session } } = await supa.auth.getSession();
@@ -4542,7 +4543,7 @@ function renderReschedulePreview(proposals, missedOverdue) {
 	</tr>`).join('');
 	const warn = missedOverdue ? `<div class="mb-2 text-xs text-red-500">⚠️ ${missedOverdue} overdue task(s) were not moved — try again to reschedule them.</div>` : '';
 	container.innerHTML = `
-		<div class="mb-1 text-sm text-slate-600">🤖 ${_t('Proposed new dates for {count} task(s). Review, then apply.', { count: proposals.length })}${overdueCount ? ` <b class="text-red-500">${overdueCount} overdue</b>` : ''}</div>
+		<div class="mb-1 text-sm text-slate-600">${AI_ICON} ${_t('Proposed new dates for {count} task(s). Review, then apply.', { count: proposals.length })}${overdueCount ? ` <b class="text-red-500">${overdueCount} overdue</b>` : ''}</div>
 		${warn}
 		<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>
 			<th class="px-3 py-2 text-left">Task</th>
