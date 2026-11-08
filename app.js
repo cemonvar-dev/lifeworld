@@ -110,16 +110,19 @@ function calculateHealth(task) {
 
 	if (mode === 'once') {
 		if (doneDates.size > 0) return 100;
-		if (task.end_date && new Date(task.end_date) < now) return 0;
+		// Compare calendar days: a task due today isn't overdue yet.
+		if (task.end_date && String(task.end_date).slice(0, 10) < todayLocal()) return 0;
 		return 50; // not yet due
 	}
 
 	// Count expected vs fulfilled days
 	let expected = 0;
 	let fulfilled = 0;
-	for (let d = new Date(effectiveStart); d <= now; d.setDate(d.getDate() + 1)) {
+	const firstDay = new Date(effectiveStart);
+	firstDay.setHours(0, 0, 0, 0); // whole local days, matching log_date
+	for (let d = firstDay; d <= now; d.setDate(d.getDate() + 1)) {
 		const dayOfWeek = d.getDay();
-		const dateStr = d.toISOString().split('T')[0];
+		const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 		let isExpected = false;
 		if (mode === 'daily') isExpected = true;
 		else if (mode === 'weekly') isExpected = freqDays.includes(dayOfWeek);
@@ -128,7 +131,8 @@ function calculateHealth(task) {
 			const md = monthlyDateFor(task, d.getFullYear(), d.getMonth());
 			isExpected = d.getDate() === md.getDate();
 		}
-		if (isExpected) {
+		// A deliberately skipped day is neither a success nor a miss.
+		if (isExpected && (doneDates.has(dateStr) || !skipDates.has(dateStr))) {
 			expected++;
 			if (doneDates.has(dateStr)) fulfilled++;
 		}
