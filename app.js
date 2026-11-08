@@ -1310,7 +1310,7 @@ function staleSuggestion(raw, doneLogs, lastDone) {
 	return {
 		kind: 'stale',
 		text: lastDone ? `No activity since ${since}. Restart it today, or close this tile if it no longer matters.` : `You haven't started this yet. Do it once today, or close this tile if it no longer matters.`,
-		hint: lastDone ? `💤 Inactive since ${since}` : '💤 Not started yet',
+		hint: raw.frequency_mode === 'daily' ? '🗓️ Try 3 days a week' : '🌱 Do it once today to restart',
 		actions
 	};
 }
