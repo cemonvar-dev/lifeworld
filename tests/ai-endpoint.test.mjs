@@ -10,13 +10,13 @@ const tmp = join(tmpdir(), `fiblia-ai-${process.pid}.mjs`);
 writeFileSync(tmp, readFileSync(new URL('../api/ai.js', import.meta.url)));
 const { default: handler } = await import(pathToFileURL(tmp).href);
 const json = (b, status = 200) => ({ ok: status < 400, status, json: async () => b });
-let user, openaiStatus, calls;
+let user, openaiStatus, calls, openaiMessage = { content: 'hi' };
 globalThis.fetch = async (url, opts) => {
   calls.push({ url, body: opts?.body ? JSON.parse(opts.body) : null });
   if (url.includes('/auth/v1/user')) return json(user);
   if (url.includes('consume_ai_quota')) return json([{ allowed: true, used: 1, day_limit: 25 }]);
   if (url.includes('ai_memory')) return json([]);
-  if (url.includes('openai.com')) return openaiStatus === 200 ? json({ choices: [{ message: { content: 'hi' } }] }) : json({ error: { message: 'secret upstream detail' } }, openaiStatus);
+  if (url.includes('openai.com')) return openaiStatus === 200 ? json({ choices: [{ message: openaiMessage }] }) : json({ error: { message: 'secret upstream detail' } }, openaiStatus);
   throw new Error('unexpected ' + url);
 };
 async function call(body, u = { id: 'u1' }, status = 200) {
@@ -49,3 +49,30 @@ r = await call({ messages: hello }, { id: 'u' }, 429);
 assert(r.res.code === 502 && r.res.out.code === 'ai_unavailable' && !JSON.stringify(r.res.out).includes('secret')); console.log('ok OpenAI 429 becomes 502 without upstream text');
 r = await call({ messages: hello });
 assert(r.res.code === 200 && r.res.out.reply === 'hi'); console.log('ok normal chat works');
+
+// Task changes arrive through a validated tool call.
+const toolReply = args => ({ content: null, tool_calls: [{ function: { name: 'propose_task_changes', arguments: typeof args === 'string' ? args : JSON.stringify(args) } }] });
+r = await call({ messages: hello });
+assert.strictEqual(r.ai.body.tools[0].function.name, 'propose_task_changes'); console.log('ok chat offers the task tool');
+r = await call({ messages: hello, responseFormat: { type: 'json_object' } });
+assert.strictEqual(r.ai.body.tools, undefined); console.log('ok reschedule JSON mode has no tools');
+openaiMessage = toolReply({ message: 'Here you go', actions: [
+  { type: 'create', name: '  Walk  ', frequency: 'daily', evil: 'x' },
+  { type: 'create' },
+  { type: 'update', id: 't1', frequency: 'hourly', status: 'hacked', weekdays: [1, 1, 9, 'x'], end_date: 'soon', day_of_month: 40 },
+  { type: 'delete', id: 't2', name: 'ignored' },
+  { type: 'delete' },
+  { type: 'drop_table', id: 't3' }
+] });
+r = await call({ messages: hello });
+assert.strictEqual(r.res.out.reply, 'Here you go');
+assert.deepStrictEqual(r.res.out.actions, [{ type: 'create', name: 'Walk', frequency: 'daily' }, { type: 'update', id: 't1', weekdays: [1] }, { type: 'delete', id: 't2' }]);
+console.log('ok proposals are validated');
+assert.ok(!calls.some(c => c.body && c.body.max_tokens === 350), 'memory must skip action replies'); console.log('ok action replies skip memory update');
+openaiMessage = toolReply('{not json');
+r = await call({ messages: hello });
+assert.strictEqual(r.res.code, 200); assert.deepStrictEqual(r.res.out.actions, []); console.log('ok malformed tool output is harmless');
+openaiMessage = toolReply({ message: 'many', actions: Array.from({ length: 50 }, (_, i) => ({ type: 'create', name: 'n' + i })) });
+r = await call({ messages: hello });
+assert.strictEqual(r.res.out.actions.length, 20); console.log('ok proposals are capped');
+openaiMessage = { content: 'hi' };

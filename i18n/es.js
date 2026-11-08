@@ -306,5 +306,10 @@ window.I18N_MESSAGES.es = {
 	"Set a reminder": "Configurar un recordatorio",
 	"Try the AI coach": "Prueba el coach de IA",
 	"Hide": "Ocultar",
-	"Replay welcome guide": "Volver a ver la guía de bienvenida"
+	"Replay welcome guide": "Volver a ver la guía de bienvenida",
+	"Review these changes": "Revisa estos cambios",
+	"Apply changes": "Aplicar cambios",
+	"Update": "Actualizar",
+	"Name": "Nombre",
+	"Days": "Días"
 };

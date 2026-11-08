@@ -306,5 +306,10 @@ window.I18N_MESSAGES.nl = {
 	"Set a reminder": "Herinnering instellen",
 	"Try the AI coach": "Probeer de AI-coach",
 	"Hide": "Verbergen",
-	"Replay welcome guide": "Welkomstgids opnieuw bekijken"
+	"Replay welcome guide": "Welkomstgids opnieuw bekijken",
+	"Review these changes": "Controleer deze wijzigingen",
+	"Apply changes": "Wijzigingen toepassen",
+	"Update": "Bijwerken",
+	"Name": "Naam",
+	"Days": "Dagen"
 };

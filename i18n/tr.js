@@ -306,5 +306,10 @@ window.I18N_MESSAGES.tr = {
 	"Set a reminder": "Hatırlatıcı ayarla",
 	"Try the AI coach": "Yapay zekâ koçunu deneyin",
 	"Hide": "Gizle",
-	"Replay welcome guide": "Hoş geldiniz rehberini tekrar göster"
+	"Replay welcome guide": "Hoş geldiniz rehberini tekrar göster",
+	"Review these changes": "Bu değişiklikleri inceleyin",
+	"Apply changes": "Değişiklikleri uygula",
+	"Update": "Güncelle",
+	"Name": "Ad",
+	"Days": "Günler"
 };

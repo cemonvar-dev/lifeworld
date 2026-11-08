@@ -3651,16 +3651,70 @@ async function aiDeleteTask(a) {
 	return '🗑️ ' + _t('Deleted “{name}”', { name });
 }
 
+// Readable field changes for one proposed action.
+function aiActionDetails(a) {
+	const frequencies = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', once: 'One-time' };
+	const statuses = { 'in progress': 'Active', completed: 'Completed', cancelled: 'Cancelled' };
+	const details = [];
+	if (a.type === 'update' && a.name) details.push(`${_t('Name')}: ${a.name}`);
+	if (a.frequency) details.push(`${_t('Frequency')}: ${_t(frequencies[a.frequency])}`);
+	if (Array.isArray(a.weekdays) && a.weekdays.length) details.push(`${_t('Days')}: ${a.weekdays.map(d => i18n.dayName(d, 'short')).join(', ')}`);
+	if (a.day_of_month) details.push(`${_t('Day of month')}: ${a.day_of_month}`);
+	if (a.end_date) details.push(`${_t('Date')}: ${a.end_date}`);
+	if (a.status) details.push(`${_t('Status')}: ${_t(statuses[a.status])}`);
+	const tags = resolveTagIds(a.tags).map(tagName);
+	if (tags.length) details.push(`${_t('Tags')}: ${tags.join(', ')}`);
+	return details;
+}
+
+// Show proposed changes in the chat; nothing is applied until the user approves.
+function appendAiActionPreview(actions, message) {
+	const valid = actions.filter(a => a.type === 'create' || rawTiles[a.id]);
+	const intro = message || _t('Review these changes');
+	aiChatHistory.push({ role: 'assistant', content: intro });
+	appendAiMessage('assistant', intro);
+	if (!valid.length) return;
+	window.track?.('ai_actions_proposed', { count: valid.length });
+	const verbs = { create: ['➕', 'Create'], update: ['✏️', 'Update'], delete: ['🗑️', 'Delete'] };
+	const rows = valid.map(a => {
+		const [icon, verb] = verbs[a.type];
+		const title = a.type === 'create' ? a.name : rawTiles[a.id].name;
+		const details = aiActionDetails(a).map(d => `<div class="text-xs text-slate-500">${escapeHtml(d)}</div>`).join('');
+		return `<div class="py-1.5 border-t border-slate-200 first:border-t-0"><div class="text-sm ${a.type === 'delete' ? 'text-red-600 font-semibold' : 'text-slate-800'}">${icon} ${_t(verb)}: ${escapeHtml(title)}</div>${details}</div>`;
+	}).join('');
+	const container = document.getElementById('aiChatMessages');
+	const bubble = document.createElement('div');
+	bubble.className = 'flex justify-start';
+	bubble.setAttribute('translate', 'no');
+	bubble.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 max-w-[85%] w-full">
+		<div class="text-xs font-semibold text-slate-500 mb-1">${_t('Review these changes')}</div>
+		${rows}
+		<div class="flex justify-end gap-2 mt-2">
+			<button type="button" data-ai-cancel class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100 transition disabled:opacity-50">${_t('Cancel')}</button>
+			<button type="button" data-ai-apply class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50">${_t('Apply changes')}</button>
+		</div>
+	</div>`;
+	container.appendChild(bubble);
+	container.scrollTop = container.scrollHeight;
+	const buttons = bubble.querySelectorAll('button');
+	const finish = text => {
+		bubble.querySelector('[data-ai-apply]').parentElement.remove();
+		aiChatHistory.push({ role: 'assistant', content: text });
+		appendAiMessage('assistant', text);
+	};
+	bubble.querySelector('[data-ai-cancel]').addEventListener('click', () => {
+		window.track?.('ai_actions_cancelled', { count: valid.length });
+		finish('❌ ' + _t('Cancelled — nothing changed.'));
+	});
+	bubble.querySelector('[data-ai-apply]').addEventListener('click', async () => {
+		buttons.forEach(b => { b.disabled = true; });
+		const summary = await executeAiActions(valid);
+		window.track?.('ai_actions_applied', { count: valid.length });
+		finish(summary);
+	});
+}
+
 async function executeAiActions(actions) {
-	// Confirm destructive deletes before running anything.
-	const deletes = actions.filter(a => a && a.type === 'delete' && a.id && rawTiles[a.id]);
-	if (deletes.length) {
-		const names = deletes.map(d => `“${rawTiles[d.id].name}”`).join(', ');
-		if (!confirm(_t("The AI wants to DELETE {count} task(s): {names}.\n\nThis can't be undone. Proceed?", { count: deletes.length, names }))) {
-			actions = actions.filter(a => !(a.type === 'delete'));
-			if (!actions.length) return '❌ ' + _t('Cancelled — nothing changed.');
-		}
-	}
 	const results = [];
 	for (const a of actions) {
 		try {
@@ -3739,22 +3793,9 @@ async function sendAiMessage(text) {
 		   const data = await response.json();
 		   window.track?.('ai_message_sent', { language: i18n.lang });
 		   const reply = data.reply || _t('No response.');
-		   // The AI may return an action command (create/update/delete tasks).
-		   let handled = false;
-		   try {
-			   const cmd = JSON.parse(stripFences(reply));
-			   if (cmd && Array.isArray(cmd.actions) && cmd.actions.length) {
-				   const summary = await executeAiActions(cmd.actions);
-				   const msg = [cmd.message, summary].filter(Boolean).join('\n\n') || 'Done.';
-				   aiChatHistory.push({ role: 'assistant', content: msg });
-				   appendAiMessage('assistant', msg);
-				   handled = true;
-			   } else if (cmd && cmd.action === 'create_tile' && cmd.name) {
-				   await createTileByName(cmd.name);
-				   handled = true;
-			   }
-		   } catch (e) {}
-		   if (!handled) {
+		   if (Array.isArray(data.actions) && data.actions.length) {
+			   appendAiActionPreview(data.actions, data.reply);
+		   } else {
 			   aiChatHistory.push({ role: 'assistant', content: reply });
 			   appendAiMessage('assistant', reply);
 		   }

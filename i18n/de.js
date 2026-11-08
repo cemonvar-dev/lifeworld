@@ -306,5 +306,10 @@ window.I18N_MESSAGES.de = {
 	"Set a reminder": "Erinnerung einstellen",
 	"Try the AI coach": "KI-Coach ausprobieren",
 	"Hide": "Ausblenden",
-	"Replay welcome guide": "Einführung wiederholen"
+	"Replay welcome guide": "Einführung wiederholen",
+	"Review these changes": "Änderungen prüfen",
+	"Apply changes": "Änderungen anwenden",
+	"Update": "Aktualisieren",
+	"Name": "Name",
+	"Days": "Tage"
 };

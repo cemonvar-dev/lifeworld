@@ -24,6 +24,67 @@ const MAX_JSON_PROMPT_CHARS = 40000; // auto-reschedule embeds the event list
 const MAX_TASK_CONTEXT_CHARS = 30000;
 const LANGUAGE_NAMES = { en: 'English', de: 'German', fr: 'French', nl: 'Dutch', es: 'Spanish', it: 'Italian', tr: 'Turkish' };
 
+const FREQUENCIES = ['daily', 'weekly', 'monthly', 'once'];
+const TASK_STATUSES = ['in progress', 'completed', 'cancelled'];
+const MAX_ACTIONS = 20;
+
+const TASK_CHANGES_TOOL = {
+	type: 'function',
+	function: {
+		name: 'propose_task_changes',
+		description: 'Propose creating, updating or deleting tasks. The user reviews the proposal before it is applied.',
+		parameters: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', description: 'One short, friendly line introducing the proposed changes.' },
+				actions: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							type: { type: 'string', enum: ['create', 'update', 'delete'] },
+							id: { type: 'string', description: 'Existing task id. Required for update and delete.' },
+							name: { type: 'string', description: 'Task title. Required for create.' },
+							frequency: { type: 'string', enum: FREQUENCIES },
+							weekdays: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 6 }, description: 'Only for weekly tasks.' },
+							day_of_month: { type: 'integer', minimum: 1, maximum: 31, description: 'Only for monthly tasks.' },
+							end_date: { type: 'string', description: 'YYYY-MM-DD. Only for one-time tasks.' },
+							status: { type: 'string', enum: TASK_STATUSES },
+							tags: { type: 'array', items: { type: 'string' }, description: 'Names of existing tags.' }
+						},
+						required: ['type']
+					}
+				}
+			},
+			required: ['message', 'actions']
+		}
+	}
+};
+
+// Keep only well-formed proposals, whatever the model returned.
+function sanitizeActions(actions) {
+	if (!Array.isArray(actions)) return [];
+	const clean = [];
+	for (const raw of actions.slice(0, MAX_ACTIONS)) {
+		if (!raw || !['create', 'update', 'delete'].includes(raw.type)) continue;
+		const action = { type: raw.type };
+		if (typeof raw.id === 'string' && raw.id) action.id = raw.id.slice(0, 64);
+		if (raw.type !== 'delete') {
+			if (typeof raw.name === 'string' && raw.name.trim()) action.name = raw.name.trim().slice(0, 200);
+			if (FREQUENCIES.includes(raw.frequency)) action.frequency = raw.frequency;
+			if (TASK_STATUSES.includes(raw.status)) action.status = raw.status;
+			if (Array.isArray(raw.weekdays)) action.weekdays = [...new Set(raw.weekdays.filter(d => Number.isInteger(d) && d >= 0 && d <= 6))];
+			if (Number.isInteger(raw.day_of_month) && raw.day_of_month >= 1 && raw.day_of_month <= 31) action.day_of_month = raw.day_of_month;
+			if (typeof raw.end_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(raw.end_date)) action.end_date = raw.end_date;
+			if (Array.isArray(raw.tags)) action.tags = raw.tags.filter(t => typeof t === 'string').map(t => t.slice(0, 100)).slice(0, 20);
+		}
+		if (raw.type === 'create' && !action.name) continue;
+		if (raw.type !== 'create' && !action.id) continue;
+		clean.push(action);
+	}
+	return clean;
+}
+
 async function getUserFromToken(token) {
 	if (!token || !SUPABASE_ANON_KEY) return null;
 	try {
@@ -191,20 +252,12 @@ You can:
 
 TASK ACTIONS
 When (and only when) the user clearly asks you to add, change, rename, reschedule,
-or remove task(s), respond with ONLY a JSON object — no prose, no code fences — in
-exactly this shape:
-{"actions":[ <action>, ... ], "message":"<one short friendly confirmation line>"}
-Each <action> is one of:
-- {"type":"create","name":"<title>","frequency":"daily|weekly|monthly|once","weekdays":[0-6],"day_of_month":1-31,"end_date":"YYYY-MM-DD","status":"planned|in progress|completed|failed|cancelled","tags":["<existing tag name>", ...]}
-- {"type":"update","id":"<task id from the data below>","name":"...", ...same fields as create...}
-- {"type":"delete","id":"<task id from the data below>"}
-Rules: only "name" (create) or "id" (update/delete) are required; frequency defaults
-to daily. weekdays are 0=Sunday..6=Saturday and only apply to weekly. day_of_month
-only applies to monthly. end_date only applies to once. Use task ids EXACTLY as shown
-in the data below. Only reference tags that already exist. Never guess an id — if you
-can't find the task the user means, ask them instead of emitting an action.
-For anything that is NOT an explicit task change, reply normally as a coach (plain
-text), never JSON.
+or remove task(s), call the propose_task_changes tool. The user reviews your proposal
+before anything is applied, so never say a change has already been made.
+Use task ids EXACTLY as shown in the data below. Never guess an id: if you can't find
+the task the user means, ask them instead. Only reference tags that already exist.
+Weekdays are 0=Sunday..6=Saturday. For anything that is NOT an explicit task change,
+reply normally as a coach in plain text.
 
 LANGUAGE
 The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Always write all user-facing text in that language, including "message" and "reason" values, even when the user writes or speaks in another language. Only use a different language if the user explicitly asks you to. Keep JSON keys and enum values in English.
@@ -227,11 +280,10 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 				],
 				max_tokens: 1500,
 				temperature: 0.7,
-				// Optional strict JSON mode (e.g. auto-reschedule). Only allow the
-				// json_object form so callers can't inject arbitrary request fields.
-				...(responseFormat && responseFormat.type === 'json_object'
+				// Auto-reschedule uses strict JSON; chat can propose task changes.
+				...(jsonMode
 					? { response_format: { type: 'json_object' } }
-					: {})
+					: { tools: [TASK_CHANGES_TOOL], tool_choice: 'auto' })
 			})
 		});
 
@@ -243,6 +295,15 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 		}
 
 		const data = await response.json();
+		const toolCall = data.choices?.[0]?.message?.tool_calls?.find(call => call.function?.name === 'propose_task_changes');
+		if (toolCall) {
+			let args = {};
+			try { args = JSON.parse(toolCall.function.arguments); } catch { /* treated as no valid actions */ }
+			return res.status(200).json({
+				reply: typeof args.message === 'string' ? args.message.slice(0, 500) : '',
+				actions: sanitizeActions(args.actions)
+			});
+		}
 		const reply = data.choices?.[0]?.message?.content || 'No response from AI.';
 		// Fold durable facts from this exchange into the user's long-term memory.
 		if (isChat) {
