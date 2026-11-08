@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Fiblia',
   webDir: 'www',   // minimal shell; the app loads server.url at runtime
   server: {
-    url: 'https://lifeworld.vercel.app',
+    url: 'https://fiblia.com',
     cleartext: true
   }
 };

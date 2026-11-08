@@ -9,7 +9,7 @@ and data, **OpenAI** (via a Vercel serverless function) for the AI assistant, an
 **Capacitor 7** for the native Android app. Runs as a web app / PWA and as an
 installable Android APK from the same codebase.
 
-- **Web:** https://lifeworld.vercel.app
+- **Web:** https://fiblia.com
 - **Android:** APK built in CI (GitHub Actions, Capacitor 7, JDK 21)
 
 ## Features

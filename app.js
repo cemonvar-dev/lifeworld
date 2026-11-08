@@ -3458,7 +3458,7 @@ function formatAiResponse(text) {
 // bundled/native context (capacitor://, file://, or localhost) so /api calls
 // still reach the deployed backend.
 const API_BASE = (/^(capacitor|ionic|file):/i.test(location.protocol) || location.hostname === 'localhost')
-	? 'https://lifeworld.vercel.app'
+	? 'https://fiblia.com'
 	: '';
 
 // Lemon Squeezy hosted checkout for the premium subscription.
