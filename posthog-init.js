@@ -46,6 +46,49 @@
 	});
 })();
 
+// Report uncaught browser errors to PostHog as `client_error` events, with
+// secrets and email addresses removed. Capped so a loop can't flood the project.
+(function () {
+	var MAX_REPORTS_PER_PAGE = 10;
+	var reported = {};
+	var reportCount = 0;
+
+	function clean(text) {
+		return String(text || '')
+			.replace(/\b(access_token|refresh_token|provider_token|id_token|code)=[^&\s"']*/gi, '$1=REDACTED')
+			.replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+/g, 'REDACTED')
+			.replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, 'REDACTED');
+	}
+
+	function report(message, source, line, column, stack) {
+		if (!window.posthog || typeof window.posthog.capture !== 'function') return;
+		var text = clean(message);
+		// Cross-origin script noise and a harmless browser layout warning.
+		if (!text || /^Script error\.?$/.test(text) || /ResizeObserver loop/.test(text)) return;
+		var fingerprint = text + '|' + source + '|' + line;
+		if (reported[fingerprint] || reportCount >= MAX_REPORTS_PER_PAGE) return;
+		reported[fingerprint] = true;
+		reportCount++;
+		window.posthog.capture('client_error', {
+			error_message: text.slice(0, 300),
+			error_source: clean(String(source || '').split(/[?#]/)[0]),
+			error_line: line || null,
+			error_column: column || null,
+			error_stack: clean(stack).slice(0, 1500),
+			app_language: window.i18n ? window.i18n.lang : 'en'
+		});
+	}
+
+	window.addEventListener('error', function (event) {
+		if (event.target && event.target !== window) return; // failed image or script load
+		report(event.message, event.filename, event.lineno, event.colno, event.error && event.error.stack);
+	});
+	window.addEventListener('unhandledrejection', function (event) {
+		var reason = event.reason || {};
+		report(reason.message || reason, '', null, null, reason.stack);
+	});
+})();
+
 // Identify the signed-in Supabase user (call after a session is known).
 // Safe to call repeatedly; no-op if PostHog isn't configured.
 window.posthogIdentify = function (user) {
