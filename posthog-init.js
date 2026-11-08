@@ -35,6 +35,7 @@
 		capture_pageview: true,             // automatic pageview on each page load
 		capture_pageleave: true,
 		disable_session_recording: true,    // no screen/session replay — pageviews + events only
+		autocapture: false,                 // clicks can contain tile names; we send named events instead
 
 		// Runs on every event: redact auth tokens from URL-bearing properties.
 		sanitize_properties: function (properties) {
@@ -45,6 +46,11 @@
 		}
 	});
 })();
+
+// Record a named product event. Never pass tile names, notes or other user text.
+window.track = function (name, properties) {
+	if (window.posthog && typeof window.posthog.capture === 'function') window.posthog.capture(name, properties || {});
+};
 
 // Report uncaught browser errors to PostHog as `client_error` events, with
 // secrets and email addresses removed. Capped so a loop can't flood the project.

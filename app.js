@@ -29,6 +29,7 @@ async function createTileByName(name, mode = 'once') {
 		createdAt: data.created_at || null,
 		lastUpdate: null
 	});
+	window.track?.('task_created', { frequency: mode });
 	applyFilters();
 	openTilePopup(data.id);
 	scheduleReminders();
@@ -274,6 +275,21 @@ function tileTimeOfDay(raw) {
 	return v || '';
 }
 
+// One app_opened per page load, plus user_signed_up the first time we see a new account.
+let appOpenTracked = false;
+function trackAppOpened(user) {
+	if (appOpenTracked || !window.track) return;
+	appOpenTracked = true;
+	const isNew = user.created_at && Date.now() - new Date(user.created_at).getTime() < 10 * 60 * 1000;
+	try {
+		if (isNew && !localStorage.getItem('lw_signup_tracked')) {
+			localStorage.setItem('lw_signup_tracked', '1');
+			window.track('user_signed_up');
+		}
+	} catch (e) {}
+	window.track('app_opened', { tile_count: tiles.length, language: i18n.lang, premium: isPremiumUser() });
+}
+
 async function fetchTilesFromSupabase() {
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session || !session.user) {
@@ -348,6 +364,7 @@ async function fetchTilesFromSupabase() {
 	scheduleReminders();
 	if (typeof refreshNotifications === 'function') refreshNotifications(); // update the bell badge
 	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
+	trackAppOpened(session.user);
 	if (window.maybeShowOnboarding) window.maybeShowOnboarding(session.user);
 }
 
@@ -607,6 +624,7 @@ async function setTilePinned(tileId, pinned) {
 	};
 	raw.pinned = pinned;
 	refresh();
+	window.track?.(pinned ? 'tile_pinned' : 'tile_unpinned');
 	const { error } = await supa.from('tasks').update({ pinned }).eq('id', tileId);
 	if (error) {
 		console.error('Pin update error:', error);
@@ -1545,6 +1563,7 @@ function renderTileSuggestion(raw, tileId) {
 	</div>`;
 	mount.querySelector('[data-suggestion-dismiss]').addEventListener('click', () => {
 		snoozeSuggestion(tileId, suggestion.kind);
+		window.track?.('suggestion_dismissed', { kind: suggestion.kind });
 		renderTileSuggestion(raw, tileId);
 		applyFilters();
 	});
@@ -1552,7 +1571,9 @@ function renderTileSuggestion(raw, tileId) {
 		btn.addEventListener('click', async () => {
 			mount.querySelectorAll('button').forEach(b => { b.disabled = true; });
 			try {
-				await applySuggestionAction(tileId, suggestion.actions[Number(btn.dataset.suggestionAction)]);
+				const action = suggestion.actions[Number(btn.dataset.suggestionAction)];
+				await applySuggestionAction(tileId, action);
+				window.track?.('suggestion_applied', { kind: suggestion.kind, action: action.id });
 			} catch (e) {
 				console.error('Suggestion action failed:', e);
 				mount.querySelectorAll('button').forEach(b => { b.disabled = false; });
@@ -2105,6 +2126,7 @@ async function quickLog(tileId, status) {
 		displayTile.healthColor = plant.color;
 	}
 	applyFilters();
+	window.track?.(status === 'done' ? 'task_completed' : 'task_skipped', { source: 'card' });
 	scheduleReminders(); // re-arm summaries so done items drop from today's carryover
 }
 
@@ -3545,6 +3567,7 @@ async function openUpgradeCheckout() {
 	const params = `checkout[custom][user_id]=${encodeURIComponent(session.user.id)}`
 		+ (session.user.email ? `&checkout[email]=${encodeURIComponent(session.user.email)}` : '');
 	const sep = LEMONSQUEEZY_CHECKOUT_URL.includes('?') ? '&' : '?';
+	window.track?.('upgrade_clicked');
 	window.open(`${LEMONSQUEEZY_CHECKOUT_URL}${sep}${params}`, '_blank');
 }
 
@@ -3599,6 +3622,7 @@ async function aiCreateTask(a) {
 	const { data, error } = await supa.from('tasks').insert(patch).select('id').single();
 	if (error || !data) throw error || new Error('insert failed');
 	if (patch.frequency_mode === 'weekly') await aiSetWeekdays(data.id, a.weekdays);
+	window.track?.('task_created', { frequency: patch.frequency_mode, source: 'ai' });
 	return '✅ ' + _t('Created “{name}”', { name: patch.name });
 }
 
@@ -3702,6 +3726,7 @@ async function sendAiMessage(text) {
 		if (!response.ok) {
 			const err = await response.json().catch(() => ({}));
 			if (err.code === 'quota_exceeded') {
+				window.track?.('ai_quota_reached');
 				appendAiMessage('assistant', '🔒 ' + aiErrorText(response.status, err));
 				appendUpgradeButton();
 				return;
@@ -3712,6 +3737,7 @@ async function sendAiMessage(text) {
 		}
 
 		   const data = await response.json();
+		   window.track?.('ai_message_sent', { language: i18n.lang });
 		   const reply = data.reply || _t('No response.');
 		   // The AI may return an action command (create/update/delete tasks).
 		   let handled = false;
@@ -3826,6 +3852,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	document.getElementById('settingsLanguage').addEventListener('change', async e => {
 		const language = e.target.value;
 		await i18n.setLanguage(language);
+		window.track?.('language_changed', { language });
 		// Saved to the account so the choice follows the user across devices.
 		const { error } = await supa.auth.updateUser({ data: { language } });
 		if (error) console.error('Language save error:', error);
@@ -4045,6 +4072,7 @@ function openCalendarPopup() {
 				if (isDone && btn.getAttribute('data-kind') === 'once') { completeTaskFromCalendar(id); return; }
 				const status = isDone ? 'done' : 'skipped';
 				await calMarkStatus(id, date, status);
+				window.track?.(status === 'done' ? 'task_completed' : 'task_skipped', { source: 'planned' });
 				const cell = btn.closest('td');
 				if (cell) cell.innerHTML = CAL_STATUS_LABELS[status];
 			});

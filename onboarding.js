@@ -98,7 +98,10 @@ function gettingStartedProgress(tasks, triedAi) {
 				</div>
 			</div>
 		</div>`;
-		overlay.querySelector('[data-onboarding="skip"]').addEventListener('click', finish);
+		overlay.querySelector('[data-onboarding="skip"]').addEventListener('click', () => {
+			window.track?.('onboarding_skipped', { step: step + 1 });
+			finish();
+		});
 		overlay.querySelector('[data-onboarding="back"]')?.addEventListener('click', () => { step--; render(); });
 		overlay.querySelector('[data-onboarding="next"]')?.addEventListener('click', () => { step++; render(); });
 		const nameInput = overlay.querySelector('#onboardingName');
@@ -109,6 +112,7 @@ function gettingStartedProgress(tasks, triedAi) {
 			if (!name) { nameInput.focus(); return; }
 			createBtn.disabled = true;
 			const mode = tileMode;
+			window.track?.('onboarding_completed', { frequency: mode });
 			finish();
 			await createTileByName(name, mode);
 		};
@@ -140,7 +144,8 @@ function gettingStartedProgress(tasks, triedAi) {
 		render();
 	}
 
-	function closeChecklist() {
+	function closeChecklist(reason) {
+		window.track?.('checklist_closed', { reason });
 		write(CHECKLIST_KEY);
 		if (currentUser) currentUser.user_metadata = { ...currentUser.user_metadata, checklist_done: true };
 		saveFlag({ checklist_done: true });
@@ -163,7 +168,7 @@ function gettingStartedProgress(tasks, triedAi) {
 		}
 		const progress = gettingStartedProgress(Object.values(rawTiles), read(TRIED_AI_KEY));
 		const doneCount = CHECKLIST.filter(item => progress[item.key]).length;
-		if (doneCount === CHECKLIST.length) { closeChecklist(); return; }
+		if (doneCount === CHECKLIST.length) { closeChecklist('completed'); return; }
 		if (!panel) {
 			panel = document.createElement('section');
 			panel.id = 'gettingStarted';
@@ -182,7 +187,7 @@ function gettingStartedProgress(tasks, triedAi) {
 				const clickable = !finished && item.key !== 'done' && !(item.key === 'reminder' && !tiles.length);
 				return `<button type="button" ${clickable ? `data-checklist-item="${item.key}"` : 'disabled'} class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs font-medium transition ${finished ? 'text-slate-400 line-through' : clickable ? 'text-slate-700 bg-slate-100 hover:bg-slate-200' : 'text-slate-700 bg-slate-100'}"><span aria-hidden="true">${finished ? '✅' : '⬜'}</span><span>${item.label}</span></button>`;
 			}).join('')}</div>`;
-		panel.querySelector('[data-checklist-hide]').addEventListener('click', closeChecklist);
+		panel.querySelector('[data-checklist-hide]').addEventListener('click', () => closeChecklist('hidden'));
 		panel.querySelectorAll('[data-checklist-item]').forEach(btn => {
 			btn.addEventListener('click', () => runChecklistAction(btn.dataset.checklistItem));
 		});
