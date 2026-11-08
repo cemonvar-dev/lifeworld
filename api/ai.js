@@ -22,6 +22,7 @@ const MAX_HISTORY_MESSAGES = 20;
 const MAX_MESSAGE_CHARS = 8000;
 const MAX_JSON_PROMPT_CHARS = 40000; // auto-reschedule embeds the event list
 const MAX_TASK_CONTEXT_CHARS = 30000;
+const LANGUAGE_NAMES = { en: 'English', de: 'German', fr: 'French', nl: 'Dutch', es: 'Spanish', tr: 'Turkish' };
 
 async function getUserFromToken(token) {
 	if (!token || !SUPABASE_ANON_KEY) return null;
@@ -144,7 +145,7 @@ export default async function handler(req, res) {
 		.slice(-MAX_HISTORY_MESSAGES);
 	if (!turns.length) return res.status(400).json({ error: 'messages required' });
 	if (jsonMode && turns.some(m => m.content.length > MAX_JSON_PROMPT_CHARS)) {
-		return res.status(400).json({ error: 'That request is too large. Please select fewer items and try again.' });
+		return res.status(400).json({ error: 'That request is too large. Please select fewer items and try again.', code: 'too_large' });
 	}
 	// Chat turns are trimmed rather than rejected: history is resent every time,
 	// so rejecting one long message would fail every later message too.
@@ -204,6 +205,9 @@ in the data below. Only reference tags that already exist. Never guess an id —
 can't find the task the user means, ask them instead of emitting an action.
 For anything that is NOT an explicit task change, reply normally as a coach (plain
 text), never JSON.
+
+LANGUAGE
+The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Write all user-facing text in that language, including "message" and "reason" values, unless the user writes to you in another language. Keep JSON keys and enum values in English.
 
 USER'S TASK DATA:
 ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOUT THIS USER (learned from past chats — durable context, may be outdated; the task data above is authoritative for current stats):\n${memory}` : ''}`;

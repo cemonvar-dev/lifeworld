@@ -231,6 +231,7 @@ function monthlyDateFor(task, year, month) {
 }
 
 function ordinal(n) {
+	if (i18n.lang !== 'en') return String(n);
 	const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
 	return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
@@ -279,6 +280,8 @@ async function fetchTilesFromSupabase() {
 	}
 	currentUserId = session.user.id;
 	currentUserIsPremium = !!(session.user.app_metadata && session.user.app_metadata.premium);
+	const accountLanguage = session.user.user_metadata && session.user.user_metadata.language;
+	if (accountLanguage && accountLanguage !== i18n.lang) i18n.setLanguage(accountLanguage);
 
 	// Identify the signed-in user in PostHog analytics
 	if (window.posthogIdentify) window.posthogIdentify(session.user);
@@ -461,6 +464,7 @@ function renderGallery(filteredTiles) {
 		const heading = document.createElement('div');
 		heading.className = 'text-lg font-semibold text-slate-500 mb-2 mt-8 pl-1';
 		heading.textContent = groupLabel(tag);
+		if (tag !== PINNED_GROUP && tag !== 'Untagged') heading.translate = false;
 		groupSection.appendChild(heading);
 
 		const groupGrid = document.createElement('div');
@@ -492,7 +496,7 @@ function renderGallery(filteredTiles) {
 			tileDiv.innerHTML = `
 				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
-				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
+				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
@@ -689,7 +693,7 @@ function openTilePopup(tileId) {
 				   timeStr = createdAtDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 			   }
 			   const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
-			   const noteHtml = log.note ? `<div class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
+			   const noteHtml = log.note ? `<div translate="no" class="text-xs text-slate-500 mt-1 italic">${log.note}</div>` : '';
 			   timelineHtml += `
 				   <div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
 					   <div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
@@ -755,7 +759,7 @@ function openTilePopup(tileId) {
 						<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
 					</div>
 					<div id="weeklyDays" class="flex flex-wrap gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-9 py-1 text-center rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${d}</button>`).join('')}
+						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-9 py-1 text-center rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${i18n.dayName(i, 'short')}</button>`).join('')}
 					</div>
 					<div id="monthlyDayPicker" class="mt-2" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
 						<label class="text-xs text-slate-500">Day of month</label>
@@ -1220,7 +1224,7 @@ async function submitLog(statusArg) {
 
 	const note = document.getElementById('logNoteInput').value.trim();
 	const dates = getSelectedLogDates();
-	if (!dates.length) { alert('Please select at least one date.'); return; }
+	if (!dates.length) { alert(_t('Please select at least one date.')); return; }
 
 	if (editingLogId) {
 		// --- Edit mode (single date) ---
@@ -1231,7 +1235,7 @@ async function submitLog(statusArg) {
 			.eq('id', editingLogId)
 			.select()
 			.single();
-		if (error) { console.error('Edit log error:', error); alert('Failed to update log: ' + error.message); return; }
+		if (error) { console.error('Edit log error:', error); alert(_t('Failed to update log:') + ' ' + error.message); return; }
 		if (data) {
 			const idx = (raw.task_logs || []).findIndex(l => l.id === editingLogId);
 			if (idx >= 0) raw.task_logs[idx] = data;
@@ -1248,7 +1252,7 @@ async function submitLog(statusArg) {
 			.insert(rows)
 			.select();
 
-		if (error) { console.error('Add log error:', error); alert('Failed to add logs: ' + error.message); return; }
+		if (error) { console.error('Add log error:', error); alert(_t('Failed to add logs:') + ' ' + error.message); return; }
 
 		if (data) {
 			raw.task_logs = (raw.task_logs || []).concat(data);
@@ -1311,7 +1315,6 @@ async function updateTask(taskId, updates) {
 // Rule-based "How to grow" advice, computed from the tile's own logs.
 const SUGGESTION_DISMISS_KEY = 'lw_suggestion_dismissed';
 const SUGGESTION_SNOOZE_DAYS = 14;
-const SUGGESTION_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const SUGGESTION_MILESTONES = [[20, 'Wilting'], [40, 'Growing'], [60, 'Healthy'], [80, 'Thriving']];
 
 function suggestionDayKey(date) {
@@ -1326,7 +1329,7 @@ function suggestionWeekday(dayKey) {
 	return new Date(dayKey + 'T00:00:00').getDay();
 }
 function suggestionDayList(days) {
-	return [...days].sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => SUGGESTION_DAY_NAMES[d].slice(0, 3)).join(', ');
+	return [...days].sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => i18n.dayName(d, 'short')).join(', ');
 }
 
 // The weekdays this tile is most often done on, or Mon/Wed/Fri without enough history.
@@ -1352,7 +1355,7 @@ function staleSuggestion(raw, doneLogs, lastDone) {
 	actions.push({ id: 'complete', label: 'Completed' });
 	return {
 		kind: 'stale',
-		text: lastDone ? `No activity since ${since}. Restart it today, or close this tile if it no longer matters.` : `You haven't started this yet. Do it once today, or close this tile if it no longer matters.`,
+		text: lastDone ? _t('No activity since {date}. Restart it today, or close this tile if it no longer matters.', { date: since }) : `You haven't started this yet. Do it once today, or close this tile if it no longer matters.`,
 		hint: raw.frequency_mode === 'daily' ? '🗓️ Try 3 days a week' : '🌱 Do it once today to restart',
 		actions
 	};
@@ -1365,9 +1368,9 @@ function scheduleSuggestion(raw, doneLogs, health) {
 	const days = suggestedThreeDays(doneLogs);
 	return {
 		kind: 'schedule',
-		text: `Daily hasn't stuck: ${fulfilled} of ${expected} days lately. A lighter schedule is easier to keep.`,
+		text: _t("Daily hasn't stuck: {done} of {total} days lately. A lighter schedule is easier to keep.", { done: fulfilled, total: expected }),
 		hint: '🗓️ Try 3 days a week',
-		actions: [{ id: 'schedule', label: `Switch to ${suggestionDayList(days)}`, days }]
+		actions: [{ id: 'schedule', label: _t('Switch to {days}', { days: suggestionDayList(days) }), days }]
 	};
 }
 
@@ -1384,12 +1387,12 @@ function skipSuggestion(raw) {
 	const current = mode === 'daily' ? [0, 1, 2, 3, 4, 5, 6] : scheduled;
 	const day = current.filter(d => skips[d] >= 3 && skips[d] > (dones[d] || 0)).sort((a, b) => skips[b] - skips[a])[0];
 	if (day === undefined) return null;
-	const name = SUGGESTION_DAY_NAMES[day];
+	const name = i18n.dayName(day, 'long');
 	return {
 		kind: 'skip',
-		text: `You often skip this on ${name}s (${skips[day]} times lately). Take ${name} off the schedule?`,
-		hint: `⏭️ Often skipped on ${name}s`,
-		actions: [{ id: 'schedule', label: `Remove ${name}s`, days: current.filter(d => d !== day) }]
+		text: _t('You often skip this on {day} ({count} times lately). Take {day} off the schedule?', { day: name, count: skips[day] }),
+		hint: '⏭️ ' + _t('Often skipped on {day}', { day: name }),
+		actions: [{ id: 'schedule', label: _t('Remove {day}', { day: name }), days: current.filter(d => d !== day) }]
 	};
 }
 
@@ -1408,9 +1411,9 @@ function timingSuggestion(raw, doneLogs) {
 	const label = top[0].toUpperCase() + top.slice(1);
 	return {
 		kind: 'timing',
-		text: `You usually do this in the ${top}. Set its timing to match?`,
-		hint: `🕒 Usually in the ${top}`,
-		actions: [{ id: 'timing', label: `Set to ${label}`, value: top }]
+		text: _t('Usual time: {part}. Set its timing to match?', { part: _t(label) }),
+		hint: '🕒 ' + _t('Usually: {part}', { part: _t(label) }),
+		actions: [{ id: 'timing', label: _t('Set to {part}', { part: _t(label) }), value: top }]
 	};
 }
 
@@ -1422,8 +1425,8 @@ function milestoneSuggestion(raw, health) {
 		if (Math.round((fulfilled + more) / expected * 100) >= next[0]) {
 			return {
 				kind: 'milestone',
-				text: `About ${more} more Done ${more === 1 ? 'day' : 'days'} to reach ${next[1]}.`,
-				hint: `🌱 About ${more} ${more === 1 ? 'day' : 'days'} to ${next[1]}`,
+				text: _t(more === 1 ? 'About 1 more Done day to reach {level}.' : 'About {count} more Done days to reach {level}.', { count: more, level: _t(next[1]) }),
+				hint: '🌱 ' + _t(more === 1 ? 'About 1 day to {level}' : 'About {count} days to {level}', { count: more, level: _t(next[1]) }),
 				actions: []
 			};
 		}
@@ -1732,7 +1735,7 @@ function refreshNotifications() {
 		list.forEach(t => {
 			if (!notifiedReminderIds.has(t.id)) {
 				notifiedReminderIds.add(t.id);
-				try { new Notification('🔔 ' + t.name, { body: 'Reminder', tag: 'lw-' + t.id }); } catch (e) {}
+				try { new Notification('🔔 ' + t.name, { body: _t('Reminder'), tag: 'lw-' + t.id }); } catch (e) {}
 			}
 		});
 	}
@@ -1751,7 +1754,7 @@ function renderNotifList() {
 	listEl.innerHTML = list.map(t => `
 		<div class="flex items-start justify-between gap-2 px-2 py-2 rounded-xl hover:bg-slate-50 transition">
 			<button class="notif-open flex-1 text-left min-w-0" data-tile-id="${t.id}">
-				<div class="text-sm font-medium text-slate-700 truncate">${t.name}</div>
+				<div translate="no" class="text-sm font-medium text-slate-700 truncate">${t.name}</div>
 				<div class="text-xs text-slate-400">🔔 ${formatReminderAt(t.reminder_at)}</div>
 			</button>
 			<button class="notif-dismiss text-slate-300 hover:text-red-500 text-lg leading-none px-1" data-tile-id="${t.id}" title="Dismiss">&times;</button>
@@ -1874,8 +1877,8 @@ async function scheduleReminders() {
 					types: [{
 						id: NOTIF_ACTION_TYPE,
 						actions: [
-							{ id: 'done', title: '✅ Done' },
-							{ id: 'skip', title: '⏭️ Skip', destructive: true }
+							{ id: 'done', title: '✅ ' + _t('Done') },
+							{ id: 'skip', title: '⏭️ ' + _t('Skip'), destructive: true }
 						]
 					}]
 				});
@@ -1903,7 +1906,7 @@ async function scheduleReminders() {
 			if (!task.reminder_at) return;
 			const rwhen = new Date(task.reminder_at);
 			if (!isNaN(rwhen.getTime()) && rwhen > now) {
-				notifications.push({ id: id++, title: `🔔 ${task.name}`, body: 'Reminder', channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id }, schedule: { at: rwhen, allowWhileIdle: true } });
+				notifications.push({ id: id++, title: `🔔 ${task.name}`, body: _t('Reminder'), channelId: 'reminders', actionTypeId: NOTIF_ACTION_TYPE, extra: { taskId: task.id }, schedule: { at: rwhen, allowWhileIdle: true } });
 			}
 		});
 
@@ -1939,15 +1942,15 @@ async function scheduleReminders() {
 				if (!total) return;
 				let body;
 				if (pending.length) {
-					const lines = ['⏰ Still pending: ' + fmtNames(pending.map(t => t.name))];
-					if (own.length) lines.push(`${b.icon} ${b.label}: ` + fmtNames(own.map(t => t.name)));
+					const lines = ['⏰ ' + _t('Still pending:') + ' ' + fmtNames(pending.map(t => t.name))];
+					if (own.length) lines.push(`${b.icon} ${_t(b.label)}: ` + fmtNames(own.map(t => t.name)));
 					body = lines.join('\n');
 				} else {
 					body = fmtNames(own.map(t => t.name));
 				}
 				notifications.push({
 					id: id++,
-					title: `${b.icon} ${b.label} — ${total} to do`,
+					title: `${b.icon} ${_t('{label} — {count} to do', { label: _t(b.label), count: total })}`,
 					body,
 					channelId: 'reminders',
 					schedule: { at: when, allowWhileIdle: true },
@@ -2165,7 +2168,7 @@ async function renderAttachments(taskId) {
 	listEl.querySelectorAll('.att-del').forEach(b => b.addEventListener('click', async (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		if (!confirm('Delete this attachment?')) return;
+		if (!confirm(_t('Delete this attachment?'))) return;
 		await deleteAttachment(b.dataset.id, b.dataset.path, taskId);
 	}));
 }
@@ -2211,7 +2214,7 @@ async function compressImage(file, maxDim = 1600, quality = 0.82) {
 // Upload one or more files for a task, then re-render the grid.
 async function uploadAttachments(taskId, files, btnEl) {
 	const { data: { session } } = await supa.auth.getSession();
-	if (!session) { alert('Please sign in to add attachments.'); return; }
+	if (!session) { alert(_t('Please sign in to add attachments.')); return; }
 	// Premium-only. RLS enforces this too, but fail early with a clear prompt.
 	if (!(session.user.app_metadata && session.user.app_metadata.premium)) {
 		openUpgradeCheckout();
@@ -2224,7 +2227,7 @@ async function uploadAttachments(taskId, files, btnEl) {
 		for (const original of files) {
 			const file = await compressImage(original); // shrink big images first
 			if (file.size > ATTACH_MAX_BYTES) {
-				alert(`"${original.name}" is larger than 10 MB (even after compression) and was skipped.`);
+				alert(_t('"{name}" is larger than 10 MB (even after compression) and was skipped.', { name: original.name }));
 				continue;
 			}
 			const safe = (file.name || 'file').replace(/[^\w.\-]+/g, '_').slice(-80);
@@ -2233,7 +2236,7 @@ async function uploadAttachments(taskId, files, btnEl) {
 				contentType: file.type || 'application/octet-stream',
 				upsert: false
 			});
-			if (upErr) { console.error('upload error:', upErr); alert('Upload failed: ' + (upErr.message || 'unknown error')); continue; }
+			if (upErr) { console.error('upload error:', upErr); alert(_t('Upload failed:') + ' ' + (upErr.message || _t('unknown error'))); continue; }
 			const { error: insErr } = await supa.from('task_attachments').insert({
 				task_id: taskId, user_id: userId, path, name: file.name, mime: file.type || null, size: file.size || null
 			});
@@ -2285,6 +2288,8 @@ function openSettings(initialTab) {
 	if (sel) sel.value = getVoiceLang();
 	const iconSel = document.getElementById('settingsHealthIcons');
 	if (iconSel) iconSel.value = getHealthIconStyle();
+	const languageSel = document.getElementById('settingsLanguage');
+	if (languageSel) languageSel.value = i18n.lang;
 	// Show the signed-in account email
 	supa.auth.getSession().then(({ data }) => {
 		const el = document.getElementById('settingsAccountEmail');
@@ -2330,11 +2335,11 @@ function csvCell(v) {
 function csvRows(rows) { return rows.map(r => r.map(csvCell).join(',')).join('\r\n'); }
 
 async function exportUserData(format) {
-	if (!currentUserId) { alert('Please sign in first.'); return; }
+	if (!currentUserId) { alert(_t('Please sign in first.')); return; }
 	const { data: tasks, error: tErr } = await supa
 		.from('tasks').select('*, task_logs(*), task_frequency_days(*)').eq('user_id', currentUserId);
 	const { data: tags } = await supa.from('tags').select('*').eq('user_id', currentUserId);
-	if (tErr) { alert('Export failed: ' + tErr.message); return; }
+	if (tErr) { alert(_t('Export failed:') + ' ' + tErr.message); return; }
 	const stamp = todayLocal();
 
 	if (format === 'json') {
@@ -2577,7 +2582,7 @@ function renderTagTree(node, tagCounts, level = 0, tagMoods = {}) {
 			}`;
 		btn.innerHTML =
 			`<span class="text-base shrink-0">🏷️</span>` +
-			`<span class="flex-1 truncate">${tagObj.label}</span>` +
+			`<span translate="no" class="flex-1 truncate">${tagObj.label}</span>` +
 			`<span class="flex items-center gap-1 shrink-0">${moodChipsHtml(tagMoods[tagObj.key] || {})}</span>`;
 		btn.addEventListener('click', () => { if (!tagManageMode) setTagFilter(tagObj.key); });
 		wrapper.appendChild(btn);
@@ -2681,14 +2686,14 @@ async function setTagParent(id, newParentId) {
 	const cur = TAGS_BY_ID[id];
 	if (!cur || newParentId === id) return;
 	if (newParentId && getDescendantIds(id).has(newParentId)) {
-		alert("Can't move a tag under one of its own children.");
+		alert(_t("Can't move a tag under one of its own children."));
 		openTagFilterPopup();
 		return;
 	}
 	const sibs = TAGS.filter(t => t.parent_id === newParentId && t.id !== id);
 	const nextOrder = sibs.length ? Math.max(...sibs.map(s => s.sort_order)) + 1 : 0;
 	const { error } = await supa.from('tags').update({ parent_id: newParentId, sort_order: nextOrder }).eq('id', id);
-	if (error) { alert('Move failed: ' + error.message); return; }
+	if (error) { alert(_t('Move failed:') + ' ' + error.message); return; }
 	cur.parent_id = newParentId;
 	cur.sort_order = nextOrder;
 	rebuildTagIndex();
@@ -2698,7 +2703,7 @@ async function setTagParent(id, newParentId) {
 async function deleteTagFull(id) {
 	const cur = TAGS_BY_ID[id];
 	if (!cur) return;
-	if (!confirm(`Delete tag "${cur.name}"?\nIts sub-tags become top-level, and it's removed from any cards.`)) return;
+	if (!confirm(_t('Delete tag "{name}"?\nIts sub-tags become top-level, and it\'s removed from any cards.', { name: cur.name }))) return;
 	// Remove the tag id from any task that uses it.
 	const affected = Object.values(rawTiles).filter(t => (t.tag_ids || []).includes(id));
 	for (const task of affected) {
@@ -2708,7 +2713,7 @@ async function deleteTagFull(id) {
 		if (dt) dt.tags = [...task.tag_ids];
 	}
 	const { error } = await supa.from('tags').delete().eq('id', id); // children.parent_id -> null via FK
-	if (error) { alert('Delete failed: ' + error.message); return; }
+	if (error) { alert(_t('Delete failed:') + ' ' + error.message); return; }
 	if (activeTagFilter === id) activeTagFilter = null;
 	await loadTags();
 	applyFilters();
@@ -2757,12 +2762,12 @@ function openTagFilterPopup() {
 	newBtn.className = 'flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-lg border-2 border-dashed border-blue-300 text-blue-500 hover:bg-blue-50 transition text-center min-w-[70px]';
 	newBtn.innerHTML = `<span class="text-base">➕</span><span class="text-xs font-semibold">New Tag</span>`;
 	newBtn.addEventListener('click', async () => {
-		const name = prompt('New tag name:');
+		const name = prompt(_t('New tag name:'));
 		if (!name || !name.trim()) return;
 		const { data, error } = await supa.from('tags')
 			.insert({ user_id: currentUserId, name: name.trim() })
 			.select().single();
-		if (error) { alert('Create tag failed: ' + error.message); return; }
+		if (error) { alert(_t('Create tag failed:') + ' ' + error.message); return; }
 		if (data) { TAGS.push(data); rebuildTagIndex(); }
 		openTagFilterPopup();
 	});
@@ -2830,11 +2835,11 @@ function closeTagFilterPopup() {
 async function renameTag(id) {
 	const cur = TAGS_BY_ID[id];
 	if (!cur) return;
-	const newName = prompt('Rename tag:', cur.name);
+	const newName = prompt(_t('Rename tag:'), cur.name);
 	if (!newName || !newName.trim() || newName.trim() === cur.name) return;
 	const name = newName.trim();
 	const { error } = await supa.from('tags').update({ name }).eq('id', id);
-	if (error) { alert('Rename failed: ' + error.message); return; }
+	if (error) { alert(_t('Rename failed:') + ' ' + error.message); return; }
 	cur.name = name;            // task assignments are unaffected (they use the id)
 	rebuildTagIndex();
 	if (refreshTagTree) refreshTagTree(); else openTagFilterPopup();
@@ -2955,7 +2960,7 @@ function toggleTodaySummaryMenu(forceOpen) {
 function todaySummaryRow(t, hover) {
 	return `<button class="today-summary-row w-full flex items-center gap-2 px-2.5 py-2 rounded-lg ${hover} text-left transition" data-tile-id="${t.id}">
 		<span class="text-lg shrink-0">${t.emoji}</span>
-		<span class="flex-1 text-sm font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
+		<span translate="no" class="flex-1 text-sm font-medium text-slate-700 truncate">${escapeHtml(t.name)}</span>
 	</button>`;
 }
 
@@ -3392,7 +3397,7 @@ function openAiChat() {
 	document.getElementById('aiChatOverlay').classList.remove('hidden');
 	document.getElementById('aiChatInput').focus();
 	if (aiChatHistory.length === 0) {
-		appendAiMessage('assistant', "Hi! I'm your Fiblia AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!");
+		appendAiMessage('assistant', _t("Hi! I'm your Fiblia AI coach 🤖\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!"));
 	}
 }
 
@@ -3433,7 +3438,7 @@ async function startAiDictation() {
 	}
 	// Web fallback (Chrome / PWA)
 	const WebSR = window.SpeechRecognition || window.webkitSpeechRecognition;
-	if (!WebSR) { alert('Voice input isn\'t supported here — please type your message.'); return; }
+	if (!WebSR) { alert(_t('Voice input isn\'t supported here — please type your message.')); return; }
 	try {
 		aiSpeechRecognizer = new WebSR();
 		aiSpeechRecognizer.lang = getVoiceLang();
@@ -3463,7 +3468,7 @@ function stopAiDictation() {
 function clearAiChat() {
 	aiChatHistory = [];
 	document.getElementById('aiChatMessages').innerHTML = '';
-	appendAiMessage('assistant', "Chat cleared! Ask me anything about your tasks 🤖");
+	appendAiMessage('assistant', _t("Chat cleared! Ask me anything about your tasks 🤖"));
 }
 
 function appendAiMessage(role, content) {
@@ -3471,10 +3476,10 @@ function appendAiMessage(role, content) {
 	const bubble = document.createElement('div');
 	if (role === 'user') {
 		bubble.className = 'flex justify-end';
-		bubble.innerHTML = `<div class="bg-purple-500 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>`;
+		bubble.innerHTML = `<div translate="no" class="bg-purple-500 text-white rounded-2xl rounded-br-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>`;
 	} else if (role === 'assistant') {
 		bubble.className = 'flex justify-start';
-		bubble.innerHTML = `<div class="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${formatAiResponse(content)}</div>`;
+		bubble.innerHTML = `<div translate="no" class="bg-slate-100 text-slate-800 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[80%] text-sm whitespace-pre-wrap">${formatAiResponse(content)}</div>`;
 	} else if (role === 'loading') {
 		bubble.className = 'flex justify-start';
 		bubble.id = 'aiLoadingBubble';
@@ -3511,12 +3516,12 @@ const LEMONSQUEEZY_CHECKOUT_URL = 'https://lifeworld.lemonsqueezy.com/checkout/b
 // Open LS checkout, passing the Supabase user id so the webhook can grant premium.
 async function openUpgradeCheckout() {
 	if (LEMONSQUEEZY_CHECKOUT_URL.includes('STORE') || LEMONSQUEEZY_CHECKOUT_URL.includes('VARIANT_ID')) {
-		appendAiMessage('assistant', '⚠️ Upgrades are not configured yet. Please check back soon.');
+		appendAiMessage('assistant', '⚠️ ' + _t('Upgrades are not configured yet. Please check back soon.'));
 		return;
 	}
 	const { data: { session } } = await supa.auth.getSession();
 	if (!session) {
-		appendAiMessage('assistant', '⚠️ Please sign in to upgrade.');
+		appendAiMessage('assistant', '⚠️ ' + _t('Please sign in to upgrade.'));
 		return;
 	}
 	const params = `checkout[custom][user_id]=${encodeURIComponent(session.user.id)}`
@@ -3576,7 +3581,7 @@ async function aiCreateTask(a) {
 	const { data, error } = await supa.from('tasks').insert(patch).select('id').single();
 	if (error || !data) throw error || new Error('insert failed');
 	if (patch.frequency_mode === 'weekly') await aiSetWeekdays(data.id, a.weekdays);
-	return `✅ Created “${patch.name}”`;
+	return '✅ ' + _t('Created “{name}”', { name: patch.name });
 }
 
 async function aiUpdateTask(a) {
@@ -3591,7 +3596,7 @@ async function aiUpdateTask(a) {
 	if ((patch.frequency_mode || rawTiles[a.id].frequency_mode) === 'weekly' && Array.isArray(a.weekdays)) {
 		await aiSetWeekdays(a.id, a.weekdays);
 	}
-	return `✏️ Updated “${name}”`;
+	return '✏️ ' + _t('Updated “{name}”', { name });
 }
 
 async function aiDeleteTask(a) {
@@ -3601,7 +3606,7 @@ async function aiDeleteTask(a) {
 	await supa.from('task_frequency_days').delete().eq('task_id', a.id);
 	const { error } = await supa.from('tasks').delete().eq('id', a.id);
 	if (error) throw error;
-	return `🗑️ Deleted “${name}”`;
+	return '🗑️ ' + _t('Deleted “{name}”', { name });
 }
 
 async function executeAiActions(actions) {
@@ -3609,9 +3614,9 @@ async function executeAiActions(actions) {
 	const deletes = actions.filter(a => a && a.type === 'delete' && a.id && rawTiles[a.id]);
 	if (deletes.length) {
 		const names = deletes.map(d => `“${rawTiles[d.id].name}”`).join(', ');
-		if (!confirm(`The AI wants to DELETE ${deletes.length} task(s): ${names}.\n\nThis can't be undone. Proceed?`)) {
+		if (!confirm(_t("The AI wants to DELETE {count} task(s): {names}.\n\nThis can't be undone. Proceed?", { count: deletes.length, names }))) {
 			actions = actions.filter(a => !(a.type === 'delete'));
-			if (!actions.length) return '❌ Cancelled — nothing changed.';
+			if (!actions.length) return '❌ ' + _t('Cancelled — nothing changed.');
 		}
 	}
 	const results = [];
@@ -3622,11 +3627,20 @@ async function executeAiActions(actions) {
 			else if (a.type === 'delete') results.push(await aiDeleteTask(a));
 		} catch (e) {
 			console.error('AI action failed:', a, e);
-			results.push(`⚠️ Could not ${a.type} ${a.name ? '“' + a.name + '”' : (a.id || '')}`);
+			results.push('⚠️ ' + _t('Could not apply this change: {name}', { name: a.name || a.id || '' }));
 		}
 	}
 	await fetchTilesFromSupabase(); // reload everything so the UI is consistent
 	return results.join('\n');
+}
+
+// AI failures in the user's language, keyed by the server's error code.
+function aiErrorText(status, err) {
+	if (err.code === 'quota_exceeded') return _t("You've reached your free limit of {limit} AI messages today. Upgrade to Fiblia Premium for unlimited coaching.", { limit: err.limit });
+	if (status === 401) return _t('Please sign in to use the AI assistant.');
+	if (err.code === 'ai_unavailable') return _t('The AI assistant is temporarily unavailable. Please try again shortly.');
+	if (err.code === 'too_large') return _t('That request is too large. Please select fewer items and try again.');
+	return _t('Something went wrong. Please try again.');
 }
 
 async function sendAiMessage(text) {
@@ -3647,7 +3661,7 @@ async function sendAiMessage(text) {
 		if (!session) {
 			const loading = document.getElementById('aiLoadingBubble');
 			if (loading) loading.remove();
-			appendAiMessage('assistant', '⚠️ Please sign in to use the AI assistant.');
+			appendAiMessage('assistant', '⚠️ ' + _t('Please sign in to use the AI assistant.'));
 			return;
 		}
 		const response = await fetch(`${API_BASE}/api/ai`, {
@@ -3658,7 +3672,8 @@ async function sendAiMessage(text) {
 			},
 			body: JSON.stringify({
 				messages: aiChatHistory,
-				taskContext
+				taskContext,
+				language: i18n.lang
 			})
 		});
 
@@ -3669,17 +3684,17 @@ async function sendAiMessage(text) {
 		if (!response.ok) {
 			const err = await response.json().catch(() => ({}));
 			if (err.code === 'quota_exceeded') {
-				appendAiMessage('assistant', '🔒 ' + (err.error || "You've hit today's free AI limit. Upgrade to Premium for unlimited coaching."));
+				appendAiMessage('assistant', '🔒 ' + aiErrorText(response.status, err));
 				appendUpgradeButton();
 				return;
 			}
-			const errMsg = err.error || 'Something went wrong. Please try again.';
+			const errMsg = aiErrorText(response.status, err);
 			appendAiMessage('assistant', '⚠️ ' + errMsg);
 			return;
 		}
 
 		   const data = await response.json();
-		   const reply = data.reply || 'No response.';
+		   const reply = data.reply || _t('No response.');
 		   // The AI may return an action command (create/update/delete tasks).
 		   let handled = false;
 		   try {
@@ -3703,7 +3718,7 @@ async function sendAiMessage(text) {
 		const loading = document.getElementById('aiLoadingBubble');
 		if (loading) loading.remove();
 		console.error('AI chat error:', err);
-		appendAiMessage('assistant', '⚠️ Network error. Please check your connection and try again.');
+		appendAiMessage('assistant', '⚠️ ' + _t('Network error. Please check your connection and try again.'));
 	}
 }
 
@@ -3785,6 +3800,19 @@ document.addEventListener('DOMContentLoaded', () => {
 		if (e.target === document.getElementById('settingsOverlay')) closeSettings();
 	});
 	document.getElementById('settingsVoiceLang').addEventListener('change', e => setVoiceLang(e.target.value));
+	document.getElementById('settingsLanguage').addEventListener('change', async e => {
+		const language = e.target.value;
+		await i18n.setLanguage(language);
+		// Saved to the account so the choice follows the user across devices.
+		const { error } = await supa.auth.updateUser({ data: { language } });
+		if (error) console.error('Language save error:', error);
+	});
+	window.addEventListener('i18n-change', () => {
+		if (!tiles.length) return;
+		applyFilters();
+		scheduleReminders();
+		if (activeTileId && !document.getElementById('tileOverlay').classList.contains('hidden')) openTilePopup(activeTileId);
+	});
 	document.getElementById('settingsHealthIcons').addEventListener('change', e => {
 		setHealthIconStyle(e.target.value);
 		applyFilters(); // re-render the gallery with the new icon set
@@ -4132,10 +4160,10 @@ function openCalendarPopup() {
 			       .find(row => row.style.display !== 'none' && row.dataset.day >= day);
 		       const label = new Date(day + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 		       if (!target) {
-			       note.textContent = `Nothing planned on or after ${label}.`;
+			       note.textContent = _t('Nothing planned on or after {date}.', { date: label });
 			       return;
 		       }
-		       note.textContent = target.dataset.day === day ? '' : `Nothing on ${label}. Showing the next planned date.`;
+		       note.textContent = target.dataset.day === day ? '' : _t('Nothing on {date}. Showing the next planned date.', { date: label });
 		       const toolbarHeight = document.getElementById('calendarToolbar').offsetHeight;
 		       container.scrollTop += target.getBoundingClientRect().top - container.getBoundingClientRect().top - toolbarHeight;
 		       target.style.outline = '2px solid #60a5fa';
@@ -4210,7 +4238,7 @@ function rescheduleTaskFromCalendar(tileId, btnEl) {
 	const raw = rawTiles[tileId];
 	if (!raw) return;
 	if (!window.flatpickr) {
-		const v = prompt('New date (YYYY-MM-DD):', raw.end_date || '');
+		const v = prompt(_t('New date (YYYY-MM-DD):'), raw.end_date || '');
 		if (v && v.trim()) applyReschedule(tileId, v.trim());
 		return;
 	}
@@ -4275,10 +4303,10 @@ async function autoRescheduleCalendar() {
 	const targetTasks = hasSelection ? onceTasks.filter(t => selectedIds.includes(t.id)) : onceTasks;
 
 	if (!hasSelection && onceTasks.length < 2) {
-		alert('Need at least 2 planned tasks to auto-distribute (or tick specific rows to reschedule just those).');
+		alert(_t('Need at least 2 planned tasks to auto-distribute (or tick specific rows to reschedule just those).'));
 		return;
 	}
-	if (hasSelection && !targetTasks.length) { alert('No valid tasks selected.'); return; }
+	if (hasSelection && !targetTasks.length) { alert(_t('No valid tasks selected.')); return; }
 
 	const btn = document.getElementById('autoRescheduleBtn');
 	const orig = btn ? btn.innerHTML : '';
@@ -4286,7 +4314,7 @@ async function autoRescheduleCalendar() {
 
 	try {
 		const { data: { session } } = await supa.auth.getSession();
-		if (!session) { alert('Please sign in to use AI auto-reschedule.'); return; }
+		if (!session) { alert(_t('Please sign in to use AI auto-reschedule.')); return; }
 
 		const today = todayLocal();
 		// Send the full list (so the AI sees existing dates to avoid clustering),
@@ -4329,20 +4357,21 @@ Respond with ONLY a JSON object in exactly this shape, listing only the events y
 			body: JSON.stringify({
 				messages: [{ role: 'user', content: instruction }],
 				taskContext: '',
-				responseFormat: { type: 'json_object' }
+				responseFormat: { type: 'json_object' },
+				language: i18n.lang
 			})
 		});
 
 		if (!response.ok) {
 			const err = await response.json().catch(() => ({}));
-			alert(err.error || 'AI request failed. Please try again.');
+			alert(aiErrorText(response.status, err));
 			return;
 		}
 
 		const data = await response.json();
 		let parsed;
 		try { parsed = JSON.parse(stripFences(data.reply)); }
-		catch (e) { alert('The AI returned an unexpected format. Please try again.'); return; }
+		catch (e) { alert(_t('The AI returned an unexpected format. Please try again.')); return; }
 
 		const byId = {};
 		onceTasks.forEach(t => { byId[t.id] = t; });
@@ -4352,7 +4381,7 @@ Respond with ONLY a JSON object in exactly this shape, listing only the events y
 			.map(s => ({ id: s.id, name: byId[s.id].name, from: byId[s.id].end_date, to: s.date, reason: s.reason || '', overdue: byId[s.id].end_date < today }))
 			.filter(p => p.from !== p.to);
 
-		if (!proposals.length) { alert('The AI did not suggest any changes — your schedule already looks well spread out.'); return; }
+		if (!proposals.length) { alert(_t('The AI did not suggest any changes — your schedule already looks well spread out.')); return; }
 
 		// Overdue tasks (within the rescheduled set) the AI failed to move forward.
 		const movedIds = new Set(proposals.map(p => p.id));
@@ -4360,7 +4389,7 @@ Respond with ONLY a JSON object in exactly this shape, listing only the events y
 		renderReschedulePreview(proposals, missedOverdue);
 	} catch (e) {
 		console.error('auto reschedule error:', e);
-		alert('Something went wrong with auto-reschedule.');
+		alert(_t('Something went wrong with auto-reschedule.'));
 	} finally {
 		if (btn) { btn.disabled = false; btn.innerHTML = orig; }
 	}
@@ -4383,11 +4412,11 @@ function renderReschedulePreview(proposals, missedOverdue) {
 		<td class="border px-3 py-2">${p.overdue ? '<span class="text-xs font-semibold text-red-500 mr-1">⚠️</span>' : ''}${escapeHtml(p.name)}</td>
 		<td class="border px-3 py-2 whitespace-nowrap line-through ${p.overdue ? 'text-red-400' : 'text-slate-400'}">${fmt(p.from)}</td>
 		<td class="border px-3 py-2 whitespace-nowrap font-semibold text-blue-700">${fmt(p.to)}</td>
-		<td class="border px-3 py-2 text-xs text-slate-500">${escapeHtml(p.reason)}</td>
+		<td translate="no" class="border px-3 py-2 text-xs text-slate-500">${escapeHtml(p.reason)}</td>
 	</tr>`).join('');
 	const warn = missedOverdue ? `<div class="mb-2 text-xs text-red-500">⚠️ ${missedOverdue} overdue task(s) were not moved — try again to reschedule them.</div>` : '';
 	container.innerHTML = `
-		<div class="mb-1 text-sm text-slate-600">🤖 Proposed new dates for <b>${proposals.length}</b> task(s)${overdueCount ? ` — including <b class="text-red-500">${overdueCount} overdue</b>` : ''}. Review, then apply.</div>
+		<div class="mb-1 text-sm text-slate-600">🤖 ${_t('Proposed new dates for {count} task(s). Review, then apply.', { count: proposals.length })}${overdueCount ? ` <b class="text-red-500">${overdueCount} overdue</b>` : ''}</div>
 		${warn}
 		<div class="overflow-x-auto"><table class="min-w-full text-sm"><thead><tr>
 			<th class="px-3 py-2 text-left">Task</th>
@@ -4515,7 +4544,7 @@ function renderOnceTasksCalendar() {
 		const skipBtn = kind === 'once' ? '' : `<button class="cal-mark-skip text-base leading-none px-2 py-1 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition mr-1" data-tile-id="${t.id}" data-date="${date}" title="Skip" aria-label="Skip">⏭️</button>`;
 		const reschedBtn = kind === 'once' ? `<button class="cal-reschedule-btn text-base px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition" data-tile-id="${t.id}" title="Reschedule" aria-label="Reschedule">📅</button>` : '';
 		const actionsCell = (st === 'done' || st === 'skipped') ? CAL_STATUS_LABELS[st] : (doneBtn + skipBtn + reschedBtn);
-		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-4 py-2"><a href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
+		return `<tr data-date="${date}" data-shortdate="${shortDate}" data-tag="${escapeHtml(tagLabel).toLowerCase()}" data-task="${desc.toLowerCase()}" data-tags="${escapeHtml(allTags)}" data-kind="${kind}" data-tod="${tileTimeOfDay(t)}"><td class="border px-4 py-2"><a translate="no" href="#" class="calendar-tile-link text-blue-600 underline hover:text-blue-800" data-tile-id="${t.id}">${desc}</a>${freqBadge}</td><td class="border px-4 py-2 whitespace-nowrap">${actionsCell}</td></tr>`;
 	}
 
 	allDates.forEach(date => {

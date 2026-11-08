@@ -54,7 +54,7 @@ function renderTodayPlanPopup() {
             <div class="planStatus">
               ${i.status === "completed" ? "✅" : i.status === "done" ? "💪" : i.status === "skipped" ? "😢" : "⏳"}
             </div>
-            <div>${i.name}</div>
+            <div translate="no">${i.name}</div>
           </div>
         `).join("")}
       </div>
