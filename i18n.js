@@ -4,7 +4,7 @@
 // the page (dialogs, notifications) or that contains variables. Mark user content
 // with translate="no" so it's left alone.
 (function () {
-	const LOCALES = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR', nl: 'nl-NL', es: 'es-ES', tr: 'tr-TR' };
+	const LOCALES = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR', nl: 'nl-NL', es: 'es-ES', it: 'it-IT', tr: 'tr-TR' };
 	const STORAGE_KEY = 'lw_language';
 	const ATTRIBUTES = ['placeholder', 'title', 'aria-label', 'alt'];
 	const SKIP_PARENTS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'TITLE']);

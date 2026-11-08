@@ -22,7 +22,7 @@ const MAX_HISTORY_MESSAGES = 20;
 const MAX_MESSAGE_CHARS = 8000;
 const MAX_JSON_PROMPT_CHARS = 40000; // auto-reschedule embeds the event list
 const MAX_TASK_CONTEXT_CHARS = 30000;
-const LANGUAGE_NAMES = { en: 'English', de: 'German', fr: 'French', nl: 'Dutch', es: 'Spanish', tr: 'Turkish' };
+const LANGUAGE_NAMES = { en: 'English', de: 'German', fr: 'French', nl: 'Dutch', es: 'Spanish', it: 'Italian', tr: 'Turkish' };
 
 async function getUserFromToken(token) {
 	if (!token || !SUPABASE_ANON_KEY) return null;
