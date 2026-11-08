@@ -346,6 +346,7 @@ async function fetchTilesFromSupabase() {
 	scheduleReminders();
 	if (typeof refreshNotifications === 'function') refreshNotifications(); // update the bell badge
 	lastRenderedDay = todayLocal(); // for day-rollover auto-refresh
+	if (window.maybeShowOnboarding) window.maybeShowOnboarding(session.user);
 }
 
 // When the app/tab is reopened on a new calendar day, re-fetch so the
