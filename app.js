@@ -440,13 +440,13 @@ function renderGallery(filteredTiles) {
 
 	const groups = {};
 	filteredTiles.forEach(tile => {
-		const tag = (tile.tags && tile.tags.length > 0) ? tile.tags[0] : 'Untagged';
+		const tag = tileGroupKey(tile);
 		if (!groups[tag]) groups[tag] = [];
 		groups[tag].push(tile);
 	});
 
-	const groupLabel = tag => tag === 'Untagged' ? 'Untagged' : tagPath(tag);
-	Object.keys(groups).sort((a, b) => groupLabel(a).localeCompare(groupLabel(b))).forEach(tag => {
+	const groupLabel = tag => tag === PINNED_GROUP ? '📌 Pinned' : tag === 'Untagged' ? 'Untagged' : tagPath(tag);
+	Object.keys(groups).sort((a, b) => (b === PINNED_GROUP) - (a === PINNED_GROUP) || groupLabel(a).localeCompare(groupLabel(b))).forEach(tag => {
 		// Sort tiles within group by sort_order (then name as fallback)
 		groups[tag].sort((a, b) => {
 			const aOrder = (rawTiles[a.id] && rawTiles[a.id].sort_order != null) ? rawTiles[a.id].sort_order : 999999;
@@ -471,7 +471,7 @@ function renderGallery(filteredTiles) {
 			const tp = tilePlant({ status: tile.taskStatus }, tile.health);
 			const tileColor = tp.color || tile.healthColor || 'bg-white';
 			// Remove color class from tile, use data attribute for gradient
-			tileDiv.className = `tile rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
+			tileDiv.className = `tile relative rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.setAttribute('data-tilecolor', tileColor);
 			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
@@ -488,7 +488,9 @@ function renderGallery(filteredTiles) {
 				: `<div class="-mt-4 -mx-4 rounded-t-xl overflow-hidden" style="width:calc(100% + 2rem);height:72px" title="${tp.label}"><img src="${healthBannerSrc(tierLabel)}" alt="${tp.label}" loading="lazy" class="block w-full h-full object-cover object-center" /></div>`;
 			// Short nudge on struggling tiles only, to keep the list calm.
 			const cardHint = !tp.finished && tile.health < 40 ? tileSuggestion(rawTiles[tile.id])?.hint : '';
+			const isPinned = !!(rawTiles[tile.id] && rawTiles[tile.id].pinned);
 			tileDiv.innerHTML = `
+				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
@@ -536,6 +538,10 @@ function renderGallery(filteredTiles) {
 				if (draggedId && draggedId !== tile.id) handleTileDrop(draggedId, tile.id, tag);
 			});
 
+			tileDiv.querySelector('.tile-pin').addEventListener('click', (e) => {
+				e.stopPropagation();
+				setTilePinned(tile.id, !isPinned);
+			});
 			tileDiv.querySelector('.quick-done').addEventListener('click', (e) => {
 				e.stopPropagation();
 				quickLog(tile.id, 'done');
@@ -555,13 +561,36 @@ function renderGallery(filteredTiles) {
 
 
 
+// ---- Pinning ----
+const PINNED_GROUP = '__pinned__';
+
+// The gallery section a tile belongs to: Pinned, or its first tag.
+function tileGroupKey(tile) {
+	if (rawTiles[tile.id] && rawTiles[tile.id].pinned) return PINNED_GROUP;
+	return (tile.tags && tile.tags.length > 0) ? tile.tags[0] : 'Untagged';
+}
+
+async function setTilePinned(tileId, pinned) {
+	const raw = rawTiles[tileId];
+	if (!raw) return;
+	const refresh = () => {
+		applyFilters();
+		if (activeTileId === tileId && !document.getElementById('tileOverlay').classList.contains('hidden')) openTilePopup(tileId);
+	};
+	raw.pinned = pinned;
+	refresh();
+	const { error } = await supa.from('tasks').update({ pinned }).eq('id', tileId);
+	if (error) {
+		console.error('Pin update error:', error);
+		raw.pinned = !pinned;
+		refresh();
+	}
+}
+
 // ---- Drag-and-Drop Reorder ----
 async function handleTileDrop(draggedId, targetId, tagGroup) {
 	// Get the tiles in this tag group in their current sort order
-	const groupTiles = tiles.filter(t => {
-		const firstTag = (t.tags && t.tags.length > 0) ? t.tags[0] : 'Untagged';
-		return firstTag === tagGroup;
-	}).sort((a, b) => {
+	const groupTiles = tiles.filter(t => tileGroupKey(t) === tagGroup).sort((a, b) => {
 		const aOrder = (rawTiles[a.id] && rawTiles[a.id].sort_order != null) ? rawTiles[a.id].sort_order : 999999;
 		const bOrder = (rawTiles[b.id] && rawTiles[b.id].sort_order != null) ? rawTiles[b.id].sort_order : 999999;
 		if (aOrder !== bOrder) return aOrder - bOrder;
@@ -707,7 +736,10 @@ function openTilePopup(tileId) {
 				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
 				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
 			</div>
+			<div class="flex gap-2">
+			<button id="tilePinBtn" type="button" aria-pressed="${!!raw.pinned}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${raw.pinned ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${raw.pinned ? '' : 'grayscale'}">📌</span><span>${raw.pinned ? 'Pinned' : 'Pin'}</span></button>
 			<button id="completeToggleBtn" type="button" class="inline-flex flex-col items-center leading-tight gap-0.5 px-4 py-2 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}">${isCompleted ? '<span>✅</span><span>Completed</span>' : '<span>⬜</span><span>Mark completed</span>'}</button>
+			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3 mb-3 items-start">
 				<!-- Left column: recurrence / date, with the weekly / monthly pickers under it -->
@@ -743,7 +775,7 @@ function openTilePopup(tileId) {
 				</div>
 			</div>
 		${'notes' in raw ? `<div class="mb-1 text-xs font-semibold text-slate-500">Notes</div>
-		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
+		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full shrink-0 rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
 		<div id="tileSuggestionMount"></div>
 		<hr class="my-5 border-slate-200">
@@ -755,7 +787,7 @@ function openTilePopup(tileId) {
 			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
 			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+		<div class="flex-1 shrink-0 min-h-[10rem] overflow-y-auto -mx-1 px-1">
 				<div id="tabPanelTimeline" class="detail-tab-panel">
 					<div class="flex items-center justify-end mb-1">
 						<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
@@ -799,6 +831,7 @@ function openTilePopup(tileId) {
 
 
 	wireTileNotes(raw, tileId);
+	document.getElementById('tilePinBtn').addEventListener('click', () => setTilePinned(tileId, !raw.pinned));
 	renderTileSuggestion(raw, tileId);
 
 	// Frequency / Reminder / Status — styled dropdowns (icon left, text right).
