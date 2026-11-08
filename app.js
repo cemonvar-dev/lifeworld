@@ -145,20 +145,19 @@ function calculateHealth(task) {
 // Health icon sets — user-selectable in Settings (weather vs plants).
 const HEALTH_ICON_SETS = {
 	weather: { Thriving: '🌞', Healthy: '☀️', Growing: '⛅', Wilting: '🌧️', Dying: '⚡' },
-	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' },
-	// Understated / professional sets:
-	minimal: { Thriving: '🟢', Healthy: '🟡', Growing: '🟠', Wilting: '🔴', Dying: '⚫' }, // status dots
-	moon:    { Thriving: '🌕', Healthy: '🌔', Growing: '🌗', Wilting: '🌘', Dying: '🌑' }, // moon phases
-	gems:    { Thriving: '💎', Healthy: '🔷', Growing: '🔹', Wilting: '▪️', Dying: '⬛' }  // gemstone → fade
+	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' }
 };
 function getHealthIconStyle() {
-	try { return localStorage.getItem('lw_health_icons') || 'weather'; } catch (e) { return 'weather'; }
+	// A stored value may name a set that no longer exists.
+	try {
+		const style = localStorage.getItem('lw_health_icons');
+		return HEALTH_ICON_SETS[style] ? style : 'weather';
+	} catch (e) { return 'weather'; }
 }
 function setHealthIconStyle(style) {
 	try { localStorage.setItem('lw_health_icons', style); } catch (e) {}
 }
-// Tile header banner for a health tier. Only Plants has its own artwork so far;
-// every other icon set keeps the weather landscapes.
+// Tile header banner for a health tier, matching the chosen icon set.
 function healthBannerSrc(tier) {
 	return getHealthIconStyle() === 'plants'
 		? `styling/icons/plants/${tier}.svg`
