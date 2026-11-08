@@ -13,6 +13,9 @@ const noon = '2026-11-08T09:00:00Z', oneAm = '2026-11-07T22:00:00Z'; // 12:00 an
 const old = '2026-01-01T09:00:00Z', log = (log_date, status = 'done') => ({ log_date, status });
 const last = n => Array.from({ length: n }, (_, i) => new RealDate(RealDate.UTC(2026, 10, 8 - i)).toISOString().slice(0, 10));
 const cases = [
+  ['new daily tile, not done yet today', noon, { frequency_mode: 'daily', created_at: '2026-11-08T05:00:00Z' }, 50],
+  ['today not done yet costs nothing', noon, { frequency_mode: 'daily', created_at: old, task_logs: last(31).slice(1).map(d => log(d)) }, 100],
+  ['yesterday missed still counts', noon, { frequency_mode: 'daily', created_at: '2026-11-07T05:00:00Z' }, 0],
   ['once due today, not done', noon, { frequency_mode: 'once', end_date: '2026-11-08', created_at: old }, 50],
   ['once due yesterday, not done', noon, { frequency_mode: 'once', end_date: '2026-11-07', created_at: old }, 0],
   ['once due tomorrow', noon, { frequency_mode: 'once', end_date: '2026-11-09', created_at: old }, 50],

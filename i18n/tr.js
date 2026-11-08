@@ -295,5 +295,16 @@ window.I18N_MESSAGES.tr = {
 	"Create tile": "Kart oluştur",
 	"Next": "İleri",
 	"Back": "Geri",
-	"Skip for now": "Şimdilik geç"
+	"Skip for now": "Şimdilik geç",
+	"All done for today": "Bugünlük hepsi tamam",
+	"Nothing left to do. Nice work.": "Yapacak bir şey kalmadı. Harika iş!",
+	"See what you did": "Yaptıklarınızı görün",
+	"Getting started": "Başlarken",
+	"{n} of 4 done": "4 adımdan {n} tanesi tamam",
+	"Create a tile": "Kart oluştur",
+	"Mark a tile Done": "Bir kartı Yapıldı işaretle",
+	"Set a reminder": "Hatırlatıcı ayarla",
+	"Try the AI coach": "Yapay zekâ koçunu deneyin",
+	"Hide": "Gizle",
+	"Replay welcome guide": "Hoş geldiniz rehberini tekrar göster"
 };

@@ -1,13 +1,13 @@
 // Create a tile by name (no prompt)
-async function createTileByName(name) {
+async function createTileByName(name, mode = 'once') {
 	if (!name || !name.trim() || !currentUserId) return;
 	const { data, error } = await supa
 		.from('tasks')
 		.insert({
 			user_id: currentUserId,
 			name: name.trim(),
-			frequency_mode: 'once',
-			end_date: todayLocal() // one-time defaults to today
+			frequency_mode: mode,
+			end_date: mode === 'once' ? todayLocal() : null // one-time defaults to today
 		})
 		.select('*, task_logs(*), task_frequency_days(*)')
 		.single();
@@ -139,6 +139,7 @@ function healthCounts(task) {
 	// Count expected vs fulfilled days
 	let expected = 0;
 	let fulfilled = 0;
+	const todayStr = todayLocal();
 	const firstDay = new Date(effectiveStart);
 	firstDay.setHours(0, 0, 0, 0); // whole local days, matching log_date
 	for (let d = firstDay; d <= now; d.setDate(d.getDate() + 1)) {
@@ -153,7 +154,8 @@ function healthCounts(task) {
 			isExpected = d.getDate() === md.getDate();
 		}
 		// A deliberately skipped day is neither a success nor a miss.
-		if (isExpected && (doneDates.has(dateStr) || !skipDates.has(dateStr))) {
+		const stillOpenToday = dateStr === todayStr && !doneDates.has(dateStr);
+		if (isExpected && !stillOpenToday && (doneDates.has(dateStr) || !skipDates.has(dateStr))) {
 			expected++;
 			if (doneDates.has(dateStr)) fulfilled++;
 		}
@@ -436,11 +438,30 @@ function nextDueDateStr(raw) {
 	return null;
 }
 
+// Explain an empty list: no tiles yet, everything done today, or no filter match.
+function renderEmptyGallery(gallery) {
+	const message = '<div class="col-span-full text-center text-slate-500 py-8">';
+	const action = 'mt-3 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition';
+	if (tiles.length === 0) {
+		gallery.innerHTML = `${message}<div>No tiles found.</div><button type="button" id="emptyCreateBtn" class="${action}">Create your first tile</button></div>`;
+		document.getElementById('emptyCreateBtn').addEventListener('click', () => window.showOnboarding && window.showOnboarding());
+		return;
+	}
+	const { done, skipped, remaining } = getTodaySummary();
+	if (activeStatusFilter === 'noaction' && remaining.length === 0 && done.length + skipped.length > 0) {
+		gallery.innerHTML = `${message}<div class="text-3xl mb-2" aria-hidden="true">🎉</div><div class="font-semibold text-slate-700">All done for today</div><div class="text-sm">Nothing left to do. Nice work.</div><button type="button" id="seeTodayBtn" class="${action}">See what you did</button></div>`;
+		document.getElementById('seeTodayBtn').addEventListener('click', () => openTodaySummary('done'));
+		return;
+	}
+	gallery.innerHTML = `${message}No tiles found.</div>`;
+}
+
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
+	if (window.refreshGettingStarted) window.refreshGettingStarted();
 	gallery.innerHTML = "";
 	if (!filteredTiles.length) {
-		gallery.innerHTML = '<div class="col-span-full text-center text-slate-500 py-8">No tiles found.</div>';
+		renderEmptyGallery(gallery);
 		return;
 	}
 

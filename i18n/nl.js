@@ -295,5 +295,16 @@ window.I18N_MESSAGES.nl = {
 	"Create tile": "Tegel maken",
 	"Next": "Volgende",
 	"Back": "Terug",
-	"Skip for now": "Nu overslaan"
+	"Skip for now": "Nu overslaan",
+	"All done for today": "Alles gedaan voor vandaag",
+	"Nothing left to do. Nice work.": "Niets meer te doen. Goed gedaan!",
+	"See what you did": "Bekijk wat je hebt gedaan",
+	"Getting started": "Aan de slag",
+	"{n} of 4 done": "{n} van 4 gedaan",
+	"Create a tile": "Tegel maken",
+	"Mark a tile Done": "Markeer een tegel als gedaan",
+	"Set a reminder": "Herinnering instellen",
+	"Try the AI coach": "Probeer de AI-coach",
+	"Hide": "Verbergen",
+	"Replay welcome guide": "Welkomstgids opnieuw bekijken"
 };

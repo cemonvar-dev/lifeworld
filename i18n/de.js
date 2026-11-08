@@ -295,5 +295,16 @@ window.I18N_MESSAGES.de = {
 	"Create tile": "Kachel erstellen",
 	"Next": "Weiter",
 	"Back": "Zurück",
-	"Skip for now": "Vorerst überspringen"
+	"Skip for now": "Vorerst überspringen",
+	"All done for today": "Für heute alles erledigt",
+	"Nothing left to do. Nice work.": "Nichts mehr zu tun. Gut gemacht!",
+	"See what you did": "Ansehen, was du erledigt hast",
+	"Getting started": "Erste Schritte",
+	"{n} of 4 done": "{n} von 4 erledigt",
+	"Create a tile": "Kachel erstellen",
+	"Mark a tile Done": "Kachel als erledigt markieren",
+	"Set a reminder": "Erinnerung einstellen",
+	"Try the AI coach": "KI-Coach ausprobieren",
+	"Hide": "Ausblenden",
+	"Replay welcome guide": "Einführung wiederholen"
 };

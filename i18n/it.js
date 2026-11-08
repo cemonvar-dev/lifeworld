@@ -295,5 +295,16 @@ window.I18N_MESSAGES.it = {
 	"Create tile": "Crea scheda",
 	"Next": "Avanti",
 	"Back": "Indietro",
-	"Skip for now": "Salta per ora"
+	"Skip for now": "Salta per ora",
+	"All done for today": "Per oggi è tutto fatto",
+	"Nothing left to do. Nice work.": "Non resta nulla da fare. Ottimo lavoro!",
+	"See what you did": "Guarda cosa hai fatto",
+	"Getting started": "Per iniziare",
+	"{n} of 4 done": "{n} di 4 completati",
+	"Create a tile": "Crea una scheda",
+	"Mark a tile Done": "Segna una scheda come fatta",
+	"Set a reminder": "Imposta un promemoria",
+	"Try the AI coach": "Prova il coach IA",
+	"Hide": "Nascondi",
+	"Replay welcome guide": "Rivedi la guida di benvenuto"
 };
