@@ -734,6 +734,9 @@ function openTilePopup(tileId) {
 					</div>
 				</div>
 			</div>
+		${'notes' in raw ? `<div class="mb-1 text-xs font-semibold text-slate-500">Notes</div>
+		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
+		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
 		<hr class="my-5 border-slate-200">
 		<div class="mb-1 text-xs font-semibold text-slate-500">Tags</div>
 		${tagDropdownHtml}
@@ -785,6 +788,8 @@ function openTilePopup(tileId) {
 		});
 	}
 
+
+	wireTileNotes(raw, tileId);
 
 	// Frequency / Reminder / Status — styled dropdowns (icon left, text right).
 	lwSelect(document.getElementById('freqSelectMount'), {
@@ -1380,6 +1385,30 @@ function lwMultiSelect(mount, config) {
 			}
 		});
 	}
+}
+
+// Autosave the popup's notes while typing and when the field loses focus.
+function wireTileNotes(raw, tileId) {
+	const input = document.getElementById('tileNotesInput');
+	if (!input) return;
+	const errorEl = document.getElementById('tileNotesError');
+	input.value = raw.notes || '';
+	let timer;
+	const save = async () => {
+		clearTimeout(timer);
+		const text = input.value;
+		if (text === (raw.notes || '')) return;
+		const previous = raw.notes;
+		raw.notes = text || null;
+		const { error } = await supa.from('tasks').update({ notes: raw.notes }).eq('id', tileId);
+		if (error) raw.notes = previous; // still differs, so the next edit or blur retries
+		if (errorEl) errorEl.classList.toggle('hidden', !error);
+	};
+	input.addEventListener('input', () => {
+		clearTimeout(timer);
+		timer = setTimeout(save, 600);
+	});
+	input.addEventListener('blur', save);
 }
 
 // Persist a tile's reminder (Date or null) and re-sync device notifications.
@@ -2033,8 +2062,8 @@ async function exportUserData(format) {
 		return;
 	}
 	// CSV: one file for tiles, one for logs (both human-readable in a spreadsheet).
-	const tileRows = [['id', 'name', 'frequency_mode', 'status', 'end_date', 'day_of_month', 'time_of_day', 'created_at']];
-	(tasks || []).forEach(t => tileRows.push([t.id, t.name, t.frequency_mode, t.status, t.end_date, t.day_of_month, t.time_of_day, t.created_at]));
+	const tileRows = [['id', 'name', 'frequency_mode', 'status', 'end_date', 'day_of_month', 'time_of_day', 'notes', 'created_at']];
+	(tasks || []).forEach(t => tileRows.push([t.id, t.name, t.frequency_mode, t.status, t.end_date, t.day_of_month, t.time_of_day, t.notes || '', t.created_at]));
 	downloadBlob(`fiblia-tiles-${stamp}.csv`, 'text/csv', csvRows(tileRows));
 
 	const nameById = {}; (tasks || []).forEach(t => { nameById[t.id] = t.name; });
