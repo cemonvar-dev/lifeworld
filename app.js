@@ -157,6 +157,13 @@ function getHealthIconStyle() {
 function setHealthIconStyle(style) {
 	try { localStorage.setItem('lw_health_icons', style); } catch (e) {}
 }
+// Tile header banner for a health tier. Only Plants has its own artwork so far;
+// every other icon set keeps the weather landscapes.
+function healthBannerSrc(tier) {
+	return getHealthIconStyle() === 'plants'
+		? `styling/icons/plants/${tier}.svg`
+		: `styling/icons/weather/${tier}.jpg`;
+}
 // Emoji for a health label in the user's chosen style.
 function healthEmoji(label) {
 	const set = HEALTH_ICON_SETS[getHealthIconStyle()] || HEALTH_ICON_SETS.weather;
@@ -457,7 +464,7 @@ function renderGallery(filteredTiles) {
 			const tierLabel = tile.health >= 80 ? 'thriving' : tile.health >= 60 ? 'healthy' : tile.health >= 40 ? 'growing' : tile.health >= 20 ? 'wilting' : 'dying';
 			const healthHeader = tp.finished
 				? `<div class="-mt-4 -mx-4 rounded-t-xl bg-slate-100 flex items-center justify-center text-3xl" style="width:calc(100% + 2rem);height:72px" title="${tp.label}">${tp.emoji}</div>`
-				: `<div class="-mt-4 -mx-4 rounded-t-xl overflow-hidden" style="width:calc(100% + 2rem);height:72px" title="${tp.label}"><img src="styling/icons/weather/${tierLabel}.jpg" alt="${tp.label}" loading="lazy" class="block w-full h-full object-cover object-center" /></div>`;
+				: `<div class="-mt-4 -mx-4 rounded-t-xl overflow-hidden" style="width:calc(100% + 2rem);height:72px" title="${tp.label}"><img src="${healthBannerSrc(tierLabel)}" alt="${tp.label}" loading="lazy" class="block w-full h-full object-cover object-center" /></div>`;
 			tileDiv.innerHTML = `
 				   ${healthHeader}
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
