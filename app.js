@@ -3413,6 +3413,84 @@ function clearAllChips() {
 const AI_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" class="inline-block w-4 h-4 align-[-2px]" aria-hidden="true"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>';
 let aiChatHistory = []; // { role: 'user'|'assistant', content: string }
 
+// ---- AI coach facts ----
+// Computed for the coach so it cites real patterns instead of estimating them.
+const COACH_WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function coachDaysSince(day) {
+	return Math.round((new Date(todayLocal() + 'T00:00:00') - new Date(day + 'T00:00:00')) / 86400000);
+}
+
+function coachTopWeekday(days) {
+	const counts = {};
+	days.forEach(day => {
+		const weekday = suggestionWeekday(day);
+		counts[weekday] = (counts[weekday] || 0) + 1;
+	});
+	const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+	return top === undefined ? null : { name: COACH_WEEKDAYS[top], count: counts[top] };
+}
+
+function coachTrend(doneDays) {
+	if (!doneDays.length) return 'never done';
+	const recent = doneDays.filter(d => d >= suggestionDaysAgo(14)).length;
+	const earlier = doneDays.filter(d => d >= suggestionDaysAgo(28) && d < suggestionDaysAgo(14)).length;
+	if (!recent && !earlier) return 'inactive';
+	if (!recent) return 'stopped recently';
+	if (recent > earlier) return 'improving';
+	return recent < earlier ? 'declining' : 'steady';
+}
+
+function tileCoachFacts(task) {
+	const logs = task.task_logs || [];
+	const uniqueDays = statuses => [...new Set(logs.filter(l => statuses.includes(l.status)).map(logDay).filter(Boolean))].sort();
+	const doneDays = uniqueDays(['done', 'completed']);
+	const skippedDays = uniqueDays(['skipped']);
+	const lastDone = doneDays[doneDays.length - 1];
+	const lastDoneText = lastDone ? `last done ${lastDone} (${coachDaysSince(lastDone)} days ago)` : 'never done';
+	if ((task.frequency_mode || 'daily') === 'once') return lastDoneText;
+	const { expected, fulfilled } = healthCounts(task);
+	const skipped = skippedDays.filter(d => d >= suggestionDaysAgo(30)).length;
+	const facts = [
+		lastDoneText,
+		`last 30 days: ${fulfilled} done, ${skipped} skipped, ${Math.max(0, expected - fulfilled)} missed`,
+		`trend: ${coachTrend(doneDays)}`
+	];
+	if (task.created_at && (Date.now() - new Date(task.created_at).getTime()) / 86400000 < 30) facts.push('tracked for under 30 days');
+	const bestDay = coachTopWeekday(doneDays.filter(d => d >= suggestionDaysAgo(90)));
+	if (bestDay && bestDay.count >= 3) facts.push(`most often done on ${bestDay.name}`);
+	const skipDay = coachTopWeekday(skippedDays.filter(d => d >= suggestionDaysAgo(90)));
+	if (skipDay && skipDay.count >= 3) facts.push(`most often skipped on ${skipDay.name}`);
+	return facts.join('; ');
+}
+
+function coachSummary(tasks) {
+	const active = tasks.filter(t => !tilePlant(t, 0).finished);
+	const levels = {};
+	const groups = {};
+	let inactive = 0;
+	active.forEach(task => {
+		const health = calculateHealth(task);
+		const label = healthToPlant(health).label;
+		levels[label] = (levels[label] || 0) + 1;
+		const doneDays = (task.task_logs || []).filter(l => l.status === 'done' || l.status === 'completed').map(logDay);
+		const recentDone = [...new Set(doneDays)].filter(d => d >= suggestionDaysAgo(30)).length;
+		if (task.frequency_mode !== 'once' && !recentDone) inactive++;
+		const tag = (task.tag_ids && task.tag_ids.length) ? tagName(task.tag_ids[0]) : 'Untagged';
+		const group = groups[tag] = groups[tag] || { tiles: 0, health: 0, done: 0 };
+		group.tiles++;
+		group.health += health;
+		group.done += recentDone;
+	});
+	const areas = Object.entries(groups)
+		.map(([tag, g]) => ({ tag, tiles: g.tiles, health: Math.round(g.health / g.tiles), done: g.done }))
+		.sort((a, b) => a.health - b.health)
+		.slice(0, 15)
+		.map(g => `- "${g.tag}": ${g.tiles} tiles, average health ${g.health}%, ${g.done} done days in last 30`);
+	const levelText = Object.entries(levels).map(([label, count]) => `${count} ${label}`).join(', ') || 'none';
+	return [`Active tiles by health: ${levelText}`, `Routine tiles with no Done in 30 days: ${inactive}`, 'Areas, weakest first:', ...areas].join('\n');
+}
+
 function buildTaskContext() {
 	const taskSummaries = Object.values(rawTiles).map(task => {
 		const logs = task.task_logs || [];
@@ -3423,7 +3501,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
@@ -3435,6 +3513,9 @@ function buildTaskContext() {
 Total tasks: ${tiles.length}
 Overall avg health: ${overallHealth}%
 Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} pending
+
+SUMMARY:
+${coachSummary(Object.values(rawTiles))}
 
 TASKS:
 ${taskSummaries.join('\n')}`;
