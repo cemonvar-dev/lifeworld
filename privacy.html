@@ -30,7 +30,7 @@
   <main class="doc">
     <div class="doc-card">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated 2 Aug 2026</p>
+      <p class="updated">Last updated 8 Nov 2026</p>
 
       <p class="lede">This policy explains what we collect, why, and how we protect it. In short: we collect what’s needed to run Fiblia, and we never sell your personal information.</p>
 
@@ -38,7 +38,11 @@
       <ul>
         <li><strong>Account details</strong> — your name and email address, provided by Google when you sign in. We never see or store your Google password.</li>
         <li><strong>Your content</strong> — the tiles, tasks, logs, and related data you create in the app.</li>
+        <li><strong>Notes and attachments</strong> — notes, photos, screenshots, and files you add to your tiles.</li>
         <li><strong>Usage &amp; device data</strong> — basic analytics such as pages viewed and actions taken, plus standard technical data like browser type, to help us understand and improve the product.</li>
+        <li><strong>Feedback</strong> — messages you send us, along with your account ID, the page you were on, your language, and browser type.</li>
+        <li><strong>Error reports</strong> — technical details when something breaks, such as the error message and where it occurred. We remove email addresses and sign-in tokens before sending these.</li>
+        <li><strong>Preferences</strong> — your language, voice language, and whether you’ve completed the welcome guide.</li>
       </ul>
 
       <h2>How we use it</h2>
@@ -54,16 +58,31 @@
         <li><strong>Google</strong> — sign-in (authentication).</li>
         <li><strong>Supabase</strong> — database and storage of your account and content.</li>
         <li><strong>Vercel</strong> — website and app hosting.</li>
-        <li><strong>PostHog</strong> — product analytics.</li>
+        <li><strong>PostHog</strong> — product analytics and error reports, linked to your account and email address.</li>
         <li><strong>Lemon Squeezy</strong> — payments and subscriptions.</li>
+        <li><strong>OpenAI</strong> — processes requests to the AI assistant.</li>
       </ul>
       <p>These providers process data on our behalf to deliver the service. We do not sell your personal information.</p>
+
+      <h2>AI assistant</h2>
+      <p>Fiblia’s AI assistant is optional and runs only when you use it, including when you ask it to reschedule tasks.</p>
+      <p><strong>What we send to OpenAI.</strong> Your messages in the current chat, plus details of your tiles so the assistant can give relevant advice: tile names and IDs, tags, schedules and dates, status, health scores, recent activity, and any notes on your recent log entries. Notes written on the tile itself and attachments are not sent. We also send your long-term AI memory, described below.</p>
+      <p><strong>Long-term memory.</strong> To remember context between chats, Fiblia uses AI to keep a short summary of lasting details from your conversations, such as goals, preferences, and recurring challenges. It is stored with your account and used only for your assistant. It is deleted when you delete your account.</p>
+      <p><strong>How OpenAI handles it.</strong> OpenAI processes this data as our service provider. Its handling of API data is described in <a href="https://openai.com/policies/" rel="noopener">OpenAI’s policies</a>.</p>
+      <p><strong>AI can be wrong.</strong> Responses are generated automatically and may be inaccurate. Don’t rely on them for medical, legal, financial, or other important decisions. The assistant can create, change, or delete tiles when you ask, and asks you to confirm before deleting.</p>
+      <p>Please avoid including sensitive information in chats or in log notes if you use the assistant.</p>
+
+      <h2>Voice input</h2>
+      <p>When you dictate, speech is converted to text by your device or browser’s speech service, such as Google’s in Chrome and on many Android devices. Fiblia receives only the resulting text, never the audio. That service’s own privacy terms apply.</p>
+
+      <h2>International transfers</h2>
+      <p>Our providers may process your data outside your country, including in the United States.</p>
 
       <h2>Cookies &amp; local storage</h2>
       <p>Fiblia uses your browser’s storage to keep you signed in and to support analytics. You can clear this at any time in your browser settings, though doing so may sign you out.</p>
 
       <h2>Data retention &amp; deletion</h2>
-      <p>We keep your data while your account is active. You can request deletion of your account and associated data by emailing <a href="mailto:info@fiblia.com">info@fiblia.com</a>.</p>
+      <p>We keep your data while your account is active. You can export your data or permanently delete your account at any time in Settings → Account. Deleting your account removes your tiles, logs, attachments, tags, AI memory, and feedback from our active systems, and cancels any active subscription. You can also email <a href="mailto:info@fiblia.com">info@fiblia.com</a> for help.</p>
 
       <h2>Security</h2>
       <p>Your data is transmitted over HTTPS and protected with per-account access controls, so no user can access another user's data. See our <a href="/security.html">Security</a> page for details.</p>
