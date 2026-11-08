@@ -104,6 +104,19 @@ function isOnceDoneForDue(task) {
 }
 
 function calculateHealth(task) {
+	if ((task.frequency_mode || 'daily') === 'once') {
+		if (isOnceDoneForDue(task)) return 100;
+		// Compare calendar days: a task due today isn't overdue yet.
+		if (task.end_date && String(task.end_date).slice(0, 10) < todayLocal()) return 0;
+		return 50; // not yet due
+	}
+	const { expected, fulfilled } = healthCounts(task);
+	if (expected === 0) return 50; // no data yet
+	return Math.round((fulfilled / expected) * 100);
+}
+
+// Expected and fulfilled days for a routine tile in the health window.
+function healthCounts(task) {
 	const logs = task.task_logs || [];
 	const mode = task.frequency_mode || 'daily';
 	const freqDays = (task.task_frequency_days || []).map(d => d.day_of_week);
@@ -122,13 +135,6 @@ function calculateHealth(task) {
 		if (log.status === 'done' || log.status === 'completed') doneDates.add(d);
 		if (log.status === 'skipped') skipDates.add(d);
 	});
-
-	if (mode === 'once') {
-		if (isOnceDoneForDue(task)) return 100;
-		// Compare calendar days: a task due today isn't overdue yet.
-		if (task.end_date && String(task.end_date).slice(0, 10) < todayLocal()) return 0;
-		return 50; // not yet due
-	}
 
 	// Count expected vs fulfilled days
 	let expected = 0;
@@ -153,8 +159,7 @@ function calculateHealth(task) {
 		}
 	}
 
-	if (expected === 0) return 50; // no data yet
-	return Math.round((fulfilled / expected) * 100);
+	return { expected, fulfilled };
 }
 
 // Health icon sets — user-selectable in Settings (weather vs plants).
@@ -481,6 +486,8 @@ function renderGallery(filteredTiles) {
 			const healthHeader = tp.finished
 				? `<div class="-mt-4 -mx-4 rounded-t-xl bg-slate-100 flex items-center justify-center text-3xl" style="width:calc(100% + 2rem);height:72px" title="${tp.label}">${tp.emoji}</div>`
 				: `<div class="-mt-4 -mx-4 rounded-t-xl overflow-hidden" style="width:calc(100% + 2rem);height:72px" title="${tp.label}"><img src="${healthBannerSrc(tierLabel)}" alt="${tp.label}" loading="lazy" class="block w-full h-full object-cover object-center" /></div>`;
+			// Short nudge on struggling tiles only, to keep the list calm.
+			const cardHint = !tp.finished && tile.health < 40 ? tileSuggestion(rawTiles[tile.id])?.hint : '';
 			tileDiv.innerHTML = `
 				   ${healthHeader}
 				   <div class="text-sm font-normal text-left w-full line-clamp-3">${tile.name}</div>
@@ -489,6 +496,7 @@ function renderGallery(filteredTiles) {
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
 					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
+				   ${cardHint ? `<div class="w-full text-left text-[11px] text-slate-500 truncate">${cardHint}</div>` : ''}
 				   <div class="flex gap-2 mt-auto w-full">
 					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
 					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
@@ -737,6 +745,7 @@ function openTilePopup(tileId) {
 		${'notes' in raw ? `<div class="mb-1 text-xs font-semibold text-slate-500">Notes</div>
 		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
+		<div id="tileSuggestionMount"></div>
 		<hr class="my-5 border-slate-200">
 		<div class="mb-1 text-xs font-semibold text-slate-500">Tags</div>
 		${tagDropdownHtml}
@@ -790,6 +799,7 @@ function openTilePopup(tileId) {
 
 
 	wireTileNotes(raw, tileId);
+	renderTileSuggestion(raw, tileId);
 
 	// Frequency / Reminder / Status — styled dropdowns (icon left, text right).
 	lwSelect(document.getElementById('freqSelectMount'), {
@@ -1252,6 +1262,234 @@ async function updateTask(taskId, updates) {
 		.update(updates)
 		.eq('id', taskId);
 	if (error) console.error('Update error:', error);
+}
+
+// ---- Tile suggestions ----
+// Rule-based "How to grow" advice, computed from the tile's own logs.
+const SUGGESTION_DISMISS_KEY = 'lw_suggestion_dismissed';
+const SUGGESTION_SNOOZE_DAYS = 14;
+const SUGGESTION_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const SUGGESTION_MILESTONES = [[20, 'Wilting'], [40, 'Growing'], [60, 'Healthy'], [80, 'Thriving']];
+
+function suggestionDayKey(date) {
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function suggestionDaysAgo(days) {
+	const d = new Date();
+	d.setDate(d.getDate() - days);
+	return suggestionDayKey(d);
+}
+function suggestionWeekday(dayKey) {
+	return new Date(dayKey + 'T00:00:00').getDay();
+}
+function suggestionDayList(days) {
+	return [...days].sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => SUGGESTION_DAY_NAMES[d].slice(0, 3)).join(', ');
+}
+
+// The weekdays this tile is most often done on, or Mon/Wed/Fri without enough history.
+function suggestedThreeDays(doneLogs) {
+	const counts = {};
+	doneLogs.filter(l => logDay(l) >= suggestionDaysAgo(60)).forEach(l => {
+		const day = suggestionWeekday(logDay(l));
+		counts[day] = (counts[day] || 0) + 1;
+	});
+	const ranked = Object.keys(counts).map(Number).sort((a, b) => counts[b] - counts[a]);
+	return ranked.length >= 3 ? ranked.slice(0, 3) : [1, 3, 5];
+}
+
+function staleSuggestion(raw, doneLogs, lastDone) {
+	const age = raw.created_at ? (Date.now() - new Date(raw.created_at).getTime()) / 86400000 : 0;
+	const cutoff = suggestionDaysAgo(raw.frequency_mode === 'monthly' ? 60 : 30);
+	if (age < 14 || (lastDone && lastDone >= cutoff)) return null;
+	const since = lastDone ? new Date(lastDone + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+	const actions = [{ id: 'restart', label: 'Done today' }];
+	if (raw.frequency_mode === 'daily') {
+		actions.push({ id: 'schedule', label: 'Try 3 days a week', days: suggestedThreeDays(doneLogs) });
+	}
+	actions.push({ id: 'complete', label: 'Mark completed' });
+	return {
+		kind: 'stale',
+		text: lastDone ? `No activity since ${since}. Restart it today, or close this tile if it no longer matters.` : `You haven't started this yet. Do it once today, or close this tile if it no longer matters.`,
+		hint: lastDone ? `💤 Inactive since ${since}` : '💤 Not started yet',
+		actions
+	};
+}
+
+function scheduleSuggestion(raw, doneLogs, health) {
+	const age = raw.created_at ? (Date.now() - new Date(raw.created_at).getTime()) / 86400000 : 0;
+	if (raw.frequency_mode !== 'daily' || age < 14 || health >= 40) return null;
+	const { expected, fulfilled } = healthCounts(raw);
+	const days = suggestedThreeDays(doneLogs);
+	return {
+		kind: 'schedule',
+		text: `Daily hasn't stuck: ${fulfilled} of ${expected} days lately. A lighter schedule is easier to keep.`,
+		hint: '🗓️ Try 3 days a week',
+		actions: [{ id: 'schedule', label: `Switch to ${suggestionDayList(days)}`, days }]
+	};
+}
+
+function skipSuggestion(raw) {
+	const mode = raw.frequency_mode;
+	const scheduled = (raw.task_frequency_days || []).map(d => d.day_of_week);
+	if (mode !== 'daily' && !(mode === 'weekly' && scheduled.length > 1)) return null;
+	const skips = {}, dones = {};
+	(raw.task_logs || []).filter(l => logDay(l) >= suggestionDaysAgo(56)).forEach(l => {
+		const day = suggestionWeekday(logDay(l));
+		if (l.status === 'skipped') skips[day] = (skips[day] || 0) + 1;
+		if (l.status === 'done' || l.status === 'completed') dones[day] = (dones[day] || 0) + 1;
+	});
+	const current = mode === 'daily' ? [0, 1, 2, 3, 4, 5, 6] : scheduled;
+	const day = current.filter(d => skips[d] >= 3 && skips[d] > (dones[d] || 0)).sort((a, b) => skips[b] - skips[a])[0];
+	if (day === undefined) return null;
+	const name = SUGGESTION_DAY_NAMES[day];
+	return {
+		kind: 'skip',
+		text: `You often skip this on ${name}s (${skips[day]} times lately). Take ${name} off the schedule?`,
+		hint: `⏭️ Often skipped on ${name}s`,
+		actions: [{ id: 'schedule', label: `Remove ${name}s`, days: current.filter(d => d !== day) }]
+	};
+}
+
+function timingSuggestion(raw, doneLogs) {
+	if (tileTimeOfDay(raw)) return null;
+	// Only same-day logs say when the task really happened.
+	const hours = doneLogs
+		.filter(l => l.created_at && logDay(l) >= suggestionDaysAgo(60) && suggestionDayKey(new Date(l.created_at)) === logDay(l))
+		.map(l => new Date(l.created_at).getHours());
+	if (hours.length < 5) return null;
+	const bucket = h => h >= 5 && h < 12 ? 'morning' : h >= 12 && h < 17 ? 'afternoon' : h >= 17 && h < 21 ? 'evening' : 'night';
+	const counts = {};
+	hours.forEach(h => { counts[bucket(h)] = (counts[bucket(h)] || 0) + 1; });
+	const top = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+	if (counts[top] / hours.length < .6) return null;
+	const label = top[0].toUpperCase() + top.slice(1);
+	return {
+		kind: 'timing',
+		text: `You usually do this in the ${top}. Set its timing to match?`,
+		hint: `🕒 Usually in the ${top}`,
+		actions: [{ id: 'timing', label: `Set to ${label}`, value: top }]
+	};
+}
+
+function milestoneSuggestion(raw, health) {
+	const next = SUGGESTION_MILESTONES.find(([score]) => score > health);
+	if (!next) return null;
+	const { expected, fulfilled } = healthCounts(raw);
+	for (let more = 1; fulfilled + more <= expected; more++) {
+		if (Math.round((fulfilled + more) / expected * 100) >= next[0]) {
+			return {
+				kind: 'milestone',
+				text: `About ${more} more Done ${more === 1 ? 'day' : 'days'} to reach ${next[1]}.`,
+				hint: `🌱 About ${more} ${more === 1 ? 'day' : 'days'} to ${next[1]}`,
+				actions: []
+			};
+		}
+	}
+	return null;
+}
+
+function suggestionSnoozes() {
+	try { return JSON.parse(localStorage.getItem(SUGGESTION_DISMISS_KEY)) || {}; } catch (e) { return {}; }
+}
+function snoozeSuggestion(tileId, kind) {
+	const snoozes = suggestionSnoozes();
+	snoozes[`${tileId}:${kind}`] = Date.now() + SUGGESTION_SNOOZE_DAYS * 86400000;
+	try { localStorage.setItem(SUGGESTION_DISMISS_KEY, JSON.stringify(snoozes)); } catch (e) {}
+}
+
+// The single most useful suggestion for a tile, or null if it needs none.
+function tileSuggestion(raw) {
+	if (!raw || raw.frequency_mode === 'once' || tilePlant(raw, 0).finished) return null;
+	const doneLogs = (raw.task_logs || []).filter(l => l.status === 'done' || l.status === 'completed');
+	const lastDone = doneLogs.map(logDay).sort().pop() || '';
+	const health = calculateHealth(raw);
+	const snoozes = suggestionSnoozes();
+	return [
+		staleSuggestion(raw, doneLogs, lastDone),
+		scheduleSuggestion(raw, doneLogs, health),
+		skipSuggestion(raw),
+		timingSuggestion(raw, doneLogs),
+		milestoneSuggestion(raw, health)
+	].find(s => s && !(snoozes[`${raw.id}:${s.kind}`] > Date.now())) || null;
+}
+
+// Replace a tile's schedule with specific weekdays.
+async function setWeeklySchedule(tileId, days) {
+	const raw = rawTiles[tileId];
+	const { error: clearError } = await supa.from('task_frequency_days').delete().eq('task_id', tileId);
+	if (clearError) throw clearError;
+	const { data, error } = await supa.from('task_frequency_days')
+		.insert(days.map(day => ({ task_id: tileId, day_of_week: day })))
+		.select();
+	if (error) throw error;
+	const { error: taskError } = await supa.from('tasks').update({ frequency_mode: 'weekly' }).eq('id', tileId);
+	if (taskError) throw taskError;
+	raw.task_frequency_days = data || [];
+	raw.frequency_mode = 'weekly';
+}
+
+async function applySuggestionAction(tileId, action) {
+	const raw = rawTiles[tileId];
+	const displayTile = tiles.find(t => t.id === tileId);
+	if (action.id === 'restart') {
+		await quickLog(tileId, 'done');
+	} else if (action.id === 'schedule') {
+		await setWeeklySchedule(tileId, action.days);
+	} else if (action.id === 'timing') {
+		const { error } = await supa.from('tasks').update({ time_of_day: [action.value] }).eq('id', tileId);
+		if (error) throw error;
+		raw.time_of_day = [action.value];
+	} else if (action.id === 'complete') {
+		const { error } = await supa.from('tasks').update({ status: 'completed' }).eq('id', tileId);
+		if (error) throw error;
+		raw.status = 'completed';
+		if (displayTile) displayTile.taskStatus = 'completed';
+	}
+	if (displayTile) {
+		const health = calculateHealth(raw);
+		const plant = healthToPlant(health);
+		displayTile.emoji = plant.emoji;
+		displayTile.health = health;
+		displayTile.healthLabel = plant.label;
+		displayTile.healthColor = plant.color;
+	}
+	openTilePopup(tileId);
+	applyFilters();
+	scheduleReminders();
+}
+
+function renderTileSuggestion(raw, tileId) {
+	const mount = document.getElementById('tileSuggestionMount');
+	if (!mount) return;
+	const suggestion = tileSuggestion(raw);
+	if (!suggestion) { mount.innerHTML = ''; return; }
+	const button = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50';
+	mount.innerHTML = `<div class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+		<div class="text-xs font-semibold text-emerald-700 mb-1">🌱 How to grow</div>
+		<div class="text-sm text-slate-700">${suggestion.text}</div>
+		<div id="suggestionError" class="hidden mt-1 text-xs text-red-500">That didn't save. Please try again.</div>
+		<div class="flex flex-wrap gap-2 mt-2">
+			${suggestion.actions.map((a, i) => `<button type="button" data-suggestion-action="${i}" class="${button} bg-emerald-600 text-white hover:bg-emerald-700">${a.label}</button>`).join('')}
+			<button type="button" data-suggestion-dismiss class="${button} text-slate-500 hover:bg-emerald-100">Not now</button>
+		</div>
+	</div>`;
+	mount.querySelector('[data-suggestion-dismiss]').addEventListener('click', () => {
+		snoozeSuggestion(tileId, suggestion.kind);
+		renderTileSuggestion(raw, tileId);
+		applyFilters();
+	});
+	mount.querySelectorAll('[data-suggestion-action]').forEach(btn => {
+		btn.addEventListener('click', async () => {
+			mount.querySelectorAll('button').forEach(b => { b.disabled = true; });
+			try {
+				await applySuggestionAction(tileId, suggestion.actions[Number(btn.dataset.suggestionAction)]);
+			} catch (e) {
+				console.error('Suggestion action failed:', e);
+				mount.querySelectorAll('button').forEach(b => { b.disabled = false; });
+				document.getElementById('suggestionError')?.classList.remove('hidden');
+			}
+		});
+	});
 }
 
 // ---- Per-tile reminder helpers ----
