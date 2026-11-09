@@ -476,6 +476,7 @@ function renderEmptyGallery(gallery) {
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	if (window.refreshGettingStarted) window.refreshGettingStarted();
+	if (typeof refreshNotifications === 'function') refreshNotifications(); // keep the bell count in step
 	gallery.innerHTML = "";
 	if (!filteredTiles.length) {
 		renderEmptyGallery(gallery);
