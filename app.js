@@ -3553,7 +3553,7 @@ function coachSummary(tasks) {
 		const doneDays = (task.task_logs || []).filter(l => l.status === 'done' || l.status === 'completed').map(logDay);
 		const recentDone = [...new Set(doneDays)].filter(d => d >= suggestionDaysAgo(30)).length;
 		if (task.frequency_mode !== 'once' && !recentDone) inactive++;
-		const tag = (task.tag_ids && task.tag_ids.length) ? tagName(task.tag_ids[0]) : 'Untagged';
+		const tag = (task.tag_ids && task.tag_ids.length) ? (typeof tagPath === 'function' ? tagPath : tagName)(task.tag_ids[0]) : 'Untagged';
 		const group = groups[tag] = groups[tag] || { tiles: 0, health: 0, done: 0 };
 		group.tiles++;
 		group.health += health;
@@ -3594,7 +3594,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagPath).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
