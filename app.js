@@ -759,16 +759,15 @@ function openTilePopup(tileId) {
 			   const actionColor = log.status === 'done' ? 'bg-green-400' : log.status === 'skipped' ? 'bg-yellow-400' : log.status === 'completed' ? 'bg-blue-400' : 'bg-slate-300';
 			   const noteHtml = log.note ? `<div translate="no" class="text-xs text-slate-500 mt-1 italic">${escapeHtml(log.note)}</div>` : '';
 			   timelineHtml += `
-				   <div class="mb-4 relative group rounded-lg p-2 -ml-2 hover:bg-red-50 transition">
-					   <div class="absolute -left-[13px] top-3 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
-					   <div class="flex items-center justify-between">
-						   <div class="text-sm font-semibold">${log.status}</div>
+				   <div class="mb-0.5 relative group rounded-lg px-2 py-1.5 -ml-2 hover:bg-red-50 transition">
+					   <div class="absolute -left-[13px] top-2.5 w-3 h-3 rounded-full ${actionColor} border-2 border-white"></div>
+					   <div class="flex items-center justify-between gap-2">
+						   <div class="flex items-baseline gap-2 min-w-0"><span class="text-sm font-semibold">${log.status}</span><span class="text-xs text-slate-400 truncate">${dateStr}${timeStr ? ' · ' + timeStr : ''}</span></div>
 						   <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
 							   <button class="edit-log text-blue-300 hover:text-blue-500 text-sm font-bold px-1" data-log-id="${log.id}">✏️</button>
 							   <button class="delete-log text-red-300 hover:text-red-500 text-lg font-bold px-1" data-log-id="${log.id}">&times;</button>
 						   </div>
 					   </div>
-					   <div class="text-xs text-slate-400">${dateStr}${timeStr ? ' · ' + timeStr : ''}</div>
 					   ${noteHtml}
 				   </div>`;
 		   });
@@ -777,7 +776,7 @@ function openTilePopup(tileId) {
 
 	// Multiselect dropdown for tags
 	const tagDropdownHtml = `
-	<div class="tagDropdown mb-8" style="min-width:220px;">
+	<div class="tagDropdown mb-1" style="min-width:220px;">
 		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-xs" tabindex="0">
 			<span id="tagDropdownSelected">${currentTags.length ? escapeHtml(currentTags.map(tagName).join(', ')) : 'Select tags...'}</span>
 			<span class="ml-2">▼</span>
@@ -789,7 +788,7 @@ function openTilePopup(tileId) {
 	</div>`;
 
 	popupBody.innerHTML = `
-		<div class="flex items-center gap-3 mb-4">
+		<div class="flex items-center gap-3 mb-1 pr-10">
 			<span class="text-4xl">${tilePlant(raw, health).emoji}</span>
 			<div>
 				<div class="text-xl font-bold">
@@ -799,16 +798,16 @@ function openTilePopup(tileId) {
 					
 			</div>
 		</div>
-		<hr class="my-5 border-slate-200">
+		<hr class="my-3 border-slate-200">
 		<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
 			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
-				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
-				<button type="button" class="routine-opt flex flex-col items-center leading-tight px-3 py-1.5 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
+				<button type="button" class="routine-opt flex items-center gap-1.5 leading-tight px-3 h-9 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
+				<button type="button" class="routine-opt flex items-center gap-1.5 leading-tight px-3 h-9 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
 			</div>
 			<div class="flex gap-2">
-			<button id="tilePinBtn" type="button" aria-pressed="${!!raw.pinned}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${raw.pinned ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${raw.pinned ? '' : 'grayscale'}">📌</span><span>${raw.pinned ? 'Pinned' : 'Pin'}</span></button>
-			<button data-status-toggle="completed" type="button" aria-pressed="${isCompleted}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span>${isCompleted ? '✅' : '⬜'}</span><span>Completed</span></button>
-			<button data-status-toggle="cancelled" type="button" aria-pressed="${isCancelled}" class="inline-flex flex-col items-center leading-tight gap-0.5 px-3 py-2 rounded-lg text-xs border transition ${isCancelled ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${isCancelled ? '' : 'grayscale'}">🚫</span><span>Cancelled</span></button>
+			<button id="tilePinBtn" type="button" aria-pressed="${!!raw.pinned}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${raw.pinned ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${raw.pinned ? '' : 'grayscale'}">📌</span><span>${raw.pinned ? 'Pinned' : 'Pin'}</span></button>
+			<button data-status-toggle="completed" type="button" aria-pressed="${isCompleted}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span>${isCompleted ? '✅' : '⬜'}</span><span>Completed</span></button>
+			<button data-status-toggle="cancelled" type="button" aria-pressed="${isCancelled}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${isCancelled ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${isCancelled ? '' : 'grayscale'}">🚫</span><span>Cancelled</span></button>
 			</div>
 		</div>
 		<div class="grid grid-cols-2 gap-3 mb-3 items-start">
@@ -822,8 +821,8 @@ function openTilePopup(tileId) {
 						<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
 						<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
 					</div>
-					<div id="weeklyDays" class="flex flex-wrap gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-9 py-1 text-center rounded-full text-xs border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${i18n.dayName(i, 'short')}</button>`).join('')}
+					<div id="weeklyDays" class="flex flex-wrap gap-0.5 sm:gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
+						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-7 py-1 text-center rounded-full text-[11px] border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${i18n.dayName(i, 'short')}</button>`).join('')}
 					</div>
 					<div id="monthlyDayPicker" class="mt-2" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
 						<label class="text-xs text-slate-500">Day of month</label>
@@ -848,16 +847,16 @@ function openTilePopup(tileId) {
 		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full shrink-0 rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
 		<div id="tileSuggestionMount"></div>
-		<hr class="my-5 border-slate-200">
+		<hr class="my-3 border-slate-200">
 		<div class="mb-1 text-xs font-semibold text-slate-500">Tags</div>
 		${tagDropdownHtml}
-		<hr class="my-5 border-slate-200">
+		<hr class="my-3 border-slate-200">
 		<!-- Tabbed view: Timeline (default) / Attachments -->
 		<div class="flex items-center gap-1 border-b border-slate-200 mb-3">
 			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
 			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<div class="h-44 shrink-0 overflow-y-auto overscroll-contain -mx-1 px-1">
+		<div class="h-56 shrink-0 overflow-y-auto overscroll-contain -mx-1 px-1">
 				<div id="tabPanelTimeline" class="detail-tab-panel">
 					<div class="flex items-center justify-end mb-1">
 						<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
@@ -875,7 +874,7 @@ function openTilePopup(tileId) {
 					</div>
 				</div>
 			</div>
-			<hr class="my-5 border-slate-200">
+			<hr class="my-3 border-slate-200">
 		<button id="deleteTileBtn" class="w-full py-2 rounded-lg bg-red-100 text-red-400 text-sm font-semibold hover:bg-red-200 transition">🗑️ Delete Tile</button>
 	`;
 
