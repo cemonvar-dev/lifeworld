@@ -2969,8 +2969,18 @@ const STATUS_CYCLE = [
 // Bucket tiles by today's LOCAL log_date: done, skipped, and still
 // scheduled-due-but-untouched. Read straight from the logs so it can't
 // drift from a tile's cached status.
-function getTodaySummary() {
-	const today = todayLocal();
+// Done, skipped and still-open tiles for a day (today by default).
+function getTodaySummary(day) {
+	const today = day || todayLocal();
+	const dayDate = new Date(today + 'T00:00:00');
+	const scheduledOn = t => {
+		const raw = rawTiles[t.id];
+		if (!raw) return false;
+		if (!day) return isTileScheduledToday(t.id);
+		const created = raw.created_at ? new Date(raw.created_at) : null;
+		const createdDay = created && `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}-${String(created.getDate()).padStart(2, '0')}`;
+		return (!createdDay || createdDay <= today) && isTaskScheduledOnDate(raw, dayDate);
+	};
 	const done = [], skipped = [], remaining = [];
 	(tiles || []).forEach(t => {
 		const logs = (rawTiles[t.id] && rawTiles[t.id].task_logs) || [];
@@ -2978,7 +2988,7 @@ function getTodaySummary() {
 			(l.status === 'done' || l.status === 'completed' || l.status === 'skipped'));
 		if (todayLog) {
 			(todayLog.status === 'skipped' ? skipped : done).push(t);
-		} else if (!['completed', 'cancelled', 'failed'].includes(t.taskStatus) && isTileScheduledToday(t.id)) {
+		} else if (!['completed', 'cancelled', 'failed'].includes(t.taskStatus) && scheduledOn(t)) {
 			remaining.push(t); // scheduled today, not completed, no action yet
 		}
 	});
@@ -3013,7 +3023,7 @@ function todaySummaryRow(t, hover) {
 
 // Remaining tiles grouped by their (first) tag, groups in alphabetical order,
 // tiles within a group by name. Returns HTML (or an em-dash placeholder).
-function renderRemainingGrouped(remaining) {
+function renderRemainingGrouped(remaining, rowHtml) {
 	if (!remaining.length) return '<div class="text-center text-slate-300 text-xs py-3">—</div>';
 	const groups = {};
 	remaining.forEach(t => {
@@ -3026,7 +3036,7 @@ function renderRemainingGrouped(remaining) {
 		.map(k => {
 			const rows = groups[k]
 				.sort((a, b) => a.name.localeCompare(b.name))
-				.map(t => todaySummaryRow(t, 'hover:bg-slate-50')).join('');
+				.map(t => rowHtml ? rowHtml(t) : todaySummaryRow(t, 'hover:bg-slate-50')).join('');
 			return `<div class="mb-2">
 				<div class="text-xs font-semibold text-slate-500 px-2 mb-0.5">${escapeHtml(label(k))}</div>
 				${rows}
@@ -3083,33 +3093,63 @@ function closeTodaySummary() {
 	document.getElementById('todaySummaryOverlay').classList.add('hidden');
 }
 
-// Combined today view: Remaining list + Done/Skip table in one popup.
-function openTodaySummaryCombined() {
+// Combined day view: Done/Skip table plus what's left. Past days list what
+// was missed, with a Done button that logs it for that day.
+function openTodaySummaryCombined(day) {
+	const today = todayLocal();
+	day = day && day < today ? day : today;
+	const isToday = day === today;
 	const overlay = document.getElementById('todaySummaryOverlay');
 	const titleEl = document.getElementById('todaySummaryTitle');
 	const iconEl = document.getElementById('todaySummaryIcon');
 	const body = document.getElementById('todaySummaryBody');
-	const { done, skipped, remaining } = getTodaySummary();
-	titleEl.textContent = "Today's Summary";
+	const { done, skipped, remaining } = getTodaySummary(isToday ? undefined : day);
+	titleEl.textContent = isToday ? "Today's Summary" : 'Day summary';
 	iconEl.textContent = '📋';
+
+	const shift = (key, days) => {
+		const d = new Date(key + 'T00:00:00');
+		d.setDate(d.getDate() + days);
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	};
+	const dateText = new Date(day + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+	const dayLabel = isToday ? _t('Today') : day === shift(today, -1) ? `${_t('Yesterday')}, ${dateText}` : dateText;
+	const navButton = 'grid place-items-center h-8 w-8 rounded-full text-lg text-slate-500 hover:bg-slate-100 transition disabled:opacity-30 disabled:hover:bg-transparent';
 
 	const listOr = (items, hover) => items.length
 		? items.map(t => todaySummaryRow(t, hover)).join('')
 		: '<div class="text-center text-slate-300 text-xs py-3">—</div>';
 	const col = (items, head, headClass, hover) =>
 		`<div class="flex flex-col gap-0.5"><div class="${headClass} text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">${head} (${items.length})</div>${listOr(items, hover)}</div>`;
+	const missedRow = t => `<div class="flex items-center gap-1"><div class="flex-1 min-w-0">${todaySummaryRow(t, 'hover:bg-slate-50')}</div><button type="button" data-mark-done="${t.id}" class="shrink-0 px-2 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition disabled:opacity-50">✅ ${_t('Done')}</button></div>`;
 
 	body.innerHTML = `
+		<div class="flex items-center justify-between gap-2 mb-3">
+			<button type="button" data-day-shift="-1" class="${navButton}" aria-label="${_t('Previous day')}" title="${_t('Previous day')}">‹</button>
+			<div class="text-sm font-semibold text-slate-700">${escapeHtml(dayLabel)}</div>
+			<button type="button" data-day-shift="1" class="${navButton}" aria-label="${_t('Next day')}" title="${_t('Next day')}" ${isToday ? 'disabled' : ''}>›</button>
+		</div>
 		<div class="grid grid-cols-2 gap-3 items-start mb-4">
 			${col(done, '✅ Done', 'bg-green-100 text-green-700', 'hover:bg-green-50')}
 			${col(skipped, '⏭️ Skip', 'bg-yellow-100 text-yellow-700', 'hover:bg-yellow-50')}
 		</div>
 		<div>
-			<div class="bg-blue-100 text-blue-700 text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">📋 Remaining (${remaining.length})</div>
-			${renderRemainingGrouped(remaining)}
+			<div class="${isToday ? 'bg-blue-100 text-blue-700' : 'bg-rose-100 text-rose-700'} text-sm font-bold px-2 py-1.5 rounded-lg mb-1 text-center">${isToday ? '📋 Remaining' : '⏳ Missed'} (${remaining.length})</div>
+			${renderRemainingGrouped(remaining, isToday ? null : missedRow)}
 		</div>`;
 	body.querySelectorAll('.today-summary-row').forEach(row => {
 		row.addEventListener('click', () => { closeTodaySummary(); openTilePopup(row.getAttribute('data-tile-id')); });
+	});
+	body.querySelectorAll('[data-day-shift]').forEach(btn => {
+		btn.addEventListener('click', () => openTodaySummaryCombined(shift(day, Number(btn.dataset.dayShift))));
+	});
+	body.querySelectorAll('[data-mark-done]').forEach(btn => {
+		btn.addEventListener('click', async () => {
+			btn.disabled = true;
+			await calMarkStatus(btn.dataset.markDone, day, 'done');
+			window.track?.('task_completed', { source: 'past_day' });
+			openTodaySummaryCombined(day);
+		});
 	});
 	overlay.classList.remove('hidden');
 }

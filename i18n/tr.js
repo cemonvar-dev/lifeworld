@@ -339,5 +339,10 @@ window.I18N_MESSAGES.tr = {
 	"{n} in a row": "Art arda {n}",
 	"Best: {n}": "Rekor: {n}",
 	"Skipped days don’t break a streak.": "Atlanan günler seriyi bozmaz.",
-	"Create a tile to start tracking your progress.": "İlerlemenizi izlemeye başlamak için bir kart oluşturun."
+	"Create a tile to start tracking your progress.": "İlerlemenizi izlemeye başlamak için bir kart oluşturun.",
+	"Yesterday": "Dün",
+	"Previous day": "Önceki gün",
+	"Next day": "Sonraki gün",
+	"Day summary": "Gün özeti",
+	"Missed": "Kaçırılan"
 };

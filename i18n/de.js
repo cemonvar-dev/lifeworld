@@ -339,5 +339,10 @@ window.I18N_MESSAGES.de = {
 	"{n} in a row": "{n} in Folge",
 	"Best: {n}": "Rekord: {n}",
 	"Skipped days don’t break a streak.": "Ausgelassene Tage unterbrechen keine Serie.",
-	"Create a tile to start tracking your progress.": "Erstelle eine Kachel, um deinen Fortschritt zu verfolgen."
+	"Create a tile to start tracking your progress.": "Erstelle eine Kachel, um deinen Fortschritt zu verfolgen.",
+	"Yesterday": "Gestern",
+	"Previous day": "Vorheriger Tag",
+	"Next day": "Nächster Tag",
+	"Day summary": "Tagesübersicht",
+	"Missed": "Verpasst"
 };

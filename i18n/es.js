@@ -339,5 +339,10 @@ window.I18N_MESSAGES.es = {
 	"{n} in a row": "{n} seguidos",
 	"Best: {n}": "Récord: {n}",
 	"Skipped days don’t break a streak.": "Los días omitidos no rompen una racha.",
-	"Create a tile to start tracking your progress.": "Crea una tarjeta para empezar a seguir tu progreso."
+	"Create a tile to start tracking your progress.": "Crea una tarjeta para empezar a seguir tu progreso.",
+	"Yesterday": "Ayer",
+	"Previous day": "Día anterior",
+	"Next day": "Día siguiente",
+	"Day summary": "Resumen del día",
+	"Missed": "Pendiente"
 };

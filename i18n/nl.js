@@ -339,5 +339,10 @@ window.I18N_MESSAGES.nl = {
 	"{n} in a row": "{n} op rij",
 	"Best: {n}": "Record: {n}",
 	"Skipped days don’t break a streak.": "Overgeslagen dagen breken een reeks niet.",
-	"Create a tile to start tracking your progress.": "Maak een tegel om je voortgang te volgen."
+	"Create a tile to start tracking your progress.": "Maak een tegel om je voortgang te volgen.",
+	"Yesterday": "Gisteren",
+	"Previous day": "Vorige dag",
+	"Next day": "Volgende dag",
+	"Day summary": "Dagoverzicht",
+	"Missed": "Gemist"
 };
