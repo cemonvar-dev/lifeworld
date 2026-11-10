@@ -363,5 +363,8 @@ window.I18N_MESSAGES.nl = {
 	"Last activity: today": "Laatste activiteit: vandaag",
 	"Last activity: yesterday": "Laatste activiteit: gisteren",
 	"Last activity: {n} days ago": "Laatste activiteit: {n} dagen geleden",
-	"No activity yet": "Nog geen activiteit"
+	"No activity yet": "Nog geen activiteit",
+	"Everything for today is done 🌿 How does that feel? We can look back on the day, or quietly plan tomorrow.": "Alles voor vandaag is gedaan 🌿 Hoe voelt dat? We kunnen terugkijken op de dag, of rustig morgen plannen.",
+	"You've already moved things forward today, and that counts. What would feel good to do next?": "Je hebt vandaag al stappen gezet, en dat telt. Waar heb je nu zin in?",
+	"A fresh start, nothing ticked off yet. Let's begin with one small thing together. What feels doable right now?": "Een frisse start, nog niets afgevinkt. Laten we samen met één klein ding beginnen. Wat voelt nu haalbaar?"
 };

@@ -363,5 +363,8 @@ window.I18N_MESSAGES.it = {
 	"Last activity: today": "Ultima attività: oggi",
 	"Last activity: yesterday": "Ultima attività: ieri",
 	"Last activity: {n} days ago": "Ultima attività: {n} giorni fa",
-	"No activity yet": "Nessuna attività ancora"
+	"No activity yet": "Nessuna attività ancora",
+	"Everything for today is done 🌿 How does that feel? We can look back on the day, or quietly plan tomorrow.": "Per oggi è tutto fatto 🌿 Come ti senti? Possiamo ripensare alla giornata o pianificare domani con calma.",
+	"You've already moved things forward today, and that counts. What would feel good to do next?": "Oggi hai già fatto passi avanti, e conta. Cosa ti farebbe piacere fare adesso?",
+	"A fresh start, nothing ticked off yet. Let's begin with one small thing together. What feels doable right now?": "Un nuovo inizio, ancora niente spuntato. Cominciamo insieme da una piccola cosa. Cosa ti sembra fattibile adesso?"
 };

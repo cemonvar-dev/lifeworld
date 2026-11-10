@@ -363,5 +363,8 @@ window.I18N_MESSAGES.tr = {
 	"Last activity: today": "Son hareket: bugün",
 	"Last activity: yesterday": "Son hareket: dün",
 	"Last activity: {n} days ago": "Son hareket: {n} gün önce",
-	"No activity yet": "Henüz hareket yok"
+	"No activity yet": "Henüz hareket yok",
+	"Everything for today is done 🌿 How does that feel? We can look back on the day, or quietly plan tomorrow.": "Bugünlük her şey tamam 🌿 Nasıl hissettiriyor? İstersen günü birlikte değerlendirelim, istersen yarını sakince planlayalım.",
+	"You've already moved things forward today, and that counts. What would feel good to do next?": "Bugün bir şeyleri ilerlettin bile, bu çok kıymetli. Şimdi ne yapmak iyi gelir?",
+	"A fresh start, nothing ticked off yet. Let's begin with one small thing together. What feels doable right now?": "Yeni bir başlangıç, henüz hiçbir şey işaretlenmedi. Hadi birlikte küçük bir şeyle başlayalım. Şu an sana ne yapılabilir geliyor?"
 };

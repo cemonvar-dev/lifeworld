@@ -3578,7 +3578,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagName).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
@@ -3601,8 +3601,61 @@ ${taskSummaries.join('\n')}`;
 function openAiChat() {
 	document.getElementById('aiChatOverlay').classList.remove('hidden');
 	document.getElementById('aiChatInput').focus();
-	if (aiChatHistory.length === 0) {
-		appendAiMessage('assistant', _t("Hi! I'm your Fiblia AI coach\n\nI can see all your tasks and their health scores. Ask me anything — or tap a quick prompt below to get started!"));
+	if (aiChatHistory.length === 0 && !document.getElementById('aiChatMessages').children.length) openCoachGreeting();
+}
+
+// Today's progress, used to pick (and cache) the coach's opening line.
+function coachDayState() {
+	const done = tiles.filter(t => t.status === 'done' || t.status === 'completed').length;
+	const skipped = tiles.filter(t => t.status === 'skipped').length;
+	const open = tiles.filter(t => t.status === 'noaction' && isTileScheduledToday(t.id)).length;
+	return { done, skipped, open, key: `${todayLocal()}|${done}|${skipped}|${i18n.lang}` };
+}
+
+// Instant, offline-safe opener in the user's language.
+function coachFallbackGreeting(state) {
+	if (state.done && !state.open) return _t('Everything for today is done 🌿 How does that feel? We can look back on the day, or quietly plan tomorrow.');
+	if (state.done) return _t("You've already moved things forward today, and that counts. What would feel good to do next?");
+	return _t("A fresh start, nothing ticked off yet. Let's begin with one small thing together. What feels doable right now?");
+}
+
+const COACH_GREETING_KEY = 'lw_coach_greeting';
+const COACH_GREETING_TTL = 3 * 3600 * 1000;
+
+// The coach speaks first: a short, warm AI line about today. Cached while
+// today's progress is unchanged; falls back to a local line on any failure.
+async function openCoachGreeting() {
+	const state = coachDayState();
+	const show = text => {
+		document.getElementById('aiGreetingLoading')?.remove();
+		if (aiChatHistory.length) return; // user already started typing a conversation
+		aiChatHistory.push({ role: 'assistant', content: text });
+		appendAiMessage('assistant', text);
+	};
+	try {
+		const cached = JSON.parse(localStorage.getItem(COACH_GREETING_KEY) || 'null');
+		if (cached && cached.key === state.key && Date.now() - cached.at < COACH_GREETING_TTL && cached.text) { show(cached.text); return; }
+	} catch (e) { /* storage unavailable */ }
+	appendAiMessage('loading', '');
+	const loadingBubble = document.getElementById('aiLoadingBubble');
+	if (loadingBubble) loadingBubble.id = 'aiGreetingLoading'; // keep apart from a message's own loader
+	try {
+		const { data: { session } } = await supa.auth.getSession();
+		if (!session) throw new Error('no session');
+		const now = new Date();
+		const response = await fetch(`${API_BASE}/api/ai`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+			body: JSON.stringify({ mode: 'greeting', taskContext: buildTaskContext(), language: i18n.lang, localTime: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}` })
+		});
+		const data = response.ok ? await response.json() : null;
+		if (!data || !data.reply) throw new Error('greeting failed: ' + response.status);
+		try { localStorage.setItem(COACH_GREETING_KEY, JSON.stringify({ key: state.key, at: Date.now(), text: data.reply })); } catch (e) {}
+		window.track?.('ai_greeting_shown', { source: 'ai', done_today: Math.min(state.done, 10) });
+		show(data.reply);
+	} catch (e) {
+		window.track?.('ai_greeting_shown', { source: 'fallback', done_today: Math.min(state.done, 10) });
+		show(coachFallbackGreeting(state));
 	}
 }
 
@@ -3701,7 +3754,7 @@ async function copyAiChat(button) {
 function clearAiChat() {
 	aiChatHistory = [];
 	document.getElementById('aiChatMessages').innerHTML = '';
-	appendAiMessage('assistant', _t("Chat cleared! Ask me anything about your tasks"));
+	openCoachGreeting();
 }
 
 function appendAiMessage(role, content) {

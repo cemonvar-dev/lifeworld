@@ -15,6 +15,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://baswgycuhblyppvvdpay.s
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '25', 10);
+// Opening greetings don't count against the user's message quota, but get their
+// own small daily cap (tracked in ai_usage under a derived id) so they can't be abused.
+const GREETING_DAILY_LIMIT = 8;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
 // Request limits: keep one call's OpenAI cost bounded.
@@ -173,6 +176,64 @@ async function updateMemory(apiKey, userId, prevNotes, userMsg, assistantReply) 
 	} catch { /* best-effort; never blocks the chat */ }
 }
 
+// A stable, separate ai_usage key for a user's greetings (uuid-shaped hash).
+async function greetingQuotaId(userId) {
+	const { createHash } = await import('node:crypto');
+	const h = createHash('sha256').update('greeting:' + userId).digest('hex');
+	return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
+
+// The coach opens the chat: a short, warm line based on what happened today.
+async function handleGreeting(req, res, apiKey, user, body) {
+	const taskContext = typeof body.taskContext === 'string' ? body.taskContext.slice(0, MAX_TASK_CONTEXT_CHARS) : '';
+	const localTime = typeof body.localTime === 'string' && /^\d{1,2}:\d{2}$/.test(body.localTime) ? body.localTime : '';
+	const quota = await consumeQuota(await greetingQuotaId(user.id), GREETING_DAILY_LIMIT);
+	if (!quota) return res.status(500).json({ error: 'Could not verify your usage quota. Please try again.' });
+	if (!quota.allowed) return res.status(429).json({ error: 'Greeting limit reached', code: 'greeting_limit' });
+	const memory = await getMemory(user.id);
+	const firstName = String(user.user_metadata?.full_name || user.user_metadata?.name || '').trim().split(/\s+/)[0].slice(0, 30);
+	const system = `You are Fiblia, the user's personal coach. They just opened the chat with you. Write the first message, as if you were texting someone you coach and genuinely care about.
+
+WHAT TO SAY
+- Look at TODAY in the data: what is already done or skipped today, and which tasks are still open for today. Consider the local time${localTime ? ` (${localTime})` : ''}.
+- If they already did something today: notice it, naming one real task, and let it land warmly and simply. Then ask, gently, what they'd like to do next.
+- If nothing is done yet: be inviting, never guilt. Suggest starting with one specific, easy task that is open today, and ask how they feel about it.
+- If everything for today is done: be calmly proud of them, and invite them to rest, reflect, or think about tomorrow.
+- Late evening: be softer; it's fine to suggest one tiny thing or simply winding down.
+
+HOW TO SOUND
+- 2 or 3 short sentences, under 45 words in total. Natural, intimate and warm, like a real coach who knows them. Plain, everyday words.
+- End with one soft, open question.
+- Never mention health scores, percentages, or "the data". No lists, no headings, no generic motivation or clichés, no exclamation-mark overload. At most one emoji, only if it feels natural.
+- Do not introduce yourself.${firstName ? ` You may use their first name, "${firstName}", once at most, and only if it feels natural.` : ''}
+
+LANGUAGE
+The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Write only in that language, in a natural, native tone (informal "you" where that language has one).
+
+USER'S TASK DATA:
+${taskContext || 'No task data available.'}${memory ? `\n\nWHAT YOU REMEMBER ABOUT THEM (may be outdated):\n${memory}` : ''}`;
+	try {
+		const response = await fetch('https://api.openai.com/v1/chat/completions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+			body: JSON.stringify({
+				model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+				messages: [{ role: 'system', content: system }, { role: 'user', content: '(The user opened the coach chat.)' }],
+				max_tokens: 160,
+				temperature: 0.85
+			})
+		});
+		if (!response.ok) return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable' });
+		const data = await response.json();
+		const reply = String(data.choices?.[0]?.message?.content || '').trim().slice(0, 600);
+		if (!reply) return res.status(502).json({ error: 'No response', code: 'ai_unavailable' });
+		return res.status(200).json({ reply });
+	} catch (err) {
+		console.error('Greeting error:', err);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
+}
+
 export default async function handler(req, res) {
 	// CORS
 	res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -198,6 +259,7 @@ export default async function handler(req, res) {
 	// --- Validate the body before spending quota. Only user/assistant turns are
 	// forwarded, so a caller can't supply its own system prompt. ---
 	const body = req.body || {};
+	if (body.mode === 'greeting') return handleGreeting(req, res, apiKey, user, body);
 	const { responseFormat } = body;
 	if (!Array.isArray(body.messages)) return res.status(400).json({ error: 'messages required' });
 	const jsonMode = responseFormat?.type === 'json_object';

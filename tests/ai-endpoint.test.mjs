@@ -76,3 +76,19 @@ openaiMessage = toolReply({ message: 'many', actions: Array.from({ length: 50 },
 r = await call({ messages: hello });
 assert.strictEqual(r.res.out.actions.length, 20); console.log('ok proposals are capped');
 openaiMessage = { content: 'hi' };
+
+// The coach's opening greeting: separate small quota, no tools, no memory write.
+calls = []; user = { id: 'u1', user_metadata: { full_name: 'Ada Lovelace' } }; openaiStatus = 200; openaiMessage = { content: 'Good morning' };
+{
+  const res = { code: 0, out: null, setHeader() {}, status(c) { this.code = c; return this; }, json(o) { this.out = o; return this; }, end() { return this; } };
+  await handler({ method: 'POST', headers: { authorization: 'Bearer t' }, body: { mode: 'greeting', taskContext: 'ctx', language: 'tr', localTime: '21:05' } }, res);
+  assert.strictEqual(res.code, 200); assert.strictEqual(res.out.reply, 'Good morning');
+  const rpc = calls.filter(c => c.url.includes('consume_ai_quota'));
+  assert.strictEqual(rpc.length, 1); assert.notStrictEqual(rpc[0].body.p_user_id, 'u1'); assert.strictEqual(rpc[0].body.p_limit, 8);
+  assert.match(rpc[0].body.p_user_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-a[0-9a-f]{3}-[0-9a-f]{12}$/);
+  const ai = calls.find(c => c.url.includes('openai.com'));
+  assert.strictEqual(ai.body.tools, undefined); assert.match(ai.body.messages[0].content, /Turkish/); assert.match(ai.body.messages[0].content, /21:05/); assert.match(ai.body.messages[0].content, /"Ada"/);
+  assert.strictEqual(calls.filter(c => c.url.includes('openai.com')).length, 1, 'no memory update call');
+  console.log('ok greeting uses its own quota, no tools, no memory write');
+}
+openaiMessage = { content: 'hi' };
