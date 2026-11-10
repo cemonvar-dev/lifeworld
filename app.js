@@ -3126,7 +3126,7 @@ function openTodaySummaryCombined(day) {
 	body.innerHTML = `
 		<div class="flex items-center justify-between gap-2 mb-3">
 			<button type="button" data-day-shift="-1" class="${navButton}" aria-label="${_t('Previous day')}" title="${_t('Previous day')}">‹</button>
-			<div class="text-sm font-semibold text-slate-700">${escapeHtml(dayLabel)}</div>
+			<div class="flex items-center gap-2"><span class="text-sm font-semibold text-slate-700">${escapeHtml(dayLabel)}</span>${isToday ? '' : `<button type="button" data-day-today class="px-2 py-0.5 rounded-full text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition">${_t('Today')}</button>`}</div>
 			<button type="button" data-day-shift="1" class="${navButton}" aria-label="${_t('Next day')}" title="${_t('Next day')}" ${isToday ? 'disabled' : ''}>›</button>
 		</div>
 		<div class="grid grid-cols-2 gap-3 items-start mb-4">
@@ -3143,6 +3143,7 @@ function openTodaySummaryCombined(day) {
 	body.querySelectorAll('[data-day-shift]').forEach(btn => {
 		btn.addEventListener('click', () => openTodaySummaryCombined(shift(day, Number(btn.dataset.dayShift))));
 	});
+	body.querySelector('[data-day-today]')?.addEventListener('click', () => openTodaySummaryCombined());
 	body.querySelectorAll('[data-mark-done]').forEach(btn => {
 		btn.addEventListener('click', async () => {
 			btn.disabled = true;
