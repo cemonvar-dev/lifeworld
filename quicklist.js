@@ -9,7 +9,8 @@
 		return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} `;
 	}
 
-	function showOnly(tagId) {
+	function showOnly(tagId, pinnedOnly = false) {
+		activePinnedFilter = pinnedOnly;
 		searchChips = [];
 		const searchBox = document.getElementById('searchBox');
 		if (searchBox) searchBox.value = '';
@@ -25,6 +26,7 @@
 	}
 
 	function exitList() {
+		activePinnedFilter = false;
 		searchChips = [];
 		activeTimelineFilter = 'today';
 		activeStatusFilter = 'noaction';
@@ -90,7 +92,7 @@
 		input.setSelectionRange(input.value.length, input.value.length);
 	}
 
-	async function quickAdd(input, tagId) {
+	async function quickAdd(input, tagId, pinned) {
 		const name = input.value.trim();
 		if (!name) return;
 		const error = document.getElementById('quickAddError');
@@ -103,7 +105,7 @@
 			syncStatusBtn();
 			updateFilterBar();
 		}
-		const created = await createTileByName(name, 'once', { tagIds: [tagId], endDate: null, open: false });
+		const created = await createTileByName(name, 'once', { tagIds: tagId ? [tagId] : [], pinned, endDate: null, open: false });
 		if (!created) {
 			input.value = name;
 			error?.classList.remove('hidden');
@@ -154,6 +156,11 @@
 	}
 
 	// Called on every gallery render; keeps the bar (and what's typed) in place.
+	window.openPinnedList = function () {
+		showOnly(null, true);
+		window.track?.('list_opened', { source: 'pinned' });
+	};
+
 	window.openTagList = function (tagId) {
 		showOnly(tagId);
 		window.track?.('list_opened', { source: 'heading' });
@@ -163,25 +170,27 @@
 		const gallery = document.getElementById('gallery');
 		if (!gallery) return;
 		let bar = document.getElementById('quickAddBar');
-		const tagId = activeTagFilter && activeTagFilter !== '__untagged__' ? activeTagFilter : null;
-		if (!tagId) { bar?.remove(); return; }
-		const count = tiles.filter(t => (t.tags || []).includes(tagId)).length;
-		if (bar && bar.dataset.tag === tagId) {
+		const pinnedMode = activePinnedFilter;
+		const tagId = !pinnedMode && activeTagFilter && activeTagFilter !== '__untagged__' ? activeTagFilter : null;
+		if (!pinnedMode && !tagId) { bar?.remove(); return; }
+		const barKey = pinnedMode ? '__pinned__' : tagId;
+		const count = pinnedMode ? tiles.filter(t => rawTiles[t.id] && rawTiles[t.id].pinned).length : tiles.filter(t => (t.tags || []).includes(tagId)).length;
+		if (bar && bar.dataset.tag === barKey) {
 			bar.querySelector('[data-quick-count]').textContent = _t('{n} tasks', { n: count });
 			return;
 		}
 		bar?.remove();
 		bar = document.createElement('section');
 		bar.id = 'quickAddBar';
-		bar.dataset.tag = tagId;
+		bar.dataset.tag = barKey;
 		bar.className = 'mt-4 rounded-2xl bg-white/90 border border-slate-200/80 shadow-sm p-3';
 		bar.innerHTML = `<div class="flex items-center justify-between gap-2 mb-2">
-				<div class="min-w-0 flex items-baseline gap-2"><span translate="no" class="text-base font-semibold text-slate-800 truncate">📝 ${escapeHtml(tagPath(tagId))}</span><span data-quick-count class="text-xs text-slate-400 whitespace-nowrap">${escapeHtml(_t('{n} tasks', { n: count }))}</span></div>
+				<div class="min-w-0 flex items-baseline gap-2">${pinnedMode ? `<span class="text-base font-semibold text-slate-800 truncate">📌 ${escapeHtml(_t('Pinned'))}</span>` : `<span translate="no" class="text-base font-semibold text-slate-800 truncate">📝 ${escapeHtml(tagPath(tagId))}</span>`}<span data-quick-count class="text-xs text-slate-400 whitespace-nowrap">${escapeHtml(_t('{n} tasks', { n: count }))}</span></div>
 				<button type="button" data-quick-exit class="shrink-0 px-3 py-1 rounded-full text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Exit list</button>
 			</div>
 			<input id="quickAddInput" type="text" maxlength="200" placeholder="Add a task and press Enter" aria-label="Add a task and press Enter" class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300" />
 			<div id="quickAddError" class="hidden mt-1 text-xs text-red-500">That didn't save. Please try again.</div>
-			${'notes' in (TAGS_BY_ID[tagId] || {}) ? `<div class="mt-3">
+			${!pinnedMode && 'notes' in (TAGS_BY_ID[tagId] || {}) ? `<div class="mt-3">
 				<div class="flex items-center justify-between mb-1"><span class="text-xs font-semibold text-slate-500">Meeting notes</span><span data-notes-status class="text-[11px] text-slate-400"></span></div>
 				<textarea id="quickNotes" rows="4" maxlength="10000" placeholder="Write notes here…" class="w-full shrink-0 rounded-lg border px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 				<div class="flex justify-end mt-2"><button type="button" data-notes-ai class="px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:opacity-90 transition disabled:opacity-40">${AI_ICON} Turn notes into tasks</button></div>
@@ -190,10 +199,10 @@
 		gallery.parentNode.insertBefore(bar, anchor);
 		const input = bar.querySelector('#quickAddInput');
 		input.addEventListener('keydown', e => {
-			if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); quickAdd(input, tagId); }
+			if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); quickAdd(input, tagId, pinnedMode); }
 		});
 		bar.querySelector('[data-quick-exit]').addEventListener('click', exitList);
-		wireListNotes(bar, tagId);
+		if (tagId) wireListNotes(bar, tagId);
 	};
 
 	document.addEventListener('DOMContentLoaded', () => {

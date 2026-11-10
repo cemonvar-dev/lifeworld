@@ -9,6 +9,7 @@ async function createTileByName(name, mode = 'once', options = {}) {
 			name: name.trim(),
 			frequency_mode: mode,
 			tag_ids: options.tagIds || [],
+			...(options.pinned ? { pinned: true } : {}),
 			end_date: mode === 'once' ? (options.endDate === undefined ? todayLocal() : options.endDate) : null
 		})
 		.select('*, task_logs(*), task_frequency_days(*)')
@@ -45,6 +46,7 @@ let activeTimelineFilter = 'today'; // 'today' or null — default: today
 let activeStatusFilter = 'noaction'; // null, 'done', 'skipped', 'noaction' — default: no action
 let activeLifecycleFilter = 'active'; // binary: 'active' (not completed), 'all', 'completed' — default: active
 let activeMoodFilter = null; // null = all, else a mood label ('Thriving', 'Dying', ...)
+let activePinnedFilter = false; // true = show only pinned tiles
 let activeFreqFilter = null; // null = all, else 'daily' | 'weekly' | 'monthly' | 'once'
 let searchChips = []; // committed search terms (Enter in the search box); OR-matched
 let ALL_TAGS = [];        // [{ key: tagId, label: name }] for legacy call sites
@@ -514,7 +516,8 @@ function renderGallery(filteredTiles) {
 		heading.textContent = groupLabel(tag);
 		if (tag !== PINNED_GROUP && tag !== 'Untagged') heading.translate = false;
 		// A tag heading opens that tag as a list (unless it's already the one shown).
-		if (tag !== PINNED_GROUP && tag !== 'Untagged' && activeTagFilter !== tag) {
+		const headingOpens = tag === PINNED_GROUP ? !activePinnedFilter : (tag !== 'Untagged' && activeTagFilter !== tag);
+		if (headingOpens) {
 			heading.classList.add('inline-flex', 'items-center', 'gap-1', 'cursor-pointer', 'hover:text-blue-600', 'transition');
 			heading.setAttribute('role', 'button');
 			heading.tabIndex = 0;
@@ -524,7 +527,7 @@ function renderGallery(filteredTiles) {
 			arrow.setAttribute('aria-hidden', 'true');
 			arrow.className = 'text-slate-300';
 			heading.appendChild(arrow);
-			const openList = () => (window.openTagList ? window.openTagList(tag) : setTagFilter(tag));
+			const openList = () => (tag === PINNED_GROUP ? window.openPinnedList?.() : window.openTagList ? window.openTagList(tag) : setTagFilter(tag));
 			heading.addEventListener('click', openList);
 			heading.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openList(); } });
 		}
@@ -3368,6 +3371,9 @@ function applyFilters() {
 	if (activeStatusFilter) {
 		filtered = filtered.filter(t => t.status === activeStatusFilter);
 	}
+	if (activePinnedFilter) {
+		filtered = filtered.filter(t => rawTiles[t.id] && rawTiles[t.id].pinned);
+	}
 	   // Lifecycle filter
 	   if (activeLifecycleFilter && activeLifecycleFilter !== 'all') {
 		   if (activeLifecycleFilter === 'active') {
@@ -3458,6 +3464,7 @@ function renderSearchChips() {
 
 // Clear everything: the tag filter AND all search chips (one "Clear all").
 function clearAllChips() {
+	activePinnedFilter = false;
 	searchChips = [];
 	const sb = document.getElementById('searchBox');
 	if (sb) sb.value = '';
