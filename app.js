@@ -510,6 +510,7 @@ function renderGallery(filteredTiles) {
 
 		const groupSection = document.createElement('section');
 		groupSection.className = 'mb-4';
+		groupSection.dataset.dropGroup = tag; // drop target for tiledrag.js
 
 		const heading = document.createElement('div');
 		heading.className = 'text-lg font-semibold text-slate-500 mb-2 mt-8 pl-1';
@@ -543,7 +544,6 @@ function renderGallery(filteredTiles) {
 			// Remove color class from tile, use data attribute for gradient
 			tileDiv.className = `tile relative rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
 			tileDiv.setAttribute('data-tilecolor', tileColor);
-			tileDiv.draggable = true;
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const lastDone = tile.lastDone ? new Date(tile.lastDone).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
@@ -582,31 +582,7 @@ function renderGallery(filteredTiles) {
 			});
 
 
-			// Drag-and-drop events
-			tileDiv.addEventListener('dragstart', (e) => {
-				e.dataTransfer.setData('text/plain', tile.id);
-				e.dataTransfer.effectAllowed = 'move';
-				tileDiv.classList.add('opacity-40', 'scale-95');
-				setTimeout(() => tileDiv.classList.add('ring-2', 'ring-blue-400'), 0);
-			});
-			tileDiv.addEventListener('dragend', () => {
-				tileDiv.classList.remove('opacity-40', 'scale-95', 'ring-2', 'ring-blue-400');
-				document.querySelectorAll('.drag-over-indicator').forEach(el => el.remove());
-			});
-			tileDiv.addEventListener('dragover', (e) => {
-				e.preventDefault();
-				e.dataTransfer.dropEffect = 'move';
-				tileDiv.classList.add('ring-2', 'ring-blue-300');
-			});
-			tileDiv.addEventListener('dragleave', () => {
-				tileDiv.classList.remove('ring-2', 'ring-blue-300');
-			});
-			tileDiv.addEventListener('drop', (e) => {
-				e.preventDefault();
-				tileDiv.classList.remove('ring-2', 'ring-blue-300');
-				const draggedId = e.dataTransfer.getData('text/plain');
-				if (draggedId && draggedId !== tile.id) handleTileDrop(draggedId, tile.id, tag);
-			});
+			// Dragging (reorder / move between sections) lives in tiledrag.js.
 
 			tileDiv.querySelector('.tile-pin').addEventListener('click', (e) => {
 				e.stopPropagation();

@@ -356,5 +356,8 @@ window.I18N_MESSAGES.nl = {
 	"Saved": "Opgeslagen",
 	"Turn notes into tasks": "Notities omzetten in taken",
 	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Maak van deze vergadernotities taken voor de lijst \"{name}\". Alleen echte actiepunten. Eenmalige taken zonder datum, tenzij de notities er een noemen.",
-	"Open as list": "Openen als lijst"
+	"Open as list": "Openen als lijst",
+	"Moved to {name}": "Verplaatst naar {name}",
+	"Undo": "Ongedaan maken",
+	"Couldn't move the task": "Taak kon niet worden verplaatst"
 };

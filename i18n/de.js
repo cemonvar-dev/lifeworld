@@ -356,5 +356,8 @@ window.I18N_MESSAGES.de = {
 	"Saved": "Gespeichert",
 	"Turn notes into tasks": "Notizen in Aufgaben umwandeln",
 	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Mach aus diesen Besprechungsnotizen Aufgaben für die Liste „{name}“. Nur echte To-dos. Einmalige Aufgaben ohne Datum, außer die Notizen nennen eins.",
-	"Open as list": "Als Liste öffnen"
+	"Open as list": "Als Liste öffnen",
+	"Moved to {name}": "Verschoben nach {name}",
+	"Undo": "Rückgängig",
+	"Couldn't move the task": "Aufgabe konnte nicht verschoben werden"
 };
