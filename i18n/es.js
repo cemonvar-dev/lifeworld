@@ -350,5 +350,10 @@ window.I18N_MESSAGES.es = {
 	"Create list": "Crear lista",
 	"Add a task and press Enter": "Escribe una tarea y pulsa Intro",
 	"Exit list": "Salir de la lista",
-	"{n} tasks": "{n} tareas"
+	"{n} tasks": "{n} tareas",
+	"Meeting notes": "Notas de la reunión",
+	"Write notes here…": "Escribe aquí tus notas…",
+	"Saved": "Guardado",
+	"Turn notes into tasks": "Convertir notas en tareas",
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Convierte estas notas de reunión en tareas para la lista \"{name}\". Solo acciones reales. Tareas únicas sin fecha, salvo que las notas indiquen una."
 };

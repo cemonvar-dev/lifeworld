@@ -350,5 +350,10 @@ window.I18N_MESSAGES.nl = {
 	"Create list": "Lijst maken",
 	"Add a task and press Enter": "Typ een taak en druk op Enter",
 	"Exit list": "Lijst sluiten",
-	"{n} tasks": "{n} taken"
+	"{n} tasks": "{n} taken",
+	"Meeting notes": "Vergadernotities",
+	"Write notes here…": "Schrijf hier notities…",
+	"Saved": "Opgeslagen",
+	"Turn notes into tasks": "Notities omzetten in taken",
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Maak van deze vergadernotities taken voor de lijst \"{name}\". Alleen echte actiepunten. Eenmalige taken zonder datum, tenzij de notities er een noemen."
 };

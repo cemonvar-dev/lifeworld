@@ -350,5 +350,10 @@ window.I18N_MESSAGES.de = {
 	"Create list": "Liste erstellen",
 	"Add a task and press Enter": "Aufgabe eingeben und Enter drücken",
 	"Exit list": "Liste verlassen",
-	"{n} tasks": "{n} Aufgaben"
+	"{n} tasks": "{n} Aufgaben",
+	"Meeting notes": "Besprechungsnotizen",
+	"Write notes here…": "Notizen hier schreiben…",
+	"Saved": "Gespeichert",
+	"Turn notes into tasks": "Notizen in Aufgaben umwandeln",
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Mach aus diesen Besprechungsnotizen Aufgaben für die Liste „{name}“. Nur echte To-dos. Einmalige Aufgaben ohne Datum, außer die Notizen nennen eins."
 };

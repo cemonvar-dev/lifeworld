@@ -350,5 +350,10 @@ window.I18N_MESSAGES.tr = {
 	"Create list": "Liste oluştur",
 	"Add a task and press Enter": "Görevi yazıp Enter’a basın",
 	"Exit list": "Listeden çık",
-	"{n} tasks": "{n} görev"
+	"{n} tasks": "{n} görev",
+	"Meeting notes": "Toplantı notları",
+	"Write notes here…": "Notlarınızı buraya yazın…",
+	"Saved": "Kaydedildi",
+	"Turn notes into tasks": "Notlardan görev çıkar",
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Bu toplantı notlarını \"{name}\" listesi için görevlere dönüştür. Sadece gerçek aksiyonları al. Notlarda tarih yoksa tarihsiz tek seferlik görev olsun."
 };

@@ -60,7 +60,9 @@ function isPremiumUser() { return !!currentUserIsPremium; }
 
 // Load the user's tags from the tags table.
 async function loadTags() {
-	const { data, error } = await supa.from('tags').select('id,name,parent_id,sort_order');
+	// notes needs scripts/tag-notes.sql; fall back if the column isn't there yet.
+	let { data, error } = await supa.from('tags').select('id,name,parent_id,sort_order,notes');
+	if (error) ({ data, error } = await supa.from('tags').select('id,name,parent_id,sort_order'));
 	TAGS = (!error && data) ? data : [];
 	rebuildTagIndex();
 }
@@ -3900,7 +3902,8 @@ function aiErrorText(status, err) {
 	return _t('Something went wrong. Please try again.');
 }
 
-async function sendAiMessage(text) {
+// options.listTag: name of a quick list; proposed tasks default to it.
+async function sendAiMessage(text, options = {}) {
 	if (!text || !text.trim()) return;
 	const msg = text.trim();
 
@@ -3955,6 +3958,11 @@ async function sendAiMessage(text) {
 		   window.track?.('ai_message_sent', { language: i18n.lang });
 		   const reply = data.reply || _t('No response.');
 		   if (Array.isArray(data.actions) && data.actions.length) {
+			   if (options.listTag) data.actions.forEach(a => {
+				   if (a.type !== 'create') return;
+				   if (!a.tags || !a.tags.length) a.tags = [options.listTag];
+				   if (!a.frequency) a.frequency = 'once';
+			   });
 			   appendAiActionPreview(data.actions, data.reply);
 		   } else {
 			   aiChatHistory.push({ role: 'assistant', content: reply });

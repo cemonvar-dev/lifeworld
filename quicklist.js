@@ -114,6 +114,45 @@
 		input.focus();
 	}
 
+	// Free-form notes for a list, saved on the tag, plus AI to pull tasks out of them.
+	function wireListNotes(bar, tagId) {
+		const area = bar.querySelector('#quickNotes');
+		if (!area) return;
+		const tag = TAGS_BY_ID[tagId];
+		const status = bar.querySelector('[data-notes-status]');
+		const aiButton = bar.querySelector('[data-notes-ai]');
+		area.value = tag.notes || '';
+		const syncButton = () => { aiButton.disabled = !area.value.trim(); };
+		syncButton();
+		let timer;
+		const save = async () => {
+			clearTimeout(timer);
+			const text = area.value;
+			if (text === (tag.notes || '')) return true;
+			const { error } = await supa.from('tags').update({ notes: text || null }).eq('id', tagId);
+			if (error) {
+				console.error('List notes save error:', error);
+				status.textContent = _t("Couldn't save your notes. Please try again.");
+				status.className = 'text-[11px] text-red-500';
+				return false;
+			}
+			tag.notes = text || null;
+			status.textContent = _t('Saved');
+			status.className = 'text-[11px] text-slate-400';
+			return true;
+		};
+		area.addEventListener('input', () => { syncButton(); clearTimeout(timer); timer = setTimeout(save, 700); });
+		area.addEventListener('blur', save);
+		aiButton.addEventListener('click', async () => {
+			const notes = area.value.trim();
+			if (!notes) return;
+			await save();
+			window.track?.('list_notes_to_tasks');
+			openAiChat();
+			sendAiMessage(_t('Turn these meeting notes into tasks for the list "{name}". Only include real action items. Make them one-time tasks without a date unless the notes give one.', { name: tag.name }) + '\n\n' + notes.slice(0, 7000), { listTag: tag.name });
+		});
+	}
+
 	// Called on every gallery render; keeps the bar (and what's typed) in place.
 	window.refreshQuickAdd = function () {
 		const gallery = document.getElementById('gallery');
@@ -136,7 +175,12 @@
 				<button type="button" data-quick-exit class="shrink-0 px-3 py-1 rounded-full text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Exit list</button>
 			</div>
 			<input id="quickAddInput" type="text" maxlength="200" placeholder="Add a task and press Enter" aria-label="Add a task and press Enter" class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300" />
-			<div id="quickAddError" class="hidden mt-1 text-xs text-red-500">That didn't save. Please try again.</div>`;
+			<div id="quickAddError" class="hidden mt-1 text-xs text-red-500">That didn't save. Please try again.</div>
+			${'notes' in (TAGS_BY_ID[tagId] || {}) ? `<div class="mt-3">
+				<div class="flex items-center justify-between mb-1"><span class="text-xs font-semibold text-slate-500">Meeting notes</span><span data-notes-status class="text-[11px] text-slate-400"></span></div>
+				<textarea id="quickNotes" rows="4" maxlength="10000" placeholder="Write notes here…" class="w-full shrink-0 rounded-lg border px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
+				<div class="flex justify-end mt-2"><button type="button" data-notes-ai class="px-3 py-1.5 rounded-full text-xs font-semibold text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:opacity-90 transition disabled:opacity-40">${AI_ICON} Turn notes into tasks</button></div>
+			</div>` : ''}`;
 		const anchor = document.getElementById('gettingStarted') ? document.getElementById('gettingStarted').nextSibling : gallery;
 		gallery.parentNode.insertBefore(bar, anchor);
 		const input = bar.querySelector('#quickAddInput');
@@ -144,6 +188,7 @@
 			if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); quickAdd(input, tagId); }
 		});
 		bar.querySelector('[data-quick-exit]').addEventListener('click', exitList);
+		wireListNotes(bar, tagId);
 	};
 
 	document.addEventListener('DOMContentLoaded', () => {
