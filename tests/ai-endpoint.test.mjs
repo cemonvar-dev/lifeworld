@@ -92,3 +92,21 @@ calls = []; user = { id: 'u1', user_metadata: { full_name: 'Ada Lovelace' } }; o
   console.log('ok greeting uses its own quota, no tools, no memory write');
 }
 openaiMessage = { content: 'hi' };
+
+// A rejected coaching model falls back to the default one.
+{
+  const seen = [];
+  const prev = globalThis.fetch;
+  globalThis.fetch = async (url, opts) => {
+    if (url.includes('openai.com')) {
+      const b = JSON.parse(opts.body); seen.push(b.model);
+      return b.model === 'gpt-4o-mini' ? json({ choices: [{ message: { content: 'fallback ok' } }] }) : json({ error: { message: 'model not allowed' } }, 403);
+    }
+    return prev(url, opts);
+  };
+  r = await call({ messages: hello });
+  assert.strictEqual(r.res.code, 200); assert.strictEqual(r.res.out.reply, 'fallback ok');
+  assert.deepStrictEqual(seen.slice(0, 2), ['gpt-4.1-mini', 'gpt-4o-mini']);
+  globalThis.fetch = prev;
+  console.log('ok rejected chat model falls back');
+}

@@ -22,7 +22,8 @@ const GREETING_DAILY_LIMIT = 8;
 const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || 'gpt-4.1-mini';
 const FALLBACK_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-// POST to OpenAI; if the preferred model is rejected (retired/unknown), retry once on the fallback.
+// POST to OpenAI; if the preferred model fails for any reason other than a bad
+// API key (not allowed for this project, retired, rate-limited, down), retry once on the fallback.
 async function openaiChat(apiKey, payload) {
 	const send = model => fetch('https://api.openai.com/v1/chat/completions', {
 		method: 'POST',
@@ -30,7 +31,7 @@ async function openaiChat(apiKey, payload) {
 		body: JSON.stringify({ ...payload, model })
 	});
 	let response = await send(payload.model);
-	if (!response.ok && (response.status === 400 || response.status === 404) && payload.model !== FALLBACK_MODEL) {
+	if (!response.ok && response.status !== 401 && payload.model !== FALLBACK_MODEL) {
 		console.error('Model rejected, falling back:', payload.model, response.status);
 		response = await send(FALLBACK_MODEL);
 	}
@@ -238,7 +239,10 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nWHAT YOU REMEMBER ABO
 			max_tokens: 160,
 			temperature: 0.85
 		});
-		if (!response.ok) return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable' });
+		if (!response.ok) {
+			console.error('Greeting OpenAI error:', response.status, await response.text().catch(() => ''));
+			return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable', upstream: response.status });
+		}
 		const data = await response.json();
 		const reply = String(data.choices?.[0]?.message?.content || '').trim().slice(0, 600);
 		if (!reply) return res.status(502).json({ error: 'No response', code: 'ai_unavailable' });
@@ -370,7 +374,7 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 			const errData = await response.json().catch(() => ({}));
 			console.error('OpenAI error:', response.status, errData);
 			// Never forward OpenAI's status: its 429 would look like the user's own quota.
-			return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable' });
+			return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable', upstream: response.status });
 		}
 
 		const data = await response.json();

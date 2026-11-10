@@ -4051,6 +4051,7 @@ async function sendAiMessage(text, options = {}) {
 				return;
 			}
 			const errMsg = aiErrorText(response.status, err);
+			window.track?.('ai_error', { status: response.status, code: String(err.code || ''), upstream: Number(err.upstream) || 0 });
 			appendAiMessage('assistant', '⚠️ ' + errMsg);
 			return;
 		}
