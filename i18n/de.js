@@ -355,5 +355,6 @@ window.I18N_MESSAGES.de = {
 	"Write notes here…": "Notizen hier schreiben…",
 	"Saved": "Gespeichert",
 	"Turn notes into tasks": "Notizen in Aufgaben umwandeln",
-	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Mach aus diesen Besprechungsnotizen Aufgaben für die Liste „{name}“. Nur echte To-dos. Einmalige Aufgaben ohne Datum, außer die Notizen nennen eins."
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Mach aus diesen Besprechungsnotizen Aufgaben für die Liste „{name}“. Nur echte To-dos. Einmalige Aufgaben ohne Datum, außer die Notizen nennen eins.",
+	"Open as list": "Als Liste öffnen"
 };

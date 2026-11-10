@@ -355,5 +355,6 @@ window.I18N_MESSAGES.it = {
 	"Write notes here…": "Scrivi qui le note…",
 	"Saved": "Salvato",
 	"Turn notes into tasks": "Trasforma le note in attività",
-	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Trasforma queste note della riunione in attività per la lista \"{name}\". Solo vere azioni. Attività una tantum senza data, a meno che le note ne indichino una."
+	"Turn these meeting notes into tasks for the list \"{name}\". Only include real action items. Make them one-time tasks without a date unless the notes give one.": "Trasforma queste note della riunione in attività per la lista \"{name}\". Solo vere azioni. Attività una tantum senza data, a meno che le note ne indichino una.",
+	"Open as list": "Apri come lista"
 };

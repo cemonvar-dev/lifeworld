@@ -513,6 +513,21 @@ function renderGallery(filteredTiles) {
 		heading.className = 'text-lg font-semibold text-slate-500 mb-2 mt-8 pl-1';
 		heading.textContent = groupLabel(tag);
 		if (tag !== PINNED_GROUP && tag !== 'Untagged') heading.translate = false;
+		// A tag heading opens that tag as a list (unless it's already the one shown).
+		if (tag !== PINNED_GROUP && tag !== 'Untagged' && activeTagFilter !== tag) {
+			heading.classList.add('inline-flex', 'items-center', 'gap-1', 'cursor-pointer', 'hover:text-blue-600', 'transition');
+			heading.setAttribute('role', 'button');
+			heading.tabIndex = 0;
+			heading.title = _t('Open as list');
+			const arrow = document.createElement('span');
+			arrow.textContent = '›';
+			arrow.setAttribute('aria-hidden', 'true');
+			arrow.className = 'text-slate-300';
+			heading.appendChild(arrow);
+			const openList = () => (window.openTagList ? window.openTagList(tag) : setTagFilter(tag));
+			heading.addEventListener('click', openList);
+			heading.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openList(); } });
+		}
 		groupSection.appendChild(heading);
 
 		const groupGrid = document.createElement('div');

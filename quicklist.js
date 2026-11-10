@@ -154,6 +154,11 @@
 	}
 
 	// Called on every gallery render; keeps the bar (and what's typed) in place.
+	window.openTagList = function (tagId) {
+		showOnly(tagId);
+		window.track?.('list_opened', { source: 'heading' });
+	};
+
 	window.refreshQuickAdd = function () {
 		const gallery = document.getElementById('gallery');
 		if (!gallery) return;
