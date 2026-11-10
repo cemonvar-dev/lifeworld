@@ -618,7 +618,7 @@ function renderGallery(filteredTiles) {
 
 
 
-// "Last activity: 3 days ago" for a gallery section, from every tile in it
+// "Last done: 3 days ago" for a gallery section (Done logs only), from every tile in it
 // (not just the ones the current filters show).
 function groupActivityLabel(tag) {
 	const members = tiles.filter(t => {
@@ -629,13 +629,13 @@ function groupActivityLabel(tag) {
 	});
 	if (!members.length) return null;
 	let latest = '';
-	members.forEach(t => (rawTiles[t.id]?.task_logs || []).forEach(l => { const d = logDay(l); if (d > latest) latest = d; }));
-	if (!latest) return { text: _t('No activity yet'), stale: false };
+	members.forEach(t => (rawTiles[t.id]?.task_logs || []).forEach(l => { if (l.status !== 'done' && l.status !== 'completed') return; const d = logDay(l); if (d > latest) latest = d; }));
+	if (!latest) return { text: _t('Not done yet'), stale: false };
 	const [y, m, d] = latest.split('-').map(Number);
 	const now = new Date();
 	const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(y, m - 1, d)) / 864e5);
 	const date = new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-	const text = days <= 0 ? _t('Last activity: today') : days === 1 ? _t('Last activity: yesterday') : _t('Last activity: {n} days ago', { n: days });
+	const text = days <= 0 ? _t('Last done: today') : days === 1 ? _t('Last done: yesterday') : _t('Last done: {n} days ago', { n: days });
 	return { text, stale: days >= 7, date };
 }
 
