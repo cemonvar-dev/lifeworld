@@ -3600,12 +3600,13 @@ function buildTaskContext() {
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
 	const doneToday = tiles.filter(t => t.status === 'done' || t.status === 'completed').length;
 	const skippedToday = tiles.filter(t => t.status === 'skipped').length;
-	const noActionToday = tiles.filter(t => t.status === 'noaction').length;
+	// Only tiles actually due today count as pending (not every untouched tile).
+	const noActionToday = tiles.filter(t => t.status === 'noaction' && (typeof isTileScheduledToday !== 'function' || isTileScheduledToday(t.id))).length;
 
 	return `Today: ${todayLocal()} (${new Date().toLocaleDateString('en-US', { weekday: 'long' })}), timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 Total tasks: ${tiles.length}
 Overall avg health: ${overallHealth}%
-Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} pending
+Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} still due today
 
 USAGE:
 ${coachUsage(Object.values(rawTiles))}

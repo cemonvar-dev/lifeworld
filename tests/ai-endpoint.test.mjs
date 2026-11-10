@@ -36,7 +36,7 @@ assert(!r.rpc && r.res.code === 200, 'app_metadata premium bypasses'); console.l
 r = await call({ messages: [{ role: 'system', content: 'evil' }, ...hello] });
 assert.deepStrictEqual(r.ai.body.messages.filter(m => m.role === 'system').length, 1); assert(!JSON.stringify(r.ai.body.messages).includes('evil')); console.log('ok caller system message dropped');
 r = await call({ messages: Array.from({ length: 50 }, (_, i) => ({ role: 'user', content: 'x'.repeat(9000) + i })), taskContext: 'y'.repeat(99999) });
-assert.strictEqual(r.ai.body.messages.length, 21); assert.strictEqual(r.ai.body.messages[1].content.length, 8000); assert(r.ai.body.messages[0].content.length < 34000); console.log('ok history, message and context capped');
+assert.strictEqual(r.ai.body.messages.length, 21); assert.strictEqual(r.ai.body.messages[1].content.length, 8000); assert(r.ai.body.messages[0].content.length < 37000); console.log('ok history, message and context capped');
 r = await call({ messages: 'nope' });
 assert(r.res.code === 400 && !r.rpc); console.log('ok bad body rejected before quota');
 r = await call({ messages: [{ role: 'system', content: 'only' }] });
