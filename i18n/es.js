@@ -359,5 +359,9 @@ window.I18N_MESSAGES.es = {
 	"Open as list": "Abrir como lista",
 	"Moved to {name}": "Movida a {name}",
 	"Undo": "Deshacer",
-	"Couldn't move the task": "No se pudo mover la tarea"
+	"Couldn't move the task": "No se pudo mover la tarea",
+	"Last activity: today": "Última actividad: hoy",
+	"Last activity: yesterday": "Última actividad: ayer",
+	"Last activity: {n} days ago": "Última actividad: hace {n} días",
+	"No activity yet": "Sin actividad todavía"
 };

@@ -359,5 +359,9 @@ window.I18N_MESSAGES.nl = {
 	"Open as list": "Openen als lijst",
 	"Moved to {name}": "Verplaatst naar {name}",
 	"Undo": "Ongedaan maken",
-	"Couldn't move the task": "Taak kon niet worden verplaatst"
+	"Couldn't move the task": "Taak kon niet worden verplaatst",
+	"Last activity: today": "Laatste activiteit: vandaag",
+	"Last activity: yesterday": "Laatste activiteit: gisteren",
+	"Last activity: {n} days ago": "Laatste activiteit: {n} dagen geleden",
+	"No activity yet": "Nog geen activiteit"
 };

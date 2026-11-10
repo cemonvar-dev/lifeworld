@@ -513,7 +513,7 @@ function renderGallery(filteredTiles) {
 		groupSection.dataset.dropGroup = tag; // drop target for tiledrag.js
 
 		const heading = document.createElement('div');
-		heading.className = 'text-lg font-semibold text-slate-500 mb-2 mt-8 pl-1';
+		heading.className = 'text-lg font-semibold text-slate-500';
 		heading.textContent = groupLabel(tag);
 		if (tag !== PINNED_GROUP && tag !== 'Untagged') heading.translate = false;
 		// A tag heading opens that tag as a list (unless it's already the one shown).
@@ -532,7 +532,18 @@ function renderGallery(filteredTiles) {
 			heading.addEventListener('click', openList);
 			heading.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openList(); } });
 		}
-		groupSection.appendChild(heading);
+		const headRow = document.createElement('div');
+		headRow.className = 'flex items-baseline flex-wrap gap-x-2 mb-2 mt-8 pl-1';
+		headRow.appendChild(heading);
+		const activity = groupActivityLabel(tag);
+		if (activity) {
+			const act = document.createElement('span');
+			act.className = `text-xs ${activity.stale ? 'text-amber-600' : 'text-slate-400'}`;
+			act.textContent = '· ' + activity.text;
+			if (activity.date) act.title = activity.date;
+			headRow.appendChild(act);
+		}
+		groupSection.appendChild(headRow);
 
 		const groupGrid = document.createElement('div');
 		groupGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4';
@@ -606,6 +617,27 @@ function renderGallery(filteredTiles) {
 }
 
 
+
+// "Last activity: 3 days ago" for a gallery section, from every tile in it
+// (not just the ones the current filters show).
+function groupActivityLabel(tag) {
+	const members = tiles.filter(t => {
+		const raw = rawTiles[t.id];
+		if (tag === PINNED_GROUP) return raw && raw.pinned;
+		if (tag === 'Untagged') return !(t.tags && t.tags.length);
+		return (t.tags || []).includes(tag);
+	});
+	if (!members.length) return null;
+	let latest = '';
+	members.forEach(t => (rawTiles[t.id]?.task_logs || []).forEach(l => { const d = logDay(l); if (d > latest) latest = d; }));
+	if (!latest) return { text: _t('No activity yet'), stale: false };
+	const [y, m, d] = latest.split('-').map(Number);
+	const now = new Date();
+	const days = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(y, m - 1, d)) / 864e5);
+	const date = new Date(y, m - 1, d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+	const text = days <= 0 ? _t('Last activity: today') : days === 1 ? _t('Last activity: yesterday') : _t('Last activity: {n} days ago', { n: days });
+	return { text, stale: days >= 7, date };
+}
 
 // ---- Pinning ----
 const PINNED_GROUP = '__pinned__';

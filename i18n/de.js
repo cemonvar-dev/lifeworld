@@ -359,5 +359,9 @@ window.I18N_MESSAGES.de = {
 	"Open as list": "Als Liste öffnen",
 	"Moved to {name}": "Verschoben nach {name}",
 	"Undo": "Rückgängig",
-	"Couldn't move the task": "Aufgabe konnte nicht verschoben werden"
+	"Couldn't move the task": "Aufgabe konnte nicht verschoben werden",
+	"Last activity: today": "Letzte Aktivität: heute",
+	"Last activity: yesterday": "Letzte Aktivität: gestern",
+	"Last activity: {n} days ago": "Letzte Aktivität: vor {n} Tagen",
+	"No activity yet": "Noch keine Aktivität"
 };

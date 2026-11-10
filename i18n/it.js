@@ -359,5 +359,9 @@ window.I18N_MESSAGES.it = {
 	"Open as list": "Apri come lista",
 	"Moved to {name}": "Spostata in {name}",
 	"Undo": "Annulla",
-	"Couldn't move the task": "Impossibile spostare l’attività"
+	"Couldn't move the task": "Impossibile spostare l’attività",
+	"Last activity: today": "Ultima attività: oggi",
+	"Last activity: yesterday": "Ultima attività: ieri",
+	"Last activity: {n} days ago": "Ultima attività: {n} giorni fa",
+	"No activity yet": "Nessuna attività ancora"
 };

@@ -359,5 +359,9 @@ window.I18N_MESSAGES.tr = {
 	"Open as list": "Liste olarak aç",
 	"Moved to {name}": "{name} grubuna taşındı",
 	"Undo": "Geri al",
-	"Couldn't move the task": "Görev taşınamadı"
+	"Couldn't move the task": "Görev taşınamadı",
+	"Last activity: today": "Son hareket: bugün",
+	"Last activity: yesterday": "Son hareket: dün",
+	"Last activity: {n} days ago": "Son hareket: {n} gün önce",
+	"No activity yet": "Henüz hareket yok"
 };

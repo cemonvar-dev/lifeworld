@@ -150,7 +150,7 @@
 		if (code === 'en' || window.I18N_MESSAGES[code]) return Promise.resolve();
 		return new Promise((resolve, reject) => {
 			const script = document.createElement('script');
-			script.src = `i18n/${code}.js?v=13`;
+			script.src = `i18n/${code}.js?v=14`;
 			script.onload = resolve;
 			script.onerror = reject;
 			document.head.appendChild(script);

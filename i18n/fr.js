@@ -359,5 +359,9 @@ window.I18N_MESSAGES.fr = {
 	"Open as list": "Ouvrir en liste",
 	"Moved to {name}": "Déplacée vers {name}",
 	"Undo": "Annuler",
-	"Couldn't move the task": "Impossible de déplacer la tâche"
+	"Couldn't move the task": "Impossible de déplacer la tâche",
+	"Last activity: today": "Dernière activité : aujourd’hui",
+	"Last activity: yesterday": "Dernière activité : hier",
+	"Last activity: {n} days ago": "Dernière activité : il y a {n} jours",
+	"No activity yet": "Aucune activité pour l’instant"
 };
