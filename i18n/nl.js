@@ -344,5 +344,11 @@ window.I18N_MESSAGES.nl = {
 	"Previous day": "Vorige dag",
 	"Next day": "Volgende dag",
 	"Day summary": "Dagoverzicht",
-	"Missed": "Gemist"
+	"Missed": "Gemist",
+	"New list": "Nieuwe lijst",
+	"List name": "Naam van de lijst",
+	"Create list": "Lijst maken",
+	"Add a task and press Enter": "Typ een taak en druk op Enter",
+	"Exit list": "Lijst sluiten",
+	"{n} tasks": "{n} taken"
 };

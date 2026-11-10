@@ -1,5 +1,6 @@
 // Create a tile by name (no prompt)
-async function createTileByName(name, mode = 'once') {
+// options: tagIds, endDate (one-time only; defaults to today), open (default true).
+async function createTileByName(name, mode = 'once', options = {}) {
 	if (!name || !name.trim() || !currentUserId) return;
 	const { data, error } = await supa
 		.from('tasks')
@@ -7,11 +8,12 @@ async function createTileByName(name, mode = 'once') {
 			user_id: currentUserId,
 			name: name.trim(),
 			frequency_mode: mode,
-			end_date: mode === 'once' ? todayLocal() : null // one-time defaults to today
+			tag_ids: options.tagIds || [],
+			end_date: mode === 'once' ? (options.endDate === undefined ? todayLocal() : options.endDate) : null
 		})
 		.select('*, task_logs(*), task_frequency_days(*)')
 		.single();
-	if (error || !data) return;
+	if (error || !data) return null;
 	rawTiles[data.id] = data;
 	const health = calculateHealth(data);
 	const plant = healthToPlant(health);
@@ -31,8 +33,9 @@ async function createTileByName(name, mode = 'once') {
 	});
 	window.track?.('task_created', { frequency: mode });
 	applyFilters();
-	openTilePopup(data.id);
+	if (options.open !== false) openTilePopup(data.id);
 	scheduleReminders();
+	return data;
 }
 let tiles = [];
 let rawTiles = {}; // full task objects keyed by uuid
@@ -476,6 +479,7 @@ function renderEmptyGallery(gallery) {
 function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	if (window.refreshGettingStarted) window.refreshGettingStarted();
+	if (window.refreshQuickAdd) window.refreshQuickAdd();
 	if (typeof refreshNotifications === 'function') refreshNotifications(); // keep the bell count in step
 	gallery.innerHTML = "";
 	if (!filteredTiles.length) {

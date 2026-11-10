@@ -344,5 +344,11 @@ window.I18N_MESSAGES.tr = {
 	"Previous day": "Önceki gün",
 	"Next day": "Sonraki gün",
 	"Day summary": "Gün özeti",
-	"Missed": "Kaçırılan"
+	"Missed": "Kaçırılan",
+	"New list": "Yeni liste",
+	"List name": "Liste adı",
+	"Create list": "Liste oluştur",
+	"Add a task and press Enter": "Görevi yazıp Enter’a basın",
+	"Exit list": "Listeden çık",
+	"{n} tasks": "{n} görev"
 };

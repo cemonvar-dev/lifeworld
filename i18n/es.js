@@ -344,5 +344,11 @@ window.I18N_MESSAGES.es = {
 	"Previous day": "Día anterior",
 	"Next day": "Día siguiente",
 	"Day summary": "Resumen del día",
-	"Missed": "Pendiente"
+	"Missed": "Pendiente",
+	"New list": "Nueva lista",
+	"List name": "Nombre de la lista",
+	"Create list": "Crear lista",
+	"Add a task and press Enter": "Escribe una tarea y pulsa Intro",
+	"Exit list": "Salir de la lista",
+	"{n} tasks": "{n} tareas"
 };
