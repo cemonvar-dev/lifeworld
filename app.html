@@ -7,7 +7,7 @@
 	<title>Fiblia</title>
 	<link rel="icon" href="logo.png" />
 	<link rel="apple-touch-icon" href="logo.png" />
-	<script src="i18n.js?v=8"></script>
+	<script src="i18n.js?v=9"></script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 	<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -149,6 +149,7 @@
 					<svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4" aria-hidden="true"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z"/></svg>
 					AI
 				</button>
+				<button id="progressBtn" title="Progress" aria-label="Progress" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 w-full sm:w-auto rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]" aria-hidden="true"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg><span class="sm:hidden ml-1">Progress</span></button>
 				<div id="notifWrapper" class="relative">
 					<button id="notifBellBtn" data-keep-menu title="Reminders" aria-label="Reminders" aria-haspopup="true" aria-expanded="false" class="relative inline-flex items-center justify-center gap-1.5 px-3.5 py-2 w-full sm:w-auto rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="sm:hidden ml-1">Reminders</span><span id="notifBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-[18px] text-center">0</span></button>
 					<div id="notifMenu" class="hidden absolute right-0 mt-2 w-72 rounded-2xl bg-white shadow-xl shadow-slate-900/10 border border-slate-200/80 p-1.5 z-[55]">
@@ -448,5 +449,6 @@
 	<script src="app.js?v=0.5.1"></script>
 	<script src="feedback.js?v=1"></script>
 	<script src="onboarding.js?v=3"></script>
+	<script src="progress.js?v=1"></script>
 </body>
 </html>
