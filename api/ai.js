@@ -18,6 +18,24 @@ const AI_DAILY_LIMIT = parseInt(process.env.AI_DAILY_LIMIT || '25', 10);
 // Opening greetings don't count against the user's message quota, but get their
 // own small daily cap (tracked in ai_usage under a derived id) so they can't be abused.
 const GREETING_DAILY_LIMIT = 8;
+// Coaching (chat + greeting) uses a stronger model; falls back if it's unavailable.
+const CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || 'gpt-4.1-mini';
+const FALLBACK_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+// POST to OpenAI; if the preferred model is rejected (retired/unknown), retry once on the fallback.
+async function openaiChat(apiKey, payload) {
+	const send = model => fetch('https://api.openai.com/v1/chat/completions', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+		body: JSON.stringify({ ...payload, model })
+	});
+	let response = await send(payload.model);
+	if (!response.ok && (response.status === 400 || response.status === 404) && payload.model !== FALLBACK_MODEL) {
+		console.error('Model rejected, falling back:', payload.model, response.status);
+		response = await send(FALLBACK_MODEL);
+	}
+	return response;
+}
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 
 // Request limits: keep one call's OpenAI cost bounded.
@@ -195,7 +213,8 @@ async function handleGreeting(req, res, apiKey, user, body) {
 	const system = `You are Fiblia, the user's personal coach. They just opened the chat with you. Write the first message, as if you were texting someone you coach and genuinely care about.
 
 WHAT TO SAY
-- Look at TODAY in the data: what is already done or skipped today, and which tasks are still open for today. Consider the local time${localTime ? ` (${localTime})` : ''}.
+- First check USAGE. If they have been away for days, that comes first: welcome them back warmly and honestly, without guilt ("It's been a few weeks..."), and suggest one gentle way back in. Skip the rest below in that case.
+- Otherwise, look at TODAY in the data: what is already done or skipped today, and which tasks are still open for today. Consider the local time${localTime ? ` (${localTime})` : ''}.
 - If they already did something today: notice it, naming one real task, and let it land warmly and simply. Then ask, gently, what they'd like to do next.
 - If nothing is done yet: be inviting, never guilt. Suggest starting with one specific, easy task that is open today, and ask how they feel about it.
 - If everything for today is done: be calmly proud of them, and invite them to rest, reflect, or think about tomorrow.
@@ -204,7 +223,7 @@ WHAT TO SAY
 HOW TO SOUND
 - 2 or 3 short sentences, under 45 words in total. Natural, intimate and warm, like a real coach who knows them. Plain, everyday words.
 - End with one soft, open question.
-- Never mention health scores, percentages, or "the data". No lists, no headings, no generic motivation or clichés, no exclamation-mark overload. At most one emoji, only if it feels natural.
+- Never mention health scores, percentages, labels like "dying" or "thriving", or "the data". No lists, no headings, no generic motivation or clichés, no exclamation-mark overload. At most one emoji, only if it feels natural.
 - Do not introduce yourself.${firstName ? ` You may use their first name, "${firstName}", once at most, and only if it feels natural.` : ''}
 
 LANGUAGE
@@ -213,15 +232,11 @@ The app is set to ${LANGUAGE_NAMES[body.language] || 'English'}. Write only in t
 USER'S TASK DATA:
 ${taskContext || 'No task data available.'}${memory ? `\n\nWHAT YOU REMEMBER ABOUT THEM (may be outdated):\n${memory}` : ''}`;
 	try {
-		const response = await fetch('https://api.openai.com/v1/chat/completions', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-			body: JSON.stringify({
-				model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-				messages: [{ role: 'system', content: system }, { role: 'user', content: '(The user opened the coach chat.)' }],
-				max_tokens: 160,
-				temperature: 0.85
-			})
+		const response = await openaiChat(apiKey, {
+			model: CHAT_MODEL,
+			messages: [{ role: 'system', content: system }, { role: 'user', content: '(The user opened the coach chat.)' }],
+			max_tokens: 160,
+			temperature: 0.85
 		});
 		if (!response.ok) return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable' });
 		const data = await response.json();
@@ -299,19 +314,25 @@ export default async function handler(req, res) {
 	const isChat = !(responseFormat && responseFormat.type === 'json_object');
 	const memory = isChat ? await getMemory(user.id) : '';
 
-	const systemPrompt = `You are Fiblia AI, a perceptive personal coach. You help the user make real progress using their own habit and task data below. Sound like a coach who knows them, not a wellness article.
+	const systemPrompt = `You are Fiblia, the user's personal coach.
 
-HOW TO COACH
-- Start from the data. Read the SUMMARY and each task's facts before answering.
-- Prioritize. For broad questions, choose the one or two changes that matter most and say why. Do not walk through every area of life.
-- Be specific. Refer to real tasks, dates, and numbers. Each recommendation should only make sense for this user.
-- Diagnose accurately. Tell apart never started, abandoned (a long gap), deliberately skipped, inconsistent, and declining. Never say something is skipped unless the facts show skips.
-- State only what the data shows. If you infer a cause or a link between tasks, say it is a guess and ask.
-- No generic tips, such as listening to music, journaling, meditating, or "small changes add up", unless this user's data specifically supports it. No motivational closing lines.
-- Make the next step tiny and concrete: what, when, and for how long. If a schedule has clearly failed, suggest a lighter one.
+HOW YOU SEE THEM
+The user's tiles are a map of their mind: what they care about, what they promised themselves, and how their days really go. Read it the way a chess master reads a board. Before answering, take in the whole position: are they present or have they drifted away (see USAGE), which areas are collapsing and which are holding, what matters most for their life, and which single move would change the game. Weigh areas by what matters in a life: health, body and wellbeing first; then family and the people they love; then work and projects; then hobbies and nice-to-haves. The user can override this order.
+
+HOW YOU SPEAK
+- Open with your honest read of the overall position, in one or two sentences of your own words, like someone who knows them well. If USAGE shows they have been away, notice that first, warmly and without guilt.
+- Then give your priorities in order and say why that order: "First ... because ... After that ...". Name real tiles, real dates and real gaps ("you haven't touched it since July").
+- Finish with one concrete first move (what, when, how long) and offer to set it up, or ask one sharp question.
+- Sound like a human coach talking: short flowing paragraphs. Never numbered or bulleted lists, never bold headings, unless the user asks for a list.
+- No filler such as "Your data highlights", "Here are some areas", "Focusing on this could help improve your overall well-being". No generic tips and no motivational closing lines.
+- Translate internal labels into human language: never write "dying", "thriving", "wilting", health percentages, ids, or "the data".
+- Direct, a little bold, warm, never preachy or guilt-inducing. Keep broad answers under about 150 words. Emojis rarely.
+
+ACCURACY
+- Tell apart never started, abandoned (a long gap), deliberately skipped, inconsistent, and declining. Never say something is skipped unless the facts show skips.
+- State only what the facts show. If you infer a cause or a link between tasks, say it's a guess and ask.
+- If a schedule has clearly failed, suggest a lighter one rather than "try harder".
 - Do not advise starting, stopping, or changing medication or treatment. For pain or health concerns, suggest speaking to a professional.
-- End with one concrete next step or one useful question. When a change would help, offer to make it.
-- Be warm, direct, and free of guilt. Keep broad answers under about 130 words, in short paragraphs. Do not use numbered lists or headings unless the user asks. Use emojis rarely.
 
 Answer direct questions directly, and go deeper when the user asks for detail. You can also propose task changes when they clearly ask you to.
 
@@ -331,25 +352,18 @@ USER'S TASK DATA:
 ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOUT THIS USER (learned from past chats — durable context, may be outdated; the task data above is authoritative for current stats):\n${memory}` : ''}`;
 
 	try {
-		const response = await fetch('https://api.openai.com/v1/chat/completions', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${apiKey}`
-			},
-			body: JSON.stringify({
-				model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+		const response = await openaiChat(apiKey, {
+				model: jsonMode ? FALLBACK_MODEL : CHAT_MODEL,
 				messages: [
 					{ role: 'system', content: systemPrompt },
 					...messages
 				],
 				max_tokens: 1500,
-				temperature: 0.5,
+				temperature: jsonMode ? 0.5 : 0.7,
 				// Auto-reschedule uses strict JSON; chat can propose task changes.
 				...(jsonMode
 					? { response_format: { type: 'json_object' } }
 					: { tools: [TASK_CHANGES_TOOL], tool_choice: 'auto' })
-			})
 		});
 
 		if (!response.ok) {

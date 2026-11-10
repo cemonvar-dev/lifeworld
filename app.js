@@ -3568,6 +3568,22 @@ function coachSummary(tasks) {
 	return [`Active tiles by health: ${levelText}`, `Routine tiles with no Done in 30 days: ${inactive}`, 'Areas, weakest first:', ...areas].join('\n');
 }
 
+// How the user has been using the app overall (presence vs. absence).
+function coachUsage(tasks) {
+	const days = [...new Set(tasks.flatMap(t => (t.task_logs || []).map(logDay)).filter(Boolean))].sort();
+	if (!days.length) return 'Nothing has ever been logged yet (new user, or never marked anything done/skipped).';
+	const last = days[days.length - 1];
+	const since = coachDaysSince(last);
+	const within = n => days.filter(d => d >= suggestionDaysAgo(n)).length;
+	const lines = [
+		`Last time anything was logged: ${last} (${since} days ago)`,
+		`Days with any activity: ${within(7)} of the last 7, ${within(30)} of the last 30, ${within(90)} of the last 90`
+	];
+	if (since >= 5) lines.push(`The user has been away from the app for ${since} days. This is the most important thing to notice.`);
+	else if (within(30) <= 6) lines.push('The user only uses the app occasionally.');
+	return lines.join('\n');
+}
+
 function buildTaskContext() {
 	const taskSummaries = Object.values(rawTiles).map(task => {
 		const logs = task.task_logs || [];
@@ -3590,6 +3606,9 @@ function buildTaskContext() {
 Total tasks: ${tiles.length}
 Overall avg health: ${overallHealth}%
 Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} pending
+
+USAGE:
+${coachUsage(Object.values(rawTiles))}
 
 SUMMARY:
 ${coachSummary(Object.values(rawTiles))}

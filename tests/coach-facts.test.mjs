@@ -15,7 +15,7 @@ const NOW = RealDate.parse('2026-11-08T09:00:00Z');
 class Fixed extends RealDate { constructor(...a) { a.length ? super(...a) : super(NOW); } static now() { return NOW; } }
 const label = h => h >= 80 ? 'Thriving' : h >= 40 ? 'Growing' : 'Dying';
 const env = { Date: Fixed, monthlyDateFor: (t, y, m) => new RealDate(y, m, 1), tilePlant: t => ({ finished: t.status === 'completed' }), healthToPlant: h => ({ label: label(h) }), tagName: id => id };
-const { tileCoachFacts: facts, coachSummary: summary } = new Function(...Object.keys(env), code + '\nreturn { tileCoachFacts, coachSummary };')(...Object.values(env));
+const { tileCoachFacts: facts, coachSummary: summary, coachUsage: usage } = new Function(...Object.keys(env), code + '\n' + between('// How the user has been using the app overall', 'function buildTaskContext') + '\nreturn { tileCoachFacts, coachSummary, coachUsage };')(...Object.values(env));
 
 const ago = n => { const d = new RealDate(NOW); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const OLD = '2026-01-01T09:00:00Z';
@@ -73,4 +73,13 @@ test('the summary ranks areas and ignores finished tiles', () => {
 	assert.match(text, /Routine tiles with no Done in 30 days: 2/);
 	assert.ok(text.indexOf('"health"') < text.indexOf('"work"'), 'weakest area first');
 	assert.ok(!text.includes('done-area'));
+});
+
+test('usage notices when the user has been away', () => {
+	const text = usage([daily([log(40), log(41)]), daily([log(45, 'skipped')])]);
+	assert.match(text, /\(40 days ago\)/);
+	assert.match(text, /0 of the last 7, 0 of the last 30, 3 of the last 90/);
+	assert.match(text, /away from the app for 40 days/);
+	assert.doesNotMatch(usage([daily(range(0, 10).map(n => log(n)))]), /away/);
+	assert.match(usage([daily([])]), /Nothing has ever been logged/);
 });
