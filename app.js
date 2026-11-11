@@ -3373,11 +3373,14 @@ function applyFilters() {
 		wanted.add(activeTagFilter);
 		filtered = filtered.filter(t => (t.tags || []).some(tag => wanted.has(tag)));
 	}
+	// Pinned tiles stay visible whatever the date or today's status; only
+	// lifecycle (completed/cancelled), tag, mood, frequency and search hide them.
+	const isPinned = t => !!(rawTiles[t.id] && rawTiles[t.id].pinned);
 	if (activeTimelineFilter === 'today') {
-		filtered = filtered.filter(t => isTileScheduledToday(t.id));
+		filtered = filtered.filter(t => isPinned(t) || isTileScheduledToday(t.id));
 	}
 	if (activeStatusFilter) {
-		filtered = filtered.filter(t => t.status === activeStatusFilter);
+		filtered = filtered.filter(t => isPinned(t) || t.status === activeStatusFilter);
 	}
 	if (activePinnedFilter) {
 		filtered = filtered.filter(t => rawTiles[t.id] && rawTiles[t.id].pinned);
