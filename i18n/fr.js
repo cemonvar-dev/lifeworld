@@ -392,5 +392,18 @@ window.I18N_MESSAGES.fr = {
 	"Its {n} sub-tags will move to the top level.": "Ses {n} sous-tags passeront au niveau supérieur.",
 	"This can't be undone.": "Cette action est irréversible.",
 	"Couldn't save. Please try again.": "Impossible d’enregistrer. Réessaie.",
-	"Search tags…": "Rechercher des tags…"
+	"Search tags…": "Rechercher des tags…",
+	"List": "Liste",
+	"Skipped": "Passé",
+	"Clear": "Effacer",
+	"Edit note": "Modifier la note",
+	"Add with note": "Ajouter avec une note",
+	"Tap a day to log it": "Touche un jour pour l’enregistrer",
+	"Previous month": "Mois précédent",
+	"Next month": "Mois suivant",
+	"On track": "En bonne voie",
+	"At risk": "À risque",
+	"Off track": "En retard",
+	"No date": "Pas de date",
+	"Business · status + 14-day history": "Business · statut + historique 14 jours"
 };

@@ -392,5 +392,18 @@ window.I18N_MESSAGES.nl = {
 	"Its {n} sub-tags will move to the top level.": "De {n} subtags gaan naar het hoogste niveau.",
 	"This can't be undone.": "Dit kan niet ongedaan worden gemaakt.",
 	"Couldn't save. Please try again.": "Opslaan mislukt. Probeer het opnieuw.",
-	"Search tags…": "Tags zoeken…"
+	"Search tags…": "Tags zoeken…",
+	"List": "Lijst",
+	"Skipped": "Overgeslagen",
+	"Clear": "Wissen",
+	"Edit note": "Notitie bewerken",
+	"Add with note": "Toevoegen met notitie",
+	"Tap a day to log it": "Tik op een dag om te loggen",
+	"Previous month": "Vorige maand",
+	"Next month": "Volgende maand",
+	"On track": "Op koers",
+	"At risk": "Risico",
+	"Off track": "Achter",
+	"No date": "Geen datum",
+	"Business · status + 14-day history": "Business · status + 14 dagen historie"
 };

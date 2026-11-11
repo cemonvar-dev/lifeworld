@@ -392,5 +392,18 @@ window.I18N_MESSAGES.de = {
 	"Its {n} sub-tags will move to the top level.": "Seine {n} Unter-Tags rücken auf die oberste Ebene.",
 	"This can't be undone.": "Das kann nicht rückgängig gemacht werden.",
 	"Couldn't save. Please try again.": "Konnte nicht speichern. Bitte versuche es erneut.",
-	"Search tags…": "Tags suchen…"
+	"Search tags…": "Tags suchen…",
+	"List": "Liste",
+	"Skipped": "Übersprungen",
+	"Clear": "Zurücksetzen",
+	"Edit note": "Notiz bearbeiten",
+	"Add with note": "Mit Notiz hinzufügen",
+	"Tap a day to log it": "Tippe auf einen Tag, um ihn einzutragen",
+	"Previous month": "Vorheriger Monat",
+	"Next month": "Nächster Monat",
+	"On track": "Im Plan",
+	"At risk": "Gefährdet",
+	"Off track": "Im Rückstand",
+	"No date": "Kein Datum",
+	"Business · status + 14-day history": "Business · Status + 14-Tage-Verlauf"
 };

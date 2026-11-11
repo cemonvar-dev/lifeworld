@@ -392,5 +392,18 @@ window.I18N_MESSAGES.it = {
 	"Its {n} sub-tags will move to the top level.": "I suoi {n} sottotag passeranno al livello principale.",
 	"This can't be undone.": "L’operazione non può essere annullata.",
 	"Couldn't save. Please try again.": "Impossibile salvare. Riprova.",
-	"Search tags…": "Cerca tag…"
+	"Search tags…": "Cerca tag…",
+	"List": "Elenco",
+	"Skipped": "Saltato",
+	"Clear": "Cancella",
+	"Edit note": "Modifica nota",
+	"Add with note": "Aggiungi con nota",
+	"Tap a day to log it": "Tocca un giorno per registrarlo",
+	"Previous month": "Mese precedente",
+	"Next month": "Mese successivo",
+	"On track": "In linea",
+	"At risk": "A rischio",
+	"Off track": "In ritardo",
+	"No date": "Nessuna data",
+	"Business · status + 14-day history": "Business · stato + storico 14 giorni"
 };

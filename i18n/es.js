@@ -392,5 +392,18 @@ window.I18N_MESSAGES.es = {
 	"Its {n} sub-tags will move to the top level.": "Sus {n} subetiquetas pasarán al nivel superior.",
 	"This can't be undone.": "No se puede deshacer.",
 	"Couldn't save. Please try again.": "No se pudo guardar. Inténtalo de nuevo.",
-	"Search tags…": "Buscar etiquetas…"
+	"Search tags…": "Buscar etiquetas…",
+	"List": "Lista",
+	"Skipped": "Saltado",
+	"Clear": "Borrar",
+	"Edit note": "Editar nota",
+	"Add with note": "Añadir con nota",
+	"Tap a day to log it": "Toca un día para registrarlo",
+	"Previous month": "Mes anterior",
+	"Next month": "Mes siguiente",
+	"On track": "En curso",
+	"At risk": "En riesgo",
+	"Off track": "Atrasado",
+	"No date": "Sin fecha",
+	"Business · status + 14-day history": "Business · estado + historial de 14 días"
 };

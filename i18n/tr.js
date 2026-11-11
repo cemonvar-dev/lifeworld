@@ -392,5 +392,18 @@ window.I18N_MESSAGES.tr = {
 	"Its {n} sub-tags will move to the top level.": "{n} alt etiketi en üst seviyeye taşınacak.",
 	"This can't be undone.": "Bu işlem geri alınamaz.",
 	"Couldn't save. Please try again.": "Kaydedilemedi. Lütfen tekrar dene.",
-	"Search tags…": "Etiket ara…"
+	"Search tags…": "Etiket ara…",
+	"List": "Liste",
+	"Skipped": "Atlandı",
+	"Clear": "Temizle",
+	"Edit note": "Notu düzenle",
+	"Add with note": "Notla ekle",
+	"Tap a day to log it": "Kaydetmek için bir güne dokun",
+	"Previous month": "Önceki ay",
+	"Next month": "Sonraki ay",
+	"On track": "Yolunda",
+	"At risk": "Riskte",
+	"Off track": "Geride",
+	"No date": "Tarih yok",
+	"Business · status + 14-day history": "Business · durum + 14 günlük geçmiş"
 };

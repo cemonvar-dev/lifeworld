@@ -177,7 +177,9 @@ function healthCounts(task) {
 const HEALTH_ICON_SETS = {
 	weather: { Thriving: '🌞', Healthy: '☀️', Growing: '⛅', Wilting: '🌧️', Dying: '⚡' },
 	plants:  { Thriving: '🌳', Healthy: '🌿', Growing: '🌱', Wilting: '🥀', Dying: '🍂' },
-	ocean:   { Thriving: '🐠', Healthy: '🐟', Growing: '🪸', Wilting: '🫧', Dying: '🦴' }
+	ocean:   { Thriving: '🐠', Healthy: '🐟', Growing: '🪸', Wilting: '🫧', Dying: '🦴' },
+	// Business: plain status colors; cards show a 14-day history strip instead of a picture.
+	business: { Thriving: '🟢', Healthy: '🟢', Growing: '🟡', Wilting: '🟠', Dying: '🔴' }
 };
 function getHealthIconStyle() {
 	// A stored value may name a set that no longer exists.
@@ -192,7 +194,7 @@ function setHealthIconStyle(style) {
 // Tile header banner for a health tier, matching the chosen icon set.
 function healthBannerSrc(tier) {
 	const style = getHealthIconStyle();
-	return style === 'weather'
+	return style === 'weather' || style === 'business' // business has no banner art; fall back for onboarding previews
 		? `styling/icons/weather/${tier}.jpg`
 		: `styling/icons/${style}/${tier}.svg`;
 }
@@ -563,8 +565,11 @@ function renderGallery(filteredTiles) {
 			const tp = tilePlant({ status: tile.taskStatus }, tile.health);
 			const tileColor = tp.color || tile.healthColor || 'bg-white';
 			// Remove color class from tile, use data attribute for gradient
-			tileDiv.className = `tile relative rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
-			tileDiv.setAttribute('data-tilecolor', tileColor);
+			const businessCard = getHealthIconStyle() === 'business' && window.businessTileHtml;
+			tileDiv.className = businessCard
+				? 'tile relative rounded-xl border border-slate-200 bg-white shadow-sm p-4 pl-5 flex flex-col gap-2.5 hover:shadow-md hover:border-slate-300 transition cursor-pointer'
+				: `tile relative rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
+			tileDiv.setAttribute('data-tilecolor', businessCard ? 'bg-white' : tileColor);
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const lastDone = tile.lastDone ? new Date(tile.lastDone).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
@@ -580,7 +585,7 @@ function renderGallery(filteredTiles) {
 			// Short nudge on struggling tiles only, to keep the list calm.
 			const cardHint = !tp.finished && tile.health < 40 ? tileSuggestion(rawTiles[tile.id])?.hint : '';
 			const isPinned = !!(rawTiles[tile.id] && rawTiles[tile.id].pinned);
-			tileDiv.innerHTML = `
+			tileDiv.innerHTML = businessCard ? window.businessTileHtml(tile, { isPinned, nextDue, nextDueClass, lastDone, tp, groupTag: tag }) : `
 				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
 				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${escapeHtml(tile.name)}</div>
@@ -877,13 +882,20 @@ function openTilePopup(tileId) {
 			<button type="button" data-tab="timeline" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-blue-500 text-blue-600 -mb-px transition">Timeline</button>
 			<button type="button" data-tab="attachments" class="detail-tab px-3 py-2 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-600 -mb-px transition">Attachments</button>
 		</div>
-		<div class="h-56 shrink-0 overflow-y-auto overscroll-contain -mx-1 px-1">
+		<div class="h-80 shrink-0 overflow-y-auto overscroll-contain -mx-1 px-1">
 				<div id="tabPanelTimeline" class="detail-tab-panel">
-					<div class="flex items-center justify-end mb-1">
+					<div class="flex items-center justify-between mb-2">
+						<div id="tlViewSwitch" class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-semibold">
+							<button type="button" data-tlview="calendar" class="px-3 py-1 rounded-md transition">Calendar</button>
+							<button type="button" data-tlview="list" class="px-3 py-1 rounded-md transition">List</button>
+						</div>
 						<button id="addLogBtn" class="text-blue-500 hover:text-blue-700 text-2xl font-bold leading-none transition" title="Add log">+</button>
 					</div>
-					<div>${timelineHtml}</div>
-					<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
+					<div id="tileCalendarMount"></div>
+					<div id="tileTimelineList">
+						<div>${timelineHtml}</div>
+						<div class="text-xs text-slate-400 mt-2">Total logs: ${logs.length}</div>
+					</div>
 				</div>
 				<div id="tabPanelAttachments" class="detail-tab-panel hidden">
 					<div class="flex items-center justify-end mb-2">
@@ -1158,6 +1170,7 @@ function openTilePopup(tileId) {
 
 	// Wire up add log button
 	document.getElementById('addLogBtn').addEventListener('click', () => openAddLogPopup());
+	if (window.mountTileCalendar) window.mountTileCalendar(tileId);
 
 	// Wire up attachments (photos / screenshots / files) — Premium feature.
 	const addAttachmentBtn = document.getElementById('addAttachmentBtn');
