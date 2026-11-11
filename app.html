@@ -7,7 +7,7 @@
 	<title>Fiblia</title>
 	<link rel="icon" href="logo.png" />
 	<link rel="apple-touch-icon" href="logo.png" />
-	<script src="i18n.js?v=17"></script>
+	<script src="i18n.js?v=18"></script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 	<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -195,15 +195,22 @@
 		</footer>
 	</main>
 
-	<!-- Tag Filter Popup -->
-	<div id="tagFilterOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[95%] max-w-2xl max-h-[80vh] flex flex-col p-5 relative">
-			<div class="flex items-center gap-2 mb-3">
-				<span class="w-9 shrink-0 text-lg text-center">🏷️</span>
-				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Filter by Tag</div>
-				<button id="closeTagFilter" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
+	<!-- Tags panel (rendered by tagpanel.js) -->
+	<div id="tagFilterOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center sm:p-4">
+		<div id="tagPanel" role="dialog" aria-modal="true" aria-labelledby="tagPanelTitle" class="relative bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl shadow-slate-900/15 border border-slate-200/70 h-[85vh] sm:h-auto sm:max-h-[80vh] flex flex-col">
+			<div class="sm:hidden mx-auto mt-2 h-1 w-10 rounded-full bg-slate-200"></div>
+			<div class="flex items-center gap-2 px-5 pt-3 sm:pt-5 pb-3">
+				<h2 id="tagPanelTitle" class="flex-1 text-lg font-semibold text-slate-800 tracking-tight">Tags</h2>
+				<button id="tagNewBtn" type="button" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"><svg class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg><span>New</span></button>
+				<button id="closeTagFilter" type="button" aria-label="Close" class="grid place-items-center h-9 w-9 shrink-0 rounded-full text-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">&times;</button>
 			</div>
-			<div id="tagFilterGrid" class="flex flex-col gap-0.5 overflow-y-auto min-h-[200px] max-h-[60vh] px-2"></div>
+			<div id="tagSearchWrap" class="px-5 pb-2">
+				<div class="relative">
+					<svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.5 13.5L17 17"/></svg>
+					<input id="tagSearch" type="search" autocomplete="off" class="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-100 border border-transparent text-sm focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100 transition" />
+				</div>
+			</div>
+			<div id="tagFilterGrid" class="flex-1 min-h-[220px] overflow-y-auto overscroll-contain px-2 sm:px-3 pb-5"></div>
 		</div>
 	</div>
 
@@ -451,7 +458,8 @@
 	<script src="feedback.js?v=1"></script>
 	<script src="onboarding.js?v=3"></script>
 	<script src="progress.js?v=1"></script>
-	<script src="quicklist.js?v=4"></script>
+	<script src="quicklist.js?v=5"></script>
 	<script src="tiledrag.js?v=1"></script>
+	<script src="tagpanel.js?v=1"></script>
 </body>
 </html>
