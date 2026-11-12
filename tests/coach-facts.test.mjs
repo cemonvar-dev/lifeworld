@@ -15,7 +15,7 @@ const NOW = RealDate.parse('2026-11-08T09:00:00Z');
 class Fixed extends RealDate { constructor(...a) { a.length ? super(...a) : super(NOW); } static now() { return NOW; } }
 const label = h => h >= 80 ? 'Thriving' : h >= 40 ? 'Growing' : 'Dying';
 const env = { Date: Fixed, monthlyDateFor: (t, y, m) => new RealDate(y, m, 1), tilePlant: t => ({ finished: t.status === 'completed' }), healthToPlant: h => ({ label: label(h) }), tagName: id => id };
-const { tileCoachFacts: facts, coachSummary: summary, coachUsage: usage } = new Function(...Object.keys(env), code + '\n' + between('// How the user has been using the app overall', 'function buildTaskContext') + '\nreturn { tileCoachFacts, coachSummary, coachUsage };')(...Object.values(env));
+const { tileCoachFacts: facts, coachSummary: summary, coachUsage: usage, coachHistory: history } = new Function(...Object.keys(env), code + '\n' + between('// Long-term record of one task', '// The plan the user agreed') + '\nreturn { tileCoachFacts, coachSummary, coachUsage, coachHistory };')(...Object.values(env));
 
 const ago = n => { const d = new RealDate(NOW); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const OLD = '2026-01-01T09:00:00Z';
@@ -82,4 +82,12 @@ test('usage notices when the user has been away', () => {
 	assert.match(text, /away from the app for 40 days/);
 	assert.doesNotMatch(usage([daily(range(0, 10).map(n => log(n)))]), /away/);
 	assert.match(usage([daily([])]), /Nothing has ever been logged/);
+});
+
+test('history gives totals, recent months and the longest streak', () => {
+	const text = history(daily([...range(60, 73).map(n => log(n)), log(3), log(5, 'skipped')]));
+	assert.match(text, /^15 done since /);
+	assert.match(text, /per month: .*\(so far\)/);
+	assert.match(text, /longest streak 14 days in a row/);
+	assert.strictEqual(history(daily([log(2, 'skipped')])), '');
 });

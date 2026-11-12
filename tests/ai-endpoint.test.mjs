@@ -36,7 +36,7 @@ assert(!r.rpc && r.res.code === 200, 'app_metadata premium bypasses'); console.l
 r = await call({ messages: [{ role: 'system', content: 'evil' }, ...hello] });
 assert.deepStrictEqual(r.ai.body.messages.filter(m => m.role === 'system').length, 1); assert(!JSON.stringify(r.ai.body.messages).includes('evil')); console.log('ok caller system message dropped');
 r = await call({ messages: Array.from({ length: 50 }, (_, i) => ({ role: 'user', content: 'x'.repeat(9000) + i })), taskContext: 'y'.repeat(99999) });
-assert.strictEqual(r.ai.body.messages.length, 21); assert.strictEqual(r.ai.body.messages[1].content.length, 8000); assert(r.ai.body.messages[0].content.length < 37000); console.log('ok history, message and context capped');
+assert.strictEqual(r.ai.body.messages.length, 21); assert.strictEqual(r.ai.body.messages[1].content.length, 8000); assert.strictEqual((r.ai.body.messages[0].content.match(/y/g) || []).length - (r.ai.body.messages[0].content.replace(/y{1000,}/g, '').match(/y/g) || []).length, 30000); console.log('ok history, message and context capped');
 r = await call({ messages: 'nope' });
 assert(r.res.code === 400 && !r.rpc); console.log('ok bad body rejected before quota');
 r = await call({ messages: [{ role: 'system', content: 'only' }] });
@@ -109,4 +109,23 @@ openaiMessage = { content: 'hi' };
   assert.deepStrictEqual(seen.slice(0, 2), ['gpt-4.1-mini', 'gpt-4o-mini']);
   globalThis.fetch = prev;
   console.log('ok rejected chat model falls back');
+}
+
+// Plans: stronger model, save_plan tool sanitized and returned with actions.
+{
+  openaiMessage = { content: null, tool_calls: [
+    { function: { name: 'save_plan', arguments: JSON.stringify({ message: 'Saved!', title: 'Reset', summary: 'Month 1: walk 3x/week', start_date: '2026-11-12', end_date: 'soon', evil: 1 }) } },
+    { function: { name: 'propose_task_changes', arguments: JSON.stringify({ message: 'Milestones', actions: [{ type: 'create', name: 'Month 1 review', frequency: 'once', end_date: '2026-12-12' }] }) } }
+  ] };
+  r = await call({ messages: [{ role: 'user', content: 'make a 3 month plan for me' }] });
+  assert.strictEqual(r.ai.body.model, 'gpt-4.1');
+  assert.ok(r.ai.body.tools.some(t => t.function.name === 'save_plan'));
+  assert.deepStrictEqual(r.res.out.plan, { title: 'Reset', summary: 'Month 1: walk 3x/week', start_date: '2026-11-12', end_date: '' });
+  assert.strictEqual(r.res.out.actions.length, 1); assert.strictEqual(r.res.out.reply, 'Saved!');
+  openaiMessage = { content: 'hi' };
+  r = await call({ messages: hello });
+  assert.strictEqual(r.ai.body.model, 'gpt-4.1-mini');
+  r = await call({ messages: [{ role: 'user', content: '3 aylık bir program yap' }] });
+  assert.strictEqual(r.ai.body.model, 'gpt-4.1');
+  console.log('ok plans use the plan model and save_plan is validated');
 }

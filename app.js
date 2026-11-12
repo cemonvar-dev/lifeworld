@@ -312,6 +312,7 @@ async function fetchTilesFromSupabase() {
 	if (accountLanguage && accountLanguage !== i18n.lang) i18n.setLanguage(accountLanguage);
 	const accountVoice = session.user.user_metadata && session.user.user_metadata.voice_language;
 	if (accountVoice) setVoiceLang(accountVoice);
+	window.coachPlan = (session.user.user_metadata && session.user.user_metadata.coach_plan) || null; // plan agreed with the AI coach
 
 	// Identify the signed-in user in PostHog analytics
 	if (window.posthogIdentify) window.posthogIdentify(session.user);
@@ -3283,6 +3284,35 @@ function coachSummary(tasks) {
 	return [`Active tiles by health: ${levelText}`, `Routine tiles with no Done in 30 days: ${inactive}`, 'Areas, weakest first:', ...areas].join('\n');
 }
 
+// Long-term record of one task: totals, recent months, best month, longest daily streak.
+function coachHistory(task) {
+	const days = [...new Set((task.task_logs || []).filter(l => l.status === 'done' || l.status === 'completed').map(logDay).filter(Boolean))].sort();
+	if (!days.length) return '';
+	const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	const perMonth = {};
+	days.forEach(d => { const k = d.slice(0, 7); perMonth[k] = (perMonth[k] || 0) + 1; });
+	const now = new Date();
+	const recent = [];
+	for (let i = 3; i >= 0; i--) {
+		const m = new Date(now.getFullYear(), now.getMonth() - i, 1);
+		const k = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, '0')}`;
+		recent.push(`${MON[m.getMonth()]} ${perMonth[k] || 0}${i === 0 ? ' (so far)' : ''}`);
+	}
+	const best = Object.entries(perMonth).sort((a, b) => b[1] - a[1])[0];
+	const parts = [`${days.length} done since ${days[0]}`, `per month: ${recent.join(', ')}`];
+	if (best && best[1] >= 3) parts.push(`best month ${MON[Number(best[0].slice(5)) - 1]} ${best[0].slice(0, 4)} (${best[1]})`);
+	if ((task.frequency_mode || 'daily') === 'daily') {
+		let run = 1, longest = 1, end = days[0];
+		for (let i = 1; i < days.length; i++) {
+			const gap = Math.round((new Date(days[i] + 'T00:00:00') - new Date(days[i - 1] + 'T00:00:00')) / 86400000);
+			run = gap === 1 ? run + 1 : 1;
+			if (run > longest) { longest = run; end = days[i]; }
+		}
+		if (longest >= 3) parts.push(`longest streak ${longest} days in a row (ended ${end})`);
+	}
+	return parts.join('; ');
+}
+
 // How the user has been using the app overall (presence vs. absence).
 function coachUsage(tasks) {
 	const days = [...new Set(tasks.flatMap(t => (t.task_logs || []).map(logDay)).filter(Boolean))].sort();
@@ -3299,6 +3329,26 @@ function coachUsage(tasks) {
 	return lines.join('\n');
 }
 
+// The plan the user agreed with the coach (saved in their account), if still running.
+function coachPlanContext() {
+	const p = window.coachPlan;
+	if (!p || !p.summary) return '';
+	const today = todayLocal();
+	if (p.end_date && today > p.end_date) return `\n\nPREVIOUS PLAN (ended ${p.end_date}): "${p.title || 'Plan'}"\n${p.summary}`;
+	const start = p.start_date || p.saved_at || today;
+	const week = Math.max(1, Math.floor(coachDaysSince(start) / 7) + 1);
+	const weeks = p.end_date ? Math.max(1, Math.ceil((coachDaysSince(start) - coachDaysSince(p.end_date)) / 7)) : null;
+	return `\n\nACTIVE PLAN "${p.title || 'Plan'}" (${start} → ${p.end_date || 'open'}; now week ${week}${weeks ? ' of ' + weeks : ''}):\n${p.summary}`;
+}
+
+async function saveCoachPlan(plan) {
+	const value = plan.cancel ? null : { title: plan.title || '', summary: plan.summary, start_date: plan.start_date || todayLocal(), end_date: plan.end_date || '', saved_at: todayLocal() };
+	window.coachPlan = value;
+	const { error } = await supa.auth.updateUser({ data: { coach_plan: value } });
+	if (error) console.error('Plan save error:', error);
+	window.track?.(plan.cancel ? 'coach_plan_cancelled' : 'coach_plan_saved');
+}
+
 function buildTaskContext() {
 	const taskSummaries = Object.values(rawTiles).map(task => {
 		const logs = task.task_logs || [];
@@ -3309,7 +3359,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagPath).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagPath).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}${(h => h ? ' | history: ' + h : '')(coachHistory(task))}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;
@@ -3324,7 +3374,7 @@ Overall avg health: ${overallHealth}%
 Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} still due today
 
 USAGE:
-${coachUsage(Object.values(rawTiles))}
+${coachUsage(Object.values(rawTiles))}${coachPlanContext()}
 
 SUMMARY:
 ${coachSummary(Object.values(rawTiles))}
@@ -3774,7 +3824,8 @@ async function sendAiMessage(text, options = {}) {
 
 		   const data = await response.json();
 		   window.track?.('ai_message_sent', { language: i18n.lang });
-		   const reply = data.reply || _t('No response.');
+		   const reply = data.reply || (data.plan ? '' : _t('No response.'));
+		   if (data.plan) await saveCoachPlan(data.plan);
 		   if (Array.isArray(data.actions) && data.actions.length) {
 			   if (options.listTag) data.actions.forEach(a => {
 				   if (a.type !== 'create') return;
@@ -3783,8 +3834,15 @@ async function sendAiMessage(text, options = {}) {
 			   });
 			   appendAiActionPreview(data.actions, data.reply);
 		   } else {
-			   aiChatHistory.push({ role: 'assistant', content: reply });
-			   appendAiMessage('assistant', reply);
+			   if (reply) {
+				   aiChatHistory.push({ role: 'assistant', content: reply });
+				   appendAiMessage('assistant', reply);
+			   }
+		   }
+		   if (data.plan) {
+			   const note = data.plan.cancel ? _t('Plan cleared.') : _t("📌 Plan saved. I'll check in on it with you.");
+			   aiChatHistory.push({ role: 'assistant', content: note });
+			   appendAiMessage('assistant', note);
 		   }
 	} catch (err) {
 		const loading = document.getElementById('aiLoadingBubble');

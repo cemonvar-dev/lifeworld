@@ -405,5 +405,7 @@ window.I18N_MESSAGES.it = {
 	"At risk": "A rischio",
 	"Off track": "In ritardo",
 	"No date": "Nessuna data",
-	"Business · status + 14-day history": "Business · stato + storico 14 giorni"
+	"Business · status + 14-day history": "Business · stato + storico 14 giorni",
+	"📌 Plan saved. I'll check in on it with you.": "📌 Piano salvato. Lo seguiremo insieme.",
+	"Plan cleared.": "Piano rimosso."
 };

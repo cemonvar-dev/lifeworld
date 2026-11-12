@@ -405,5 +405,7 @@ window.I18N_MESSAGES.tr = {
 	"At risk": "Riskte",
 	"Off track": "Geride",
 	"No date": "Tarih yok",
-	"Business · status + 14-day history": "Business · durum + 14 günlük geçmiş"
+	"Business · status + 14-day history": "Business · durum + 14 günlük geçmiş",
+	"📌 Plan saved. I'll check in on it with you.": "📌 Plan kaydedildi. Birlikte takip edeceğiz.",
+	"Plan cleared.": "Plan kaldırıldı."
 };

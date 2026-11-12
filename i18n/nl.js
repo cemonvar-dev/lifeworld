@@ -405,5 +405,7 @@ window.I18N_MESSAGES.nl = {
 	"At risk": "Risico",
 	"Off track": "Achter",
 	"No date": "Geen datum",
-	"Business · status + 14-day history": "Business · status + 14 dagen historie"
+	"Business · status + 14-day history": "Business · status + 14 dagen historie",
+	"📌 Plan saved. I'll check in on it with you.": "📌 Plan opgeslagen. Ik kom er samen met je op terug.",
+	"Plan cleared.": "Plan verwijderd."
 };

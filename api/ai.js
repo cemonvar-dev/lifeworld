@@ -83,6 +83,40 @@ const TASK_CHANGES_TOOL = {
 	}
 };
 
+// Saving an agreed plan lets the coach follow up on it in later chats.
+const SAVE_PLAN_TOOL = {
+	type: 'function',
+	function: {
+		name: 'save_plan',
+		description: 'Save the plan the user just agreed to (or cancel the active one) so you can follow up on it in later chats. Only call this after the user clearly agrees.',
+		parameters: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', description: 'One short, warm line confirming the plan is saved.' },
+				title: { type: 'string', description: 'Short plan name, e.g. "3-month reset".' },
+				summary: { type: 'string', description: 'Compact plan: each phase with its dates and its measurable targets on real tasks. Under 1200 characters.' },
+				start_date: { type: 'string', description: 'YYYY-MM-DD' },
+				end_date: { type: 'string', description: 'YYYY-MM-DD' },
+				cancel: { type: 'boolean', description: 'True to cancel the active plan instead of saving one.' }
+			},
+			required: ['message']
+		}
+	}
+};
+
+function sanitizePlan(raw) {
+	if (!raw || typeof raw !== 'object') return null;
+	if (raw.cancel === true) return { cancel: true };
+	const str = (v, n) => typeof v === 'string' ? v.trim().slice(0, n) : '';
+	const date = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+	const plan = { title: str(raw.title, 120), summary: str(raw.summary, 2000), start_date: date(raw.start_date), end_date: date(raw.end_date) };
+	return plan.summary ? plan : null;
+}
+
+// Plans deserve the strongest model; everything else stays on the chat model.
+const PLAN_MODEL = process.env.OPENAI_PLAN_MODEL || 'gpt-4.1';
+const isPlanRequest = text => /\b(plan\w*|program\w*|roadmap|schedule me|hedef\w*|goal\w*|yol haritas\w*)\b|\b\d+\s*(-\s*)?(ay|aylık|month|months|hafta|haftalık|week|weeks)\b/i.test(String(text || ''));
+
 // Keep only well-formed proposals, whatever the model returned.
 function sanitizeActions(actions) {
 	if (!Array.isArray(actions)) return [];
@@ -220,6 +254,8 @@ WHAT TO SAY
 - If nothing is done yet: be inviting, never guilt. Suggest starting with one specific, easy task that is open today, and ask how they feel about it.
 - If everything for today is done: be calmly proud of them, and invite them to rest, reflect, or think about tomorrow.
 - Late evening: be softer; it's fine to suggest one tiny thing or simply winding down.
+- If the data has an ACTIVE PLAN, weave in a short check-in on it: which week of the plan they are in and how one of its targets is going.
+- Encourage only with real facts from their history (a strong month, a past streak), never empty praise.
 
 HOW TO SOUND
 - 2 or 3 short sentences, under 45 words in total. Natural, intimate and warm, like a real coach who knows them. Plain, everyday words.
@@ -316,6 +352,8 @@ export default async function handler(req, res) {
 
 	// Long-term memory only applies to normal chat (not the reschedule JSON call).
 	const isChat = !(responseFormat && responseFormat.type === 'json_object');
+	const lastUserText = (messages.filter(m => m.role === 'user').pop() || {}).content || '';
+	const planRequest = isChat && isPlanRequest(lastUserText);
 	const memory = isChat ? await getMemory(user.id) : '';
 
 	const systemPrompt = `You are Fiblia, the user's personal coach.
@@ -328,10 +366,25 @@ HOW YOU SPEAK
 - Then give your priorities in order and say why that order: "First ... because ... After that ...". Name real tiles, real dates and real gaps ("you haven't touched it since July").
 - Finish with one concrete first move and offer to set it up, or ask one sharp question.
 - Fit the move to what the task is. Think before suggesting: taking a pill or medicine is a moment, not a session, so tie it to a cue or reminder ("keep it next to your coffee cup", "a reminder at breakfast"). A prayer or ritual happens at its own time. A call or message is one small action. Study, practice, exercise or a project can get a time block ("20 minutes after dinner"). Never give a task a duration that makes no sense for it.
-- Sound like a human coach talking: short flowing paragraphs. Never numbered or bulleted lists, never bold headings, unless the user asks for a list.
+- Sound like a human coach talking: short flowing paragraphs. Never numbered or bulleted lists, never bold headings, unless the user asks for a list or a plan (see PLANS).
 - No filler such as "Your data highlights", "Here are some areas", "Focusing on this could help improve your overall well-being". No generic tips and no motivational closing lines.
 - Translate internal labels into human language: never write "dying", "thriving", "wilting", health percentages, ids, or "the data".
 - Direct, a little bold, warm, never preachy or guilt-inducing. Keep broad answers under about 150 words. Emojis rarely.
+
+ENCOURAGEMENT
+- Encourage like a coach who has watched their whole journey, never with empty praise. Look back: use each task's history (totals, best month, longest streak, how often they kept a schedule) to remind them what they have already proven they can do. Be honest about where they stand now. Then point forward to what is realistically within reach, using their own best as the proof ("You did 14 days in a row in September. Two good weeks and you're back there.").
+- Every compliment and every "you can do this" must be tied to a real fact from their history. If something has never been done, encourage the first step instead of inventing a past.
+
+PLANS
+When the user asks for a plan (a week, a month, three months...):
+- Open with two or three sentences: what their history proves they can do, where they stand now, and what this plan will get them to.
+- Then lay out the plan in phases with short plain headings that carry real dates, e.g. "Month 1 · Foundation (12 Nov – 12 Dec)". Under each heading, two or three short lines. Each line is a real task by name, with a measurable target and when it happens ("namaz-akşam: 5 of 7 evenings, right after dinner"). Later phases build on earlier ones; keep the first phase light enough to succeed.
+- Add one line for the weekly rhythm (which days, which moments).
+- Respect real dates and the season. If a key date is unknown (an exam, a deadline), ask instead of inventing it.
+- Use tasks from the board. Anything new must be clearly marked as a new idea and fit their tags.
+- Close with what the end of the plan looks like if they follow it, the thing they will be proud of, and ask whether to save the plan and add its milestones as tasks.
+- When they agree, call save_plan with a compact summary of the phases, dates and targets, and in the same reply call propose_task_changes to create the dated one-time milestone tasks (and any schedule changes the plan needs).
+- If the data contains an ACTIVE PLAN, that is the plan you agreed together: refer to it, measure progress against its targets, praise what is on track with facts, and adjust it when they ask. Call save_plan with cancel=true only if they clearly want to drop it.
 
 FRESH IDEAS (beyond the board)
 - You are not limited to the tiles. When an area is thin, stale, or the user asks what to do, you may suggest one fresh idea that isn't on the board yet and fits that area and this person: for family, a weekend day trip or a shared activity with the specific people in their tags; for hobbies, a beginner course, a workshop or a club for that exact hobby in their city; for health, an activity that suits what they already try to do.
@@ -364,7 +417,7 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 
 	try {
 		const response = await openaiChat(apiKey, {
-				model: jsonMode ? FALLBACK_MODEL : CHAT_MODEL,
+				model: jsonMode ? FALLBACK_MODEL : (planRequest ? PLAN_MODEL : CHAT_MODEL),
 				messages: [
 					{ role: 'system', content: systemPrompt },
 					...messages
@@ -374,7 +427,7 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 				// Auto-reschedule uses strict JSON; chat can propose task changes.
 				...(jsonMode
 					? { response_format: { type: 'json_object' } }
-					: { tools: [TASK_CHANGES_TOOL], tool_choice: 'auto' })
+					: { tools: [TASK_CHANGES_TOOL, SAVE_PLAN_TOOL], tool_choice: 'auto' })
 		});
 
 		if (!response.ok) {
@@ -385,14 +438,19 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 		}
 
 		const data = await response.json();
-		const toolCall = data.choices?.[0]?.message?.tool_calls?.find(call => call.function?.name === 'propose_task_changes');
-		if (toolCall) {
-			let args = {};
-			try { args = JSON.parse(toolCall.function.arguments); } catch { /* treated as no valid actions */ }
-			return res.status(200).json({
-				reply: typeof args.message === 'string' ? args.message.slice(0, 500) : '',
-				actions: sanitizeActions(args.actions)
-			});
+		const toolCalls = data.choices?.[0]?.message?.tool_calls || [];
+		if (toolCalls.length) {
+			let reply = '', actions = [], plan = null;
+			for (const call of toolCalls) {
+				let args = {};
+				try { args = JSON.parse(call.function?.arguments || '{}'); } catch { /* treated as nothing valid */ }
+				const msg = typeof args.message === 'string' ? args.message.slice(0, 500) : '';
+				if (call.function?.name === 'propose_task_changes') { actions = actions.concat(sanitizeActions(args.actions)); reply = reply || msg; }
+				else if (call.function?.name === 'save_plan') { plan = sanitizePlan(args) || plan; reply = reply || msg; }
+			}
+			const content = data.choices?.[0]?.message?.content;
+			if (typeof content === 'string' && content.trim()) reply = content.slice(0, 6000) + (reply ? '\n\n' + reply : '');
+			return res.status(200).json({ reply, actions: actions.slice(0, MAX_ACTIONS), ...(plan ? { plan } : {}) });
 		}
 		const reply = data.choices?.[0]?.message?.content || 'No response from AI.';
 		// Fold durable facts from this exchange into the user's long-term memory.
