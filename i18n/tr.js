@@ -472,5 +472,7 @@ window.I18N_MESSAGES.tr = {
 	"Pick a time": "Saat seç",
 	"Repeats": "Tekrar",
 	"Next: {date}": "Sonraki: {date}",
-	"Tap the selected one again to clear it.": "Seçiliye tekrar dokunursan kaldırılır."
+	"Tap the selected one again to clear it.": "Seçiliye tekrar dokunursan kaldırılır.",
+	"Cleared": "Temizlendi",
+	"← Skip · Done →": "← Atla · Yapıldı →"
 };

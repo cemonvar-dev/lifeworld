@@ -472,5 +472,7 @@ window.I18N_MESSAGES.de = {
 	"Pick a time": "Zeit wählen",
 	"Repeats": "Wiederholung",
 	"Next: {date}": "Nächstes: {date}",
-	"Tap the selected one again to clear it.": "Tippe erneut auf die Auswahl, um sie zu entfernen."
+	"Tap the selected one again to clear it.": "Tippe erneut auf die Auswahl, um sie zu entfernen.",
+	"Cleared": "Zurückgesetzt",
+	"← Skip · Done →": "← Überspringen · Erledigt →"
 };

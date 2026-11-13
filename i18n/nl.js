@@ -472,5 +472,7 @@ window.I18N_MESSAGES.nl = {
 	"Pick a time": "Kies een tijd",
 	"Repeats": "Herhaling",
 	"Next: {date}": "Volgende: {date}",
-	"Tap the selected one again to clear it.": "Tik nogmaals op de keuze om die te wissen."
+	"Tap the selected one again to clear it.": "Tik nogmaals op de keuze om die te wissen.",
+	"Cleared": "Gewist",
+	"← Skip · Done →": "← Overslaan · Gedaan →"
 };
