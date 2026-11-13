@@ -147,8 +147,9 @@
 	const isControl = el => el.closest('button, a, input, textarea, select');
 
 	// ---- Mouse ----
+	const selecting = () => document.body.classList.contains('tile-selecting'); // multiselect.js
 	document.addEventListener('mousedown', e => {
-		if (e.button !== 0) return;
+		if (e.button !== 0 || selecting() || e.ctrlKey || e.metaKey || e.shiftKey) return;
 		const tileEl = e.target.closest('#gallery .tile[data-tile-id]');
 		if (!tileEl || isControl(e.target)) return;
 		pending = { tileEl, x: e.clientX, y: e.clientY, touch: false };
@@ -165,7 +166,7 @@
 
 	// ---- Touch (long-press) ----
 	document.addEventListener('touchstart', e => {
-		if (e.touches.length !== 1) { cancelPending(); return; }
+		if (e.touches.length !== 1 || selecting()) { cancelPending(); return; }
 		const tileEl = e.target.closest('#gallery .tile[data-tile-id]');
 		if (!tileEl || isControl(e.target)) return;
 		const t = e.touches[0];

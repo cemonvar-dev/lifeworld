@@ -7,7 +7,7 @@
 	<title>Fiblia</title>
 	<link rel="icon" href="logo.png" />
 	<link rel="apple-touch-icon" href="logo.png" />
-	<script src="i18n.js?v=21"></script>
+	<script src="i18n.js?v=22"></script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 	<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -116,6 +116,7 @@
 			</div>
 			<div id="navMenu" class="hidden sm:flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center gap-2 w-full sm:w-auto">
 				<button id="calendarMenuBtn" title="Calendar" aria-label="Calendar" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border border-amber-200/80 bg-amber-50/80 text-amber-700 shadow-sm transition-all duration-200 hover:bg-amber-100/80 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="sm:hidden ml-1">Calendar</span></button>
+				<button id="selectModeBtn" title="Select" aria-label="Select" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span class="sm:hidden ml-1">Select</span></button>
 				<button id="filterMenuBtn" title="Filters" aria-label="Filters" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[18px] h-[18px]" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg><span class="sm:hidden ml-1">Filters</span></button>
 				<div id="todaySummaryWrapper" class="relative hidden">
 					<button id="todaySummaryBtn" data-keep-menu aria-label="Today summary" aria-haspopup="true" aria-expanded="false" title="What's done and what's left today" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 w-full sm:w-auto rounded-full text-sm font-medium whitespace-nowrap border bg-white text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0">❓<span class="sm:hidden ml-1">Today summary</span></button>
@@ -461,9 +462,10 @@
 	<script src="onboarding.js?v=3"></script>
 	<script src="progress.js?v=1"></script>
 	<script src="quicklist.js?v=5"></script>
-	<script src="tiledrag.js?v=1"></script>
+	<script src="tiledrag.js?v=2"></script>
 	<script src="tagpanel.js?v=1"></script>
-	<script src="tilecal.js?v=2"></script>
+	<script src="tilecal.js?v=3"></script>
+	<script src="multiselect.js?v=1"></script>
 	<script src="apikeys.js?v=1"></script>
 </body>
 </html>

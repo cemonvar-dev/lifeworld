@@ -91,6 +91,8 @@
 		scheduleReminders();
 	}
 
+	window.clearTileDay = clearDay;
+
 	function closeDayMenu() { document.querySelector('[data-cal-menu]')?.remove(); }
 
 	function openDayMenu(tileId, day, cell, mount) {
