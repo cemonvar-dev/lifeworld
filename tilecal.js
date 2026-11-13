@@ -224,7 +224,7 @@
 		else if (tile.health >= 70) status = { label: _t('On track'), cls: 'bg-emerald-50 text-emerald-700' };
 		else if (tile.health >= 40) status = { label: _t('At risk'), cls: 'bg-amber-50 text-amber-700' };
 		else status = { label: _t('Off track'), cls: 'bg-red-50 text-red-700' };
-		const btnCls = on => `flex-1 h-8 rounded-lg text-xs font-semibold transition ${on ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
+		const btnCls = on => `flex-1 h-8 rounded-lg text-xs font-semibold transition ${on ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`;
 		const due = once && raw.end_date ? parse(raw.end_date).toLocaleDateString(locale(), { day: 'numeric', month: 'short' }) : '';
 		return `
 			<span class="absolute left-0 top-3 bottom-3 w-1 rounded-r-full" style="background:${color}" aria-hidden="true"></span>

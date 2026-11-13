@@ -471,5 +471,6 @@ window.I18N_MESSAGES.fr = {
 	"Tomorrow 09:00": "Demain 09:00",
 	"Pick a time": "Choisir une heure",
 	"Repeats": "Répétition",
-	"Next: {date}": "Prochain : {date}"
+	"Next: {date}": "Prochain : {date}",
+	"Tap the selected one again to clear it.": "Touche à nouveau la sélection pour l’effacer."
 };

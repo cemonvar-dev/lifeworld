@@ -471,5 +471,6 @@ window.I18N_MESSAGES.nl = {
 	"Tomorrow 09:00": "Morgen 09:00",
 	"Pick a time": "Kies een tijd",
 	"Repeats": "Herhaling",
-	"Next: {date}": "Volgende: {date}"
+	"Next: {date}": "Volgende: {date}",
+	"Tap the selected one again to clear it.": "Tik nogmaals op de keuze om die te wissen."
 };

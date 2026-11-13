@@ -96,7 +96,7 @@
 		window.track?.('plan_frequency_set', { frequency: mode });
 	}
 
-	const seg = (items, current, attr) => `<div class="flex flex-wrap gap-1.5">${items.map(([v, label]) => `<button type="button" data-${attr}="${v}" class="px-3 h-8 rounded-lg text-xs font-semibold border transition ${String(current) === String(v) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${label}</button>`).join('')}</div>`;
+	const seg = (items, current, attr) => `<div class="flex flex-wrap gap-1.5">${items.map(([v, label]) => `<button type="button" data-${attr}="${v}" class="px-3 h-8 rounded-lg text-xs font-semibold border transition ${String(current) === String(v) ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${label}</button>`).join('')}</div>`;
 	const label = text => `<div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">${escapeHtml(text)}</div>`;
 
 	function editorHtml(raw) {
@@ -107,18 +107,19 @@
 		const monday = (() => { const d = new Date(); d.setDate(d.getDate() + ((8 - d.getDay()) % 7 || 7)); return iso(d); })();
 		let detail = '';
 		if (mode === 'once') {
-			const chips = [[plus(0), _t('Today')], [plus(1), _t('Tomorrow')], [saturday, _t('This weekend')], [monday, _t('Next week')], ['', _t('No date')]];
+			const chips = [[plus(0), _t('Today')], [plus(1), _t('Tomorrow')], [saturday, _t('This weekend')], [monday, _t('Next week')]];
 			const custom = raw.end_date && !chips.some(c => c[0] === raw.end_date);
 			detail = `${label(_t('Date'))}${seg(chips.map(([v, l]) => [v, escapeHtml(l)]), custom ? '__custom' : (raw.end_date || ''), 'plan-date')}
-				<div class="mt-2 flex items-center gap-2"><span class="text-xs text-slate-500">${escapeHtml(_t('Pick a date'))}</span><input type="date" data-plan-date-pick value="${raw.end_date || ''}" class="rounded-lg border ${custom ? 'border-slate-800' : 'border-slate-200'} px-2 py-1 text-sm" /></div>`;
+				<div class="mt-2 flex items-center gap-2"><span class="text-xs text-slate-500">${escapeHtml(_t('Pick a date'))}</span><input type="date" data-plan-date-pick value="${raw.end_date || ''}" class="rounded-lg border ${custom ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200'} px-2 py-1 text-sm" /></div>
+				<div class="mt-1 text-[11px] text-slate-400">${escapeHtml(_t('Tap the selected one again to clear it.'))}</div>`;
 		} else if (mode === 'weekly') {
 			const days = weekdays(raw);
-			detail = `${label(_t('Days'))}<div class="flex gap-1">${MON_FIRST.map(d => `<button type="button" data-plan-day="${d}" class="flex-1 h-9 rounded-lg text-xs font-semibold border transition ${days.includes(d) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${escapeHtml(dayShort(d))}</button>`).join('')}</div>
+			detail = `${label(_t('Days'))}<div class="flex gap-1">${MON_FIRST.map(d => `<button type="button" data-plan-day="${d}" class="flex-1 h-9 rounded-lg text-xs font-semibold border transition ${days.includes(d) ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${escapeHtml(dayShort(d))}</button>`).join('')}</div>
 				<div class="mt-2 flex flex-wrap gap-1.5">${[['1,2,3,4,5', _t('Weekdays')], ['0,6', _t('Weekends')], ['0,1,2,3,4,5,6', _t('Every day')]].map(([v, l]) => `<button type="button" data-plan-days="${v}" class="px-2.5 h-7 rounded-full text-[11px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">${escapeHtml(l)}</button>`).join('')}</div>`;
 		} else if (mode === 'monthly') {
 			const dom = monthlyDom(raw);
-			detail = `${label(_t('Day of month'))}<div class="grid grid-cols-7 gap-1">${Array.from({ length: 30 }, (_, i) => i + 1).map(d => `<button type="button" data-plan-dom="${d}" class="h-8 rounded-lg text-xs tabular-nums border transition ${dom === d ? 'bg-slate-800 text-white border-slate-800 font-semibold' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${d}</button>`).join('')}
-				<button type="button" data-plan-dom="31" class="col-span-5 h-8 rounded-lg text-xs font-semibold border transition ${dom >= 31 ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${escapeHtml(_t('Last day of the month'))}</button></div>`;
+			detail = `${label(_t('Day of month'))}<div class="grid grid-cols-7 gap-1">${Array.from({ length: 30 }, (_, i) => i + 1).map(d => `<button type="button" data-plan-dom="${d}" class="h-8 rounded-lg text-xs tabular-nums border transition ${dom === d ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${d}</button>`).join('')}
+				<button type="button" data-plan-dom="31" class="col-span-5 h-8 rounded-lg text-xs font-semibold border transition ${dom >= 31 ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${escapeHtml(_t('Last day of the month'))}</button></div>`;
 		}
 		const tod = tileTimeOfDay(raw);
 		const timingT = TIMING.find(x => x[0] === tod);
@@ -131,7 +132,7 @@
 		return `<div class="mt-2 space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
 			<div>${label(_t('Repeats'))}${seg([['once', escapeHtml(_t('Once'))], ['daily', escapeHtml(_t('Every day'))], ['weekly', escapeHtml(_t('Weekly'))], ['monthly', escapeHtml(_t('Monthly'))]], mode, 'plan-freq')}</div>
 			${detail ? `<div>${detail}</div>` : ''}
-			<div>${label(_t('Timing'))}<div class="flex flex-wrap gap-1.5">${TIMING.map(([v, icon, l]) => `<button type="button" data-plan-tod="${v}" class="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold border transition ${tod === v ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}"><span class="leading-none">${icon}</span><span>${escapeHtml(_t(l))}</span></button>`).join('')}</div></div>
+			<div>${label(_t('Timing'))}<div class="flex flex-wrap gap-1.5">${TIMING.filter(t => t[0]).map(([v, icon, l]) => `<button type="button" data-plan-tod="${v}" class="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold border transition ${tod === v ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}"><span class="leading-none">${icon}</span><span>${escapeHtml(_t(l))}</span></button>`).join('')}</div></div>
 			<div>${label(_t('Reminder'))}
 				${remNow ? `<div class="mb-2 flex items-center gap-2 text-sm"><span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">🔔 ${escapeHtml(remNow)}</span><button type="button" data-plan-rem="" class="text-xs text-slate-500 hover:text-red-600">${escapeHtml(_t('Remove'))}</button></div>` : ''}
 				${seg(remOpts, '', 'plan-rem')}
@@ -175,11 +176,11 @@
 			if (get('plan-toggle')) { setOpen(!isOpen()); render(tileId); return; }
 			let b;
 			if ((b = get('plan-freq'))) { if (b.dataset.planFreq !== (raw.frequency_mode || 'daily')) await setFreq(tileId, b.dataset.planFreq); return; }
-			if ((b = get('plan-date'))) { await setField(tileId, 'end_date', b.dataset.planDate || null); return; }
+			if ((b = get('plan-date'))) { const v = b.dataset.planDate; await setField(tileId, 'end_date', v && v !== raw.end_date ? v : null); return; }
 			if ((b = get('plan-day'))) { const d = Number(b.dataset.planDay); const cur = weekdays(raw); const next = cur.includes(d) ? cur.filter(x => x !== d) : [...cur, d]; await setWeekdays(tileId, next); return; }
 			if ((b = get('plan-days'))) { await setWeekdays(tileId, b.dataset.planDays.split(',').map(Number)); return; }
 			if ((b = get('plan-dom'))) { await setField(tileId, 'day_of_month', Number(b.dataset.planDom)); return; }
-			if ((b = get('plan-tod'))) { const v = b.dataset.planTod; await setField(tileId, 'time_of_day', v ? [v] : []); return; }
+			if ((b = get('plan-tod'))) { const v = b.dataset.planTod; await setField(tileId, 'time_of_day', v && v !== tileTimeOfDay(raw) ? [v] : []); return; }
 			if ((b = get('plan-rem')) !== null && b) {
 				const v = b.dataset.planRem;
 				if (v === 'custom') {

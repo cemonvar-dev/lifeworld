@@ -598,8 +598,8 @@ function renderGallery(filteredTiles) {
 				   </div>
 				   ${cardHint ? `<div class="w-full text-left text-[11px] text-slate-500 truncate">${cardHint}</div>` : ''}
 				   <div class="flex gap-2 mt-auto w-full">
-					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
-					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-[#800000] text-white' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
+					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				   </div>
 			   `;
 
@@ -4008,8 +4008,8 @@ function openCalendarPopup() {
 		       activeKind = kind;
 		       container.querySelectorAll('.cal-kind-btn').forEach(b => {
 			       const on = b.getAttribute('data-kind') === kind;
-			       b.classList.toggle('bg-slate-800', on);
-			       b.classList.toggle('text-white', on);
+			       b.classList.toggle('bg-blue-50', on);
+			       b.classList.toggle('text-blue-700', on);
 			       b.classList.toggle('text-slate-600', !on);
 			       b.classList.toggle('hover:bg-slate-100', !on);
 		       });
@@ -4397,7 +4397,7 @@ function renderOnceTasksCalendar() {
 
 	// Filtering UI: kind segmented control (default One-time) + text input + chips.
 	const kindBtn = (k, label) =>
-		`<button type="button" class="cal-kind-btn px-3 py-1 rounded-full transition ${k === 'once' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}" data-kind="${k}">${label}</button>`;
+		`<button type="button" class="cal-kind-btn px-3 py-1 rounded-full transition ${k === 'once' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}" data-kind="${k}">${label}</button>`;
 	const jumpBtn = 'px-3 py-1.5 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-600 hover:bg-slate-100 transition';
 	let html = `<div id="calendarToolbar" class="sticky top-0 z-20 bg-white pb-3 mb-1 flex flex-col gap-2">
 		       <div id="calendarFilterChips" class="flex flex-wrap gap-1 w-full"></div>

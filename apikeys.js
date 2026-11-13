@@ -43,7 +43,7 @@
 			<form data-create class="mt-2 flex flex-wrap items-center gap-2">
 				<input name="name" maxlength="60" placeholder="${escapeHtml(_t('Key name, e.g. Zapier'))}" class="flex-1 min-w-[140px] px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
 				<label class="inline-flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" name="readonly" class="rounded" /> ${escapeHtml(_t('Read only'))}</label>
-				<button type="submit" class="px-3 py-2 rounded-xl bg-slate-800 text-white text-sm font-semibold hover:bg-slate-900">${escapeHtml(_t('Create key'))}</button>
+				<button type="submit" class="px-3 py-2 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold hover:bg-blue-100">${escapeHtml(_t('Create key'))}</button>
 			</form>`;
 		mount.querySelector('[data-copy]')?.addEventListener('click', async e => {
 			const ok = await copyText(justCreated);

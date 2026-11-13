@@ -53,7 +53,7 @@
 		panel.querySelector('[data-tag-toast]')?.remove();
 		const t = document.createElement('div');
 		t.dataset.tagToast = '';
-		t.className = 'absolute left-1/2 -translate-x-1/2 bottom-4 z-20 max-w-[90%] bg-slate-800 text-white text-sm rounded-xl px-4 py-2 shadow-lg';
+		t.className = 'absolute left-1/2 -translate-x-1/2 bottom-4 z-20 max-w-[90%] bg-white text-slate-700 border border-slate-200 text-sm rounded-xl px-4 py-2 shadow-lg shadow-slate-900/10';
 		t.textContent = text;
 		panel.appendChild(t);
 		setTimeout(() => t.remove(), 3500);

@@ -48,7 +48,7 @@ function gettingStartedProgress(tasks, triedAi) {
 	});
 
 	function modeClass(mode) {
-		return `px-3 py-1 rounded-full transition ${mode === tileMode ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'}`;
+		return `px-3 py-1 rounded-full transition ${mode === tileMode ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`;
 	}
 
 	function stepHtml() {

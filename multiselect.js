@@ -113,7 +113,7 @@
 		if (!bar) {
 			bar = document.createElement('div');
 			bar.id = 'bulkBar';
-			bar.className = 'fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-[60] w-[calc(100%-1.5rem)] sm:w-auto max-w-3xl rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-900/30 px-2 py-2 flex items-center gap-1';
+			bar.className = 'fixed left-1/2 -translate-x-1/2 bottom-20 sm:bottom-6 z-[60] w-[calc(100%-1.5rem)] sm:w-auto max-w-3xl rounded-2xl bg-white/95 backdrop-blur text-slate-700 border border-slate-200 shadow-2xl shadow-slate-900/15 px-2 py-2 flex items-center gap-1';
 			document.body.appendChild(bar);
 			bar.addEventListener('click', onBarClick);
 		}
@@ -122,9 +122,9 @@
 		bar.innerHTML = `
 			<div class="shrink-0 pl-2 pr-1 text-sm font-semibold whitespace-nowrap">${escapeHtml(_t('{n} selected', { n }))}</div>
 			<div class="flex-1 min-w-0 flex items-center gap-0.5 overflow-x-auto no-scrollbar">
-				${ACTIONS.map(([act, icon, label]) => `<button type="button" data-bulk="${act}" ${n ? '' : 'disabled'} class="shrink-0 inline-flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-white/10 disabled:opacity-35 disabled:hover:bg-transparent ${act === 'delete' ? 'text-red-300' : ''}"><span class="text-base leading-none">${icon}</span><span>${escapeHtml(act === 'pin' && allPinned ? _t('Unpin') : _t(label))}</span></button>`).join('')}
+				${ACTIONS.map(([act, icon, label]) => `<button type="button" data-bulk="${act}" ${n ? '' : 'disabled'} class="shrink-0 inline-flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-semibold hover:bg-blue-50 disabled:opacity-35 disabled:hover:bg-transparent ${act === 'delete' ? 'text-red-600' : ''}"><span class="text-base leading-none">${icon}</span><span>${escapeHtml(act === 'pin' && allPinned ? _t('Unpin') : _t(label))}</span></button>`).join('')}
 			</div>
-			<button type="button" data-bulk="exit" class="shrink-0 grid place-items-center w-9 h-9 rounded-xl text-xl text-slate-300 hover:bg-white/10" aria-label="${escapeHtml(_t('Close'))}">&times;</button>`;
+			<button type="button" data-bulk="exit" class="shrink-0 grid place-items-center w-9 h-9 rounded-xl text-xl text-slate-400 hover:bg-slate-100" aria-label="${escapeHtml(_t('Close'))}">&times;</button>`;
 	}
 
 	function closeMenu() { document.querySelector('[data-bulk-menu]')?.remove(); }
@@ -148,12 +148,12 @@
 		clearTimeout(undoTimer);
 		const t = document.createElement('div');
 		t.id = 'tileMoveToast';
-		t.className = 'fixed left-1/2 -translate-x-1/2 bottom-36 sm:bottom-24 z-[9999] flex items-center gap-3 max-w-[calc(100vw-2rem)] bg-slate-800 text-white text-sm rounded-xl shadow-lg pl-4 pr-2 py-2';
+		t.className = 'fixed left-1/2 -translate-x-1/2 bottom-36 sm:bottom-24 z-[9999] flex items-center gap-3 max-w-[calc(100vw-2rem)] bg-white text-slate-700 border border-slate-200 text-sm rounded-xl shadow-lg shadow-slate-900/10 pl-4 pr-2 py-2';
 		t.innerHTML = `<span class="truncate">${escapeHtml(text)}</span>`;
 		if (undo) {
 			const b = document.createElement('button');
 			b.type = 'button';
-			b.className = 'shrink-0 px-3 py-1 rounded-lg font-semibold text-amber-300 hover:bg-white/10';
+			b.className = 'shrink-0 px-3 py-1 rounded-lg font-semibold text-blue-600 hover:bg-blue-50';
 			b.textContent = _t('Undo');
 			b.addEventListener('click', async () => { t.remove(); clearTimeout(undoTimer); await undo(); window.track?.('bulk_undone'); toast(_t('Undone')); });
 			t.appendChild(b);

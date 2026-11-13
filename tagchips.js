@@ -92,7 +92,7 @@
 				${ids.map(chip).join('')}
 				<button type="button" data-open-picker class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-dashed ${open ? 'border-blue-400 text-blue-700 bg-blue-50' : 'border-slate-300 text-slate-500 hover:border-blue-400 hover:text-blue-600'} text-xs font-semibold">＋ ${escapeHtml(_t('Add tag'))}</button>
 			</div>
-			${menuFor && ids.includes(menuFor) && ids[0] !== menuFor ? `<div class="mt-1.5 flex items-center gap-2 text-xs"><button type="button" data-section="${menuFor}" class="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-semibold">${escapeHtml(_t('Show in this section'))}</button><span class="text-slate-400 truncate" translate="no">${escapeHtml(tagPath(menuFor))}</span></div>` : ''}
+			${menuFor && ids.includes(menuFor) && ids[0] !== menuFor ? `<div class="mt-1.5 flex items-center gap-2 text-xs"><button type="button" data-section="${menuFor}" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-semibold hover:bg-blue-100">${escapeHtml(_t('Show in this section'))}</button><span class="text-slate-400 truncate" translate="no">${escapeHtml(tagPath(menuFor))}</span></div>` : ''}
 			${open ? pickerHtml(tileId) : ''}`;
 		const q = mount.querySelector('[data-picker-q]');
 		if (q) {

@@ -127,7 +127,7 @@
 		clearTimeout(undoTimer);
 		const t = document.createElement('div');
 		t.id = 'tileMoveToast';
-		t.className = 'fixed left-1/2 -translate-x-1/2 bottom-6 z-[9999] flex items-center gap-3 max-w-[calc(100vw-2rem)] bg-slate-800 text-white text-sm rounded-xl shadow-lg pl-4 pr-2 py-2';
+		t.className = 'fixed left-1/2 -translate-x-1/2 bottom-6 z-[9999] flex items-center gap-3 max-w-[calc(100vw-2rem)] bg-white text-slate-700 border border-slate-200 text-sm rounded-xl shadow-lg shadow-slate-900/10 pl-4 pr-2 py-2';
 		const label = document.createElement('span');
 		label.className = 'truncate';
 		label.textContent = text;
@@ -135,7 +135,7 @@
 		if (onUndo) {
 			const b = document.createElement('button');
 			b.type = 'button';
-			b.className = 'shrink-0 px-3 py-1 rounded-lg font-semibold text-amber-300 hover:bg-white/10';
+			b.className = 'shrink-0 px-3 py-1 rounded-lg font-semibold text-blue-600 hover:bg-blue-50';
 			b.textContent = _t('Undo');
 			b.addEventListener('click', () => { t.remove(); clearTimeout(undoTimer); onUndo(); });
 			t.appendChild(b);
