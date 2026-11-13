@@ -228,6 +228,7 @@
 			<span class="absolute left-0 top-3 bottom-3 w-1 rounded-r-full" style="background:${color}" aria-hidden="true"></span>
 			<button type="button" class="tile-pin absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs transition ${ctx.isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'text-slate-300 hover:bg-slate-100 grayscale opacity-60 hover:opacity-100'}" title="${ctx.isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${ctx.isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${ctx.isPinned}">📌</button>
 			<div translate="no" class="text-sm font-semibold text-slate-800 text-left w-full line-clamp-3 pr-7 leading-snug">${escapeHtml(tile.name)}</div>
+			${ctx.tagChip || ''}
 			<div class="w-full flex items-center gap-2">
 				<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${status.cls}">${escapeHtml(status.label)}</span>
 				${ctx.tp.finished || once ? '' : `<span class="ml-auto text-[11px] font-medium tabular-nums text-slate-400">${tile.health}%</span>`}

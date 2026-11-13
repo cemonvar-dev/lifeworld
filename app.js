@@ -586,10 +586,11 @@ function renderGallery(filteredTiles) {
 			// Short nudge on struggling tiles only, to keep the list calm.
 			const cardHint = !tp.finished && tile.health < 40 ? tileSuggestion(rawTiles[tile.id])?.hint : '';
 			const isPinned = !!(rawTiles[tile.id] && rawTiles[tile.id].pinned);
-			tileDiv.innerHTML = businessCard ? window.businessTileHtml(tile, { isPinned, nextDue, nextDueClass, lastDone, tp, groupTag: tag }) : `
+			tileDiv.innerHTML = businessCard ? window.businessTileHtml(tile, { isPinned, nextDue, nextDueClass, lastDone, tp, groupTag: tag, tagChip: tag === PINNED_GROUP ? pinnedTagChip(tile) : '' }) : `
 				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
 				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${escapeHtml(tile.name)}</div>
+				   ${tag === PINNED_GROUP ? pinnedTagChip(tile) : ''}
 				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
 				   <div class="flex items-center justify-between w-full mt-1">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
@@ -659,6 +660,16 @@ function groupActivityLabel(tag) {
 const PINNED_GROUP = '__pinned__';
 
 // The gallery section a tile belongs to: Pinned, or its first tag.
+// Pinned tiles leave their tag section, so they show their tag(s) as a small chip.
+function pinnedTagChip(tile) {
+	const ids = (tile.tags || []).filter(id => TAGS_BY_ID[id]);
+	if (!ids.length) return '';
+	const color = window.tagColor ? window.tagColor(ids[0]) : '';
+	const dot = color ? `<span class="shrink-0 w-2 h-2 rounded-full" style="background:${color}"></span>` : '<span class="shrink-0 w-2 h-2 rounded-full border border-slate-300"></span>';
+	const more = ids.length > 1 ? `<span class="shrink-0 text-slate-400">+${ids.length - 1}</span>` : '';
+	return `<div translate="no" class="w-full flex items-center gap-1.5 text-[11px] text-slate-500 min-w-0" title="${escapeHtml(ids.map(tagPath).join(', '))}">${dot}<span class="truncate">${escapeHtml(tagPath(ids[0]))}</span>${more}</div>`;
+}
+
 function tileGroupKey(tile) {
 	if (rawTiles[tile.id] && rawTiles[tile.id].pinned) return PINNED_GROUP;
 	return (tile.tags && tile.tags.length > 0) ? tile.tags[0] : 'Untagged';
