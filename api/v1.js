@@ -16,7 +16,9 @@ const ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const DAILY_LIMIT = parseInt(process.env.API_DAILY_LIMIT || '5000', 10);
 const MAX_KEYS = 10;
 const FREQUENCIES = ['daily', 'weekly', 'monthly', 'once'];
-const STATUSES = ['in progress', 'completed', 'cancelled'];
+const STATUSES = ['in progress', 'planned', 'completed', 'cancelled'];
+const FINISHED = ['completed', 'cancelled', 'failed'];
+const isActive = s => !FINISHED.includes(s || 'in progress');
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 class ApiError extends Error {
@@ -166,7 +168,7 @@ function toApiTask(t, tags, today) {
 		pinned: !!t.pinned,
 		notes: t.notes ?? null,
 		tags: (t.tag_ids || []).filter(id => tags.byId[id]).map(id => ({ id, name: tags.byId[id].name, path: tags.path(id) })),
-		due_today: status === 'in progress' && isDueOn(t, today),
+		due_today: isActive(status) && isDueOn(t, today),
 		today: dayStatus(t, today),
 		last_done: done[done.length - 1] || null,
 		created_at: t.created_at || null
@@ -223,8 +225,8 @@ async function listTasks(ctx) {
 	const rows = await sbJson(`/rest/v1/tasks?user_id=eq.${userId}&${TASK_SELECT}&order=created_at.asc`);
 	let list = (rows || []).map(t => toApiTask(t, tags, today));
 	const status = query.status || 'active';
-	if (status === 'active') list = list.filter(t => t.status === 'in progress');
-	else if (status !== 'all') { if (!STATUSES.includes(status)) throw bad('status must be active, all, in progress, completed or cancelled.'); list = list.filter(t => t.status === status); }
+	if (status === 'active') list = list.filter(t => isActive(t.status));
+	else if (status !== 'all') { if (!STATUSES.includes(status)) throw bad('status must be active, all, in progress, planned, completed or cancelled.'); list = list.filter(t => t.status === status); }
 	if (query.tag) {
 		const [tagId] = await resolveTags(userId, tags, [String(query.tag)], false);
 		const wanted = new Set([tagId]);
@@ -307,7 +309,7 @@ async function summary(ctx) {
 	if (!DATE_RE.test(day)) throw bad('date must be YYYY-MM-DD.');
 	const tags = await loadTags(userId);
 	const rows = await sbJson(`/rest/v1/tasks?user_id=eq.${userId}&${TASK_SELECT}`);
-	const due = (rows || []).filter(t => (t.status || 'in progress') === 'in progress' && isDueOn(t, day))
+	const due = (rows || []).filter(t => isActive(t.status) && isDueOn(t, day))
 		.map(t => ({ ...toApiTask(t, tags, today), status_on_date: dayStatus(t, day) }));
 	const counts = { done: 0, skipped: 0, open: 0 };
 	due.forEach(t => { counts[t.status_on_date || 'open']++; });

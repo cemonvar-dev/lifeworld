@@ -52,7 +52,7 @@
       <p>Dates are <code>YYYY-MM-DD</code>. "Today" is computed in the time zone you pass as <code>?tz=Europe/Istanbul</code> or an <code>X-Timezone</code> header; it defaults to UTC.</p>
 
       <h2>Tasks</h2>
-      <p><span class="ep get">GET</span><code>/tasks</code> List tasks. Filters: <code>status</code> (<code>active</code> default, <code>all</code>, <code>completed</code>, <code>cancelled</code>), <code>tag</code> (id, name or path; includes sub-tags), <code>due=today</code>, <code>pinned=true</code>, <code>q</code> (name contains).</p>
+      <p><span class="ep get">GET</span><code>/tasks</code> List tasks. Filters: <code>status</code> (<code>active</code> default = not completed or cancelled, <code>all</code>, <code>in progress</code>, <code>planned</code>, <code>completed</code>, <code>cancelled</code>), <code>tag</code> (id, name or path; includes sub-tags), <code>due=today</code>, <code>pinned=true</code>, <code>q</code> (name contains).</p>
       <p><span class="ep get">GET</span><code>/tasks/{id}</code> One task.</p>
       <p><span class="ep post">POST</span><code>/tasks</code> Create a task.</p>
       <table>
@@ -70,7 +70,7 @@
   -H "Authorization: Bearer $FIBLIA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"Send the QA tracker","date":"2026-11-20","tags":["work"]}'</code></pre>
-      <p><span class="ep patch">PATCH</span><code>/tasks/{id}</code> Update any of the fields above, plus <code>status</code> (<code>in progress</code>, <code>completed</code>, <code>cancelled</code>). To retire a task, set <code>status</code> to <code>completed</code> or <code>cancelled</code>.</p>
+      <p><span class="ep patch">PATCH</span><code>/tasks/{id}</code> Update any of the fields above, plus <code>status</code> (<code>in progress</code>, <code>planned</code>, <code>completed</code>, <code>cancelled</code>). To retire a task, set <code>status</code> to <code>completed</code> or <code>cancelled</code>.</p>
 
       <h2>Done and Skip</h2>
       <p><span class="ep post">POST</span><code>/tasks/{id}/logs</code> Body: <code>{"status":"done"}</code> or <code>"skipped"</code>, optional <code>date</code> (default today) and <code>note</code>. Logging the same day again replaces that day's status.</p>
