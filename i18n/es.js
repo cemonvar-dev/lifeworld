@@ -445,5 +445,17 @@ window.I18N_MESSAGES.es = {
 	"Delete {n} cards?": "¿Eliminar {n} tarjetas?",
 	"Their history and attachments are deleted too. This can't be undone.": "También se eliminan su historial y adjuntos. No se puede deshacer.",
 	"{n} cards deleted": "{n} tarjetas eliminadas",
-	"About these tasks: {names}. ": "Sobre estas tareas: {names}. "
+	"About these tasks: {names}. ": "Sobre estas tareas: {names}. ",
+	"Search or create…": "Buscar o crear…",
+	"Create “{name}”": "Crear «{name}»",
+	"Recent": "Recientes",
+	"Matches": "Coincidencias",
+	"All tags": "Todas las etiquetas",
+	"No tags yet. Type a name to create one.": "Aún no hay etiquetas. Escribe un nombre para crear una.",
+	"Manage tags": "Gestionar etiquetas",
+	"Decides which gallery section the card appears in": "Decide en qué sección de la galería aparece la tarjeta",
+	"Section": "Sección",
+	"Remove tag": "Quitar etiqueta",
+	"Add tag": "Añadir etiqueta",
+	"Show in this section": "Mostrar en esta sección"
 };

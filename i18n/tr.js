@@ -445,5 +445,17 @@ window.I18N_MESSAGES.tr = {
 	"Delete {n} cards?": "{n} kart silinsin mi?",
 	"Their history and attachments are deleted too. This can't be undone.": "Geçmişleri ve ekleri de silinir. Bu işlem geri alınamaz.",
 	"{n} cards deleted": "{n} kart silindi",
-	"About these tasks: {names}. ": "Şu görevler hakkında: {names}. "
+	"About these tasks: {names}. ": "Şu görevler hakkında: {names}. ",
+	"Search or create…": "Ara veya oluştur…",
+	"Create “{name}”": "“{name}” oluştur",
+	"Recent": "Son kullanılanlar",
+	"Matches": "Eşleşenler",
+	"All tags": "Tüm etiketler",
+	"No tags yet. Type a name to create one.": "Henüz etiket yok. Oluşturmak için bir ad yaz.",
+	"Manage tags": "Etiketleri yönet",
+	"Decides which gallery section the card appears in": "Kartın galeride hangi bölümde görüneceğini belirler",
+	"Section": "Bölüm",
+	"Remove tag": "Etiketi kaldır",
+	"Add tag": "Etiket ekle",
+	"Show in this section": "Bu bölümde göster"
 };

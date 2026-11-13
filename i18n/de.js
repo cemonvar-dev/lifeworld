@@ -445,5 +445,17 @@ window.I18N_MESSAGES.de = {
 	"Delete {n} cards?": "{n} Karten löschen?",
 	"Their history and attachments are deleted too. This can't be undone.": "Ihr Verlauf und ihre Anhänge werden ebenfalls gelöscht. Das kann nicht rückgängig gemacht werden.",
 	"{n} cards deleted": "{n} Karten gelöscht",
-	"About these tasks: {names}. ": "Zu diesen Aufgaben: {names}. "
+	"About these tasks: {names}. ": "Zu diesen Aufgaben: {names}. ",
+	"Search or create…": "Suchen oder erstellen…",
+	"Create “{name}”": "„{name}“ erstellen",
+	"Recent": "Zuletzt verwendet",
+	"Matches": "Treffer",
+	"All tags": "Alle Tags",
+	"No tags yet. Type a name to create one.": "Noch keine Tags. Tippe einen Namen, um einen zu erstellen.",
+	"Manage tags": "Tags verwalten",
+	"Decides which gallery section the card appears in": "Bestimmt, in welchem Galerie-Bereich die Karte erscheint",
+	"Section": "Bereich",
+	"Remove tag": "Tag entfernen",
+	"Add tag": "Tag hinzufügen",
+	"Show in this section": "In diesem Bereich zeigen"
 };

@@ -812,19 +812,6 @@ function openTilePopup(tileId) {
 		timelineHtml += '</div>';
 	}
 
-	// Multiselect dropdown for tags
-	const tagDropdownHtml = `
-	<div class="tagDropdown mb-1" style="min-width:220px;">
-		<button id="tagDropdownBtn" type="button" class="w-full flex justify-between items-center border px-3 py-2 rounded-lg bg-white text-xs" tabindex="0">
-			<span id="tagDropdownSelected">${currentTags.length ? escapeHtml(currentTags.map(tagName).join(', ')) : 'Select tags...'}</span>
-			<span class="ml-2">▼</span>
-		</button>
-		<div id="tagDropdownMenu" class="tagDropdownMenu" style="max-height:220px;overflow-y:auto;">
-			<input id="tagDropdownSearch" type="text" placeholder="Search tags..." class="w-full px-3 py-1 mb-2 border-b text-xs focus:outline-none" style="border-radius:8px 8px 0 0;" />
-			<div id="tagDropdownOptions"></div>
-		</div>
-	</div>`;
-
 	popupBody.innerHTML = `
 		<div class="flex items-center gap-3 mb-1 pr-10">
 			<span class="text-4xl">${tilePlant(raw, health).emoji}</span>
@@ -836,6 +823,7 @@ function openTilePopup(tileId) {
 					
 			</div>
 		</div>
+		<div id="tileTagChips" class="mt-2"></div>
 		<hr class="my-3 border-slate-200">
 		<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
 			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
@@ -885,9 +873,6 @@ function openTilePopup(tileId) {
 		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full shrink-0 rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
 		<div id="tileSuggestionMount"></div>
-		<hr class="my-3 border-slate-200">
-		<div class="mb-1 text-xs font-semibold text-slate-500">Tags</div>
-		${tagDropdownHtml}
 		<hr class="my-3 border-slate-200">
 		<!-- Tabbed view: Timeline (default) / Attachments -->
 		<div class="flex items-center gap-1 border-b border-slate-200 mb-3">
@@ -1054,74 +1039,8 @@ function openTilePopup(tileId) {
 		});
 	}
 
-	// Multiselect dropdown logic
-	const tagDropdownBtn = document.getElementById('tagDropdownBtn');
-	const tagDropdownMenu = document.getElementById('tagDropdownMenu');
-	const tagDropdownOptions = document.getElementById('tagDropdownOptions');
-	const tagDropdownSelected = document.getElementById('tagDropdownSelected');
-	const tagDropdownSearch = document.getElementById('tagDropdownSearch');
-
-	function updateTagSummary() {
-		const sel = (rawTiles[activeTileId] && rawTiles[activeTileId].tag_ids) || [];
-		tagDropdownSelected.textContent = sel.length ? sel.map(tagName).join(', ') : 'Select tags...';
-	}
-
-	function renderTagOptions(filter = '') {
-		tagDropdownOptions.innerHTML = '';
-		const sel = (rawTiles[activeTileId] && rawTiles[activeTileId].tag_ids) || [];
-		const q = filter.toLowerCase();
-		ALL_TAGS
-			.filter(at => at.label.toLowerCase().includes(q) || tagPath(at.key).toLowerCase().includes(q))
-			.sort((a, b) => tagPath(a.key).localeCompare(tagPath(b.key)))
-			.forEach(at => {
-				const checked = sel.includes(at.key);
-				const btn = document.createElement('button');
-				btn.className = 'tagBtn flex items-center gap-2 w-full px-3 py-1 text-left text-sm' + (checked ? ' active' : '');
-				btn.innerHTML = `<input type="checkbox" ${checked ? 'checked' : ''} class="mr-2">${escapeHtml(tagPath(at.key))}`;
-				btn.addEventListener('click', async e => {
-					e.preventDefault();
-					await toggleTag(at.key);
-					updateTagSummary();
-					renderTagOptions(tagDropdownSearch.value);
-				});
-				tagDropdownOptions.appendChild(btn);
-			});
-	}
-
-	tagDropdownBtn.addEventListener('click', e => {
-		e.stopPropagation();
-		// Ignore a stray click that lands here right after a re-render (e.g. the
-		// tap that submitted a log via the Add-Log popup, which closes and lets the
-		// click fall through onto this button).
-		if (Date.now() - tilePopupOpenedAt < 400) return;
-		tagDropdownMenu.style.display = tagDropdownMenu.style.display === 'block' ? 'none' : 'block';
-		tagDropdownSearch.focus();
-	});
-
-	// Close the tag menu on any click outside it. Registered once and keyed off
-	// the live DOM (not this render's captured elements), so re-renders — e.g.
-	// clicking the Routine/One-time toggle — can't leave a stale handler that
-	// mis-toggles the menu. The menu now opens ONLY via its own button.
-	if (!window.__tagCloseGlobal) {
-		window.__tagCloseGlobal = true;
-		document.addEventListener('click', e => {
-			const menu = document.getElementById('tagDropdownMenu');
-			if (menu && !e.target.closest('.tagDropdown')) menu.style.display = 'none';
-		});
-	}
-
-	tagDropdownSearch.addEventListener('input', e => {
-		renderTagOptions(tagDropdownSearch.value);
-	});
-
-	renderTagOptions();
-
-	// Keyboard navigation: close on Escape
-	tagDropdownSearch.addEventListener('keydown', e => {
-		if (e.key === 'Escape') tagDropdownMenu.style.display = 'none';
-	});
-
-	// End multiselect dropdown logic
+	// Tags: chips + inline picker (tagchips.js).
+	if (window.mountTileTagChips) window.mountTileTagChips(tileId);
 
 	// (Frequency & Status are handled by the styled dropdowns above.)
 

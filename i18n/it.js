@@ -445,5 +445,17 @@ window.I18N_MESSAGES.it = {
 	"Delete {n} cards?": "Eliminare {n} schede?",
 	"Their history and attachments are deleted too. This can't be undone.": "Vengono eliminati anche storico e allegati. Operazione irreversibile.",
 	"{n} cards deleted": "{n} schede eliminate",
-	"About these tasks: {names}. ": "Su queste attività: {names}. "
+	"About these tasks: {names}. ": "Su queste attività: {names}. ",
+	"Search or create…": "Cerca o crea…",
+	"Create “{name}”": "Crea «{name}»",
+	"Recent": "Recenti",
+	"Matches": "Risultati",
+	"All tags": "Tutti i tag",
+	"No tags yet. Type a name to create one.": "Ancora nessun tag. Scrivi un nome per crearne uno.",
+	"Manage tags": "Gestisci tag",
+	"Decides which gallery section the card appears in": "Decide in quale sezione della galleria appare la scheda",
+	"Section": "Sezione",
+	"Remove tag": "Rimuovi tag",
+	"Add tag": "Aggiungi tag",
+	"Show in this section": "Mostra in questa sezione"
 };

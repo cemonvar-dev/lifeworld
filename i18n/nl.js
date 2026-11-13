@@ -445,5 +445,17 @@ window.I18N_MESSAGES.nl = {
 	"Delete {n} cards?": "{n} kaarten verwijderen?",
 	"Their history and attachments are deleted too. This can't be undone.": "Hun geschiedenis en bijlagen worden ook verwijderd. Dit kan niet ongedaan worden gemaakt.",
 	"{n} cards deleted": "{n} kaarten verwijderd",
-	"About these tasks: {names}. ": "Over deze taken: {names}. "
+	"About these tasks: {names}. ": "Over deze taken: {names}. ",
+	"Search or create…": "Zoeken of maken…",
+	"Create “{name}”": "“{name}” maken",
+	"Recent": "Recent",
+	"Matches": "Resultaten",
+	"All tags": "Alle tags",
+	"No tags yet. Type a name to create one.": "Nog geen tags. Typ een naam om er een te maken.",
+	"Manage tags": "Tags beheren",
+	"Decides which gallery section the card appears in": "Bepaalt in welke galerijsectie de kaart verschijnt",
+	"Section": "Sectie",
+	"Remove tag": "Tag verwijderen",
+	"Add tag": "Tag toevoegen",
+	"Show in this section": "In deze sectie tonen"
 };
