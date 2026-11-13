@@ -407,5 +407,19 @@ window.I18N_MESSAGES.tr = {
 	"No date": "Tarih yok",
 	"Business · status + 14-day history": "Business · durum + 14 günlük geçmiş",
 	"📌 Plan saved. I'll check in on it with you.": "📌 Plan kaydedildi. Birlikte takip edeceğiz.",
-	"Plan cleared.": "Plan kaldırıldı."
+	"Plan cleared.": "Plan kaldırıldı.",
+	"API keys": "API anahtarları",
+	"API docs": "API dokümanı",
+	"Connect Fiblia to other tools (scripts, Zapier, Shortcuts). Treat a key like a password.": "Fiblia’yı başka araçlara bağla (betikler, Zapier, Kestirmeler). Anahtarı şifre gibi sakla.",
+	"Copy your new key now. You won't see it again.": "Yeni anahtarını şimdi kopyala. Bir daha göremeyeceksin.",
+	"No API keys yet.": "Henüz API anahtarı yok.",
+	"Key name, e.g. Zapier": "Anahtar adı, ör. Zapier",
+	"Read only": "Salt okunur",
+	"Read & write": "Okuma ve yazma",
+	"Create key": "Anahtar oluştur",
+	"Revoke": "İptal et",
+	"Revoke?": "İptal edilsin mi?",
+	"Last used {date}": "Son kullanım {date}",
+	"Never used": "Hiç kullanılmadı",
+	"Please sign in.": "Lütfen giriş yap."
 };

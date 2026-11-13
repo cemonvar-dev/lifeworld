@@ -407,5 +407,19 @@ window.I18N_MESSAGES.it = {
 	"No date": "Nessuna data",
 	"Business · status + 14-day history": "Business · stato + storico 14 giorni",
 	"📌 Plan saved. I'll check in on it with you.": "📌 Piano salvato. Lo seguiremo insieme.",
-	"Plan cleared.": "Piano rimosso."
+	"Plan cleared.": "Piano rimosso.",
+	"API keys": "Chiavi API",
+	"API docs": "Documentazione API",
+	"Connect Fiblia to other tools (scripts, Zapier, Shortcuts). Treat a key like a password.": "Collega Fiblia ad altri strumenti (script, Zapier, Comandi rapidi). Tratta una chiave come una password.",
+	"Copy your new key now. You won't see it again.": "Copia ora la nuova chiave. Non la vedrai più.",
+	"No API keys yet.": "Ancora nessuna chiave API.",
+	"Key name, e.g. Zapier": "Nome chiave, es. Zapier",
+	"Read only": "Sola lettura",
+	"Read & write": "Lettura e scrittura",
+	"Create key": "Crea chiave",
+	"Revoke": "Revoca",
+	"Revoke?": "Revocare?",
+	"Last used {date}": "Ultimo uso {date}",
+	"Never used": "Mai usata",
+	"Please sign in.": "Accedi."
 };

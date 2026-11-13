@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Fiblia API</title>
+  <meta name="description" content="Fiblia REST API: create and update tasks, log Done or Skip, read tags and today's summary." />
+  <link rel="icon" href="logo.png" />
+  <link rel="apple-touch-icon" href="logo.png" />
+  <link rel="stylesheet" href="styling/landing.css" />
+  <link rel="stylesheet" href="styling/docs.css" />
+  <script src="posthog-init.js"></script>
+  <style>
+    .doc pre { background:#0f172a; color:#e2e8f0; padding:14px 16px; border-radius:12px; overflow-x:auto; font-size:13px; line-height:1.5; }
+    .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+    .doc p code, .doc li code, .doc td code { background:#f1f5f9; padding:1px 5px; border-radius:6px; }
+    .doc table { width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 16px; }
+    .doc th, .doc td { text-align:left; padding:6px 8px; border-bottom:1px solid #e2e8f0; vertical-align:top; }
+    .ep { display:inline-block; font-weight:700; font-size:12px; padding:2px 8px; border-radius:6px; margin-right:6px; }
+    .get { background:#dbeafe; color:#1d4ed8; } .post { background:#dcfce7; color:#15803d; } .patch { background:#fef3c7; color:#b45309; } .del { background:#fee2e2; color:#b91c1c; }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="/" style="text-decoration:none;">
+        <img class="mark" src="logo.png" alt="Fiblia logo" />
+        <strong>Fiblia</strong>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a class="link" href="/about.html">About</a>
+        <a class="link" href="/contact.html">Contact</a>
+        <a class="btn btn-primary" href="/">Sign in</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="doc">
+    <div class="doc-card">
+      <h1>Fiblia API</h1>
+      <p class="updated">Version 1 · Last updated 14 Nov 2026</p>
+      <p class="lede">Connect Fiblia to your own scripts and tools: create tasks, mark them done, and read what is due today.</p>
+
+      <h2>Authentication</h2>
+      <p>Create a key in the app under <strong>Settings → Account → API keys</strong>. Send it with every request:</p>
+<pre><code>Authorization: Bearer fib_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+      <p>A key acts as you, on your data only. Keys can be <em>read only</em> or <em>read &amp; write</em>, and you can revoke one at any time. Treat a key like a password and never put it in a web page or a public repository.</p>
+      <p>Base URL: <code>https://fiblia.com/api/v1</code>. Requests and responses are JSON. Each key can make up to 5,000 requests per day.</p>
+
+      <h2>Dates and time zones</h2>
+      <p>Dates are <code>YYYY-MM-DD</code>. "Today" is computed in the time zone you pass as <code>?tz=Europe/Istanbul</code> or an <code>X-Timezone</code> header; it defaults to UTC.</p>
+
+      <h2>Tasks</h2>
+      <p><span class="ep get">GET</span><code>/tasks</code> List tasks. Filters: <code>status</code> (<code>active</code> default, <code>all</code>, <code>completed</code>, <code>cancelled</code>), <code>tag</code> (id, name or path; includes sub-tags), <code>due=today</code>, <code>pinned=true</code>, <code>q</code> (name contains).</p>
+      <p><span class="ep get">GET</span><code>/tasks/{id}</code> One task.</p>
+      <p><span class="ep post">POST</span><code>/tasks</code> Create a task.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr><td><code>name</code></td><td>string</td><td>Required.</td></tr>
+        <tr><td><code>frequency</code></td><td>string</td><td><code>once</code> (default), <code>daily</code>, <code>weekly</code>, <code>monthly</code></td></tr>
+        <tr><td><code>date</code></td><td>date</td><td>Due date for one-time tasks. Omit for "someday".</td></tr>
+        <tr><td><code>weekdays</code></td><td>int[]</td><td>Weekly tasks: 0 = Sunday … 6 = Saturday.</td></tr>
+        <tr><td><code>day_of_month</code></td><td>int</td><td>Monthly tasks: 1–31.</td></tr>
+        <tr><td><code>tags</code></td><td>string[]</td><td>Tag ids, names, or paths like <code>family › defne</code> (also <code>family/defne</code>).</td></tr>
+        <tr><td><code>create_tags</code></td><td>bool</td><td>Create tags that don't exist yet (nested paths too).</td></tr>
+        <tr><td><code>notes</code>, <code>pinned</code></td><td>string, bool</td><td>Optional.</td></tr>
+      </table>
+<pre><code>curl -X POST https://fiblia.com/api/v1/tasks \
+  -H "Authorization: Bearer $FIBLIA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Send the QA tracker","date":"2026-11-20","tags":["work"]}'</code></pre>
+      <p><span class="ep patch">PATCH</span><code>/tasks/{id}</code> Update any of the fields above, plus <code>status</code> (<code>in progress</code>, <code>completed</code>, <code>cancelled</code>). To retire a task, set <code>status</code> to <code>completed</code> or <code>cancelled</code>.</p>
+
+      <h2>Done and Skip</h2>
+      <p><span class="ep post">POST</span><code>/tasks/{id}/logs</code> Body: <code>{"status":"done"}</code> or <code>"skipped"</code>, optional <code>date</code> (default today) and <code>note</code>. Logging the same day again replaces that day's status.</p>
+<pre><code>curl -X POST "https://fiblia.com/api/v1/tasks/TASK_ID/logs?tz=Europe/Istanbul" \
+  -H "Authorization: Bearer $FIBLIA_API_KEY" \
+  -H "Content-Type: application/json" -d '{"status":"done"}'</code></pre>
+      <p><span class="ep get">GET</span><code>/tasks/{id}/logs</code> History, with <code>from</code> / <code>to</code> (default: last 30 days).</p>
+      <p><span class="ep del">DELETE</span><code>/tasks/{id}/logs?date=YYYY-MM-DD</code> Clear that day's Done/Skip.</p>
+
+      <h2>Tags, summary, key info</h2>
+      <p><span class="ep get">GET</span><code>/tags</code> All tags with <code>id</code>, <code>name</code>, <code>path</code>, <code>parent_id</code>, <code>color</code>.</p>
+      <p><span class="ep get">GET</span><code>/summary</code> What is due on a day (<code>date</code>, default today) with counts of done, skipped and open.</p>
+      <p><span class="ep get">GET</span><code>/me</code> The key's name and scopes.</p>
+
+      <h2>Task object</h2>
+<pre><code>{
+  "id": "6f1c…", "name": "diz ilacı", "frequency": "daily", "weekdays": [], "day_of_month": null,
+  "date": null, "status": "in progress", "pinned": true, "notes": null,
+  "tags": [{ "id": "…", "name": "health", "path": "me › health" }],
+  "due_today": true, "today": "done", "last_done": "2026-11-14", "created_at": "2026-03-02T…"
+}</code></pre>
+
+      <h2>Errors</h2>
+      <p>Errors use HTTP status codes and a body like <code>{"error":{"code":"invalid_request","message":"…"}}</code>. Codes: <code>unauthorized</code> (401), <code>forbidden</code> (403, key lacks write access), <code>not_found</code> (404), <code>invalid_request</code> / <code>unknown_tags</code> (400), <code>rate_limited</code> (429).</p>
+
+      <h2>Questions</h2>
+      <p>Write to <a href="/contact.html">us</a>. Webhooks are planned.</p>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© <span id="year"></span> Fiblia · All rights reserved.</span>
+      <nav class="footer-links" aria-label="Footer">
+        <a href="/about.html">About</a>
+        <a href="/contact.html">Contact</a>
+        <a href="/developers.html">API</a>
+        <a href="/security.html">Security</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

@@ -407,5 +407,19 @@ window.I18N_MESSAGES.nl = {
 	"No date": "Geen datum",
 	"Business · status + 14-day history": "Business · status + 14 dagen historie",
 	"📌 Plan saved. I'll check in on it with you.": "📌 Plan opgeslagen. Ik kom er samen met je op terug.",
-	"Plan cleared.": "Plan verwijderd."
+	"Plan cleared.": "Plan verwijderd.",
+	"API keys": "API-sleutels",
+	"API docs": "API-docs",
+	"Connect Fiblia to other tools (scripts, Zapier, Shortcuts). Treat a key like a password.": "Koppel Fiblia aan andere tools (scripts, Zapier, Opdrachten). Behandel een sleutel als een wachtwoord.",
+	"Copy your new key now. You won't see it again.": "Kopieer je nieuwe sleutel nu. Je ziet hem niet opnieuw.",
+	"No API keys yet.": "Nog geen API-sleutels.",
+	"Key name, e.g. Zapier": "Sleutelnaam, bv. Zapier",
+	"Read only": "Alleen lezen",
+	"Read & write": "Lezen en schrijven",
+	"Create key": "Sleutel maken",
+	"Revoke": "Intrekken",
+	"Revoke?": "Intrekken?",
+	"Last used {date}": "Laatst gebruikt {date}",
+	"Never used": "Nooit gebruikt",
+	"Please sign in.": "Log in."
 };

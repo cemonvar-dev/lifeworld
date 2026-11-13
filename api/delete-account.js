@@ -93,7 +93,7 @@ async function deleteUserData(userId) {
 	}
 
 	// Tables keyed by user_id. Best-effort: a missing table just no-ops.
-	for (const table of ['task_attachments', 'tasks', 'tags', 'ai_memory', 'ai_usage', 'billing_customers', 'stripe_customers']) {
+	for (const table of ['task_attachments', 'tasks', 'tags', 'api_keys', 'ai_memory', 'ai_usage', 'billing_customers', 'stripe_customers']) {
 		await sb(`/rest/v1/${table}?user_id=eq.${userId}`, { method: 'DELETE' });
 	}
 }
