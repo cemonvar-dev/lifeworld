@@ -457,5 +457,19 @@ window.I18N_MESSAGES.fr = {
 	"Section": "Section",
 	"Remove tag": "Retirer le tag",
 	"Add tag": "Ajouter un tag",
-	"Show in this section": "Afficher dans cette section"
+	"Show in this section": "Afficher dans cette section",
+	"Every day": "Tous les jours",
+	"Weekdays": "En semaine",
+	"Weekends": "Le week-end",
+	"Pick days": "Choisir les jours",
+	"Last day of the month": "Dernier jour du mois",
+	"Every month on day {n}": "Chaque mois le {n}",
+	"This weekend": "Ce week-end",
+	"Pick a date": "Choisir une date",
+	"At {time}": "À {time}",
+	"This evening 18:00": "Ce soir 18:00",
+	"Tomorrow 09:00": "Demain 09:00",
+	"Pick a time": "Choisir une heure",
+	"Repeats": "Répétition",
+	"Next: {date}": "Prochain : {date}"
 };

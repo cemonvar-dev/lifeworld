@@ -457,5 +457,19 @@ window.I18N_MESSAGES.tr = {
 	"Section": "Bölüm",
 	"Remove tag": "Etiketi kaldır",
 	"Add tag": "Etiket ekle",
-	"Show in this section": "Bu bölümde göster"
+	"Show in this section": "Bu bölümde göster",
+	"Every day": "Her gün",
+	"Weekdays": "Hafta içi",
+	"Weekends": "Hafta sonu",
+	"Pick days": "Gün seç",
+	"Last day of the month": "Ayın son günü",
+	"Every month on day {n}": "Her ayın {n}. günü",
+	"This weekend": "Bu hafta sonu",
+	"Pick a date": "Tarih seç",
+	"At {time}": "{time}’da",
+	"This evening 18:00": "Bu akşam 18:00",
+	"Tomorrow 09:00": "Yarın 09:00",
+	"Pick a time": "Saat seç",
+	"Repeats": "Tekrar",
+	"Next: {date}": "Sonraki: {date}"
 };

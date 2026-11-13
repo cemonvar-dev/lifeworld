@@ -826,49 +826,13 @@ function openTilePopup(tileId) {
 		<div id="tileTagChips" class="mt-2"></div>
 		<hr class="my-3 border-slate-200">
 		<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-			<div id="routineToggle" class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-xs">
-				<button type="button" class="routine-opt flex items-center gap-1.5 leading-tight px-3 h-9 transition ${!isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="0"><span>1️⃣</span><span>One-time</span></button>
-				<button type="button" class="routine-opt flex items-center gap-1.5 leading-tight px-3 h-9 transition border-l border-slate-300 ${isRoutine ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}" data-routine="1"><span>🔁</span><span>Routine</span></button>
-			</div>
 			<div class="flex gap-2">
 			<button id="tilePinBtn" type="button" aria-pressed="${!!raw.pinned}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${raw.pinned ? 'bg-amber-100 text-amber-700 border-amber-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${raw.pinned ? '' : 'grayscale'}">📌</span><span>${raw.pinned ? 'Pinned' : 'Pin'}</span></button>
 			<button data-status-toggle="completed" type="button" aria-pressed="${isCompleted}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${isCompleted ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span>${isCompleted ? '✅' : '⬜'}</span><span>Completed</span></button>
 			<button data-status-toggle="cancelled" type="button" aria-pressed="${isCancelled}" class="inline-flex items-center leading-tight gap-1.5 px-3 h-9 rounded-lg text-xs border transition ${isCancelled ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'}"><span class="${isCancelled ? '' : 'grayscale'}">🚫</span><span>Cancelled</span></button>
 			</div>
 		</div>
-		<div class="grid grid-cols-2 gap-3 mb-3 items-start">
-				<!-- Left column: recurrence / date, with the weekly / monthly pickers under it -->
-				<div>
-					<div id="freqCell" style="display:${isRoutine ? 'block' : 'none'}">
-						<div class="mb-1 text-xs font-semibold text-slate-500">Frequency</div>
-						<div id="freqSelectMount"></div>
-					</div>
-					<div id="dateCell" style="display:${!isRoutine ? 'block' : 'none'}">
-						<div class="mb-1 text-xs font-semibold text-slate-500">Date</div>
-						<input type="date" id="onceDateInput" lang="en-GB" class="w-full rounded-lg border px-2 py-1.5 text-sm" value="${raw.end_date || ''}" />
-					</div>
-					<div id="weeklyDays" class="flex flex-wrap gap-0.5 sm:gap-1 mt-2" style="display:${freqMode === 'weekly' ? 'flex' : 'none'}">
-						${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<button class='day-btn w-7 py-1 text-center rounded-full text-[11px] border transition ${freqDays.includes(String(i)) ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"}' data-day='${i}'>${i18n.dayName(i, 'short')}</button>`).join('')}
-					</div>
-					<div id="monthlyDayPicker" class="mt-2" style="display:${freqMode === 'monthly' ? 'block' : 'none'}">
-						<label class="text-xs text-slate-500">Day of month</label>
-						<select id="monthlyDaySelect" class="ml-2 rounded-lg border px-2 py-1 text-sm">
-							${Array.from({ length: 31 }, (_, i) => i + 1).map(d => `<option value="${d}" ${monthlyDom(raw) === d ? 'selected' : ''}>${ordinal(d)}</option>`).join('')}
-						</select>
-					</div>
-				</div>
-				<!-- Right column: time of day, with reminder under it -->
-				<div>
-					<div class="mb-1 text-xs font-semibold text-slate-500">Timing</div>
-					<div id="timeOfDaySelectMount"></div>
-					<div class="mt-2 mb-1 text-xs font-semibold text-slate-500">Reminder</div>
-					<div id="reminderSelectMount"></div>
-					<div id="reminderCustomWrap" class="mt-2" style="display:none">
-						<label class="text-xs text-slate-500">Reminder date &amp; time</label>
-						<input type="datetime-local" id="reminderCustom" class="ml-2 rounded-lg border px-2 py-1 text-sm" />
-					</div>
-				</div>
-			</div>
+		<div id="tilePlanMount" class="mb-3"></div>
 		${'notes' in raw ? `<div class="mb-1 text-xs font-semibold text-slate-500">Notes</div>
 		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full shrink-0 rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
@@ -933,29 +897,6 @@ function openTilePopup(tileId) {
 	document.getElementById('tilePinBtn').addEventListener('click', () => setTilePinned(tileId, !raw.pinned));
 	renderTileSuggestion(raw, tileId);
 
-	// Frequency / Reminder / Status — styled dropdowns (icon left, text right).
-	lwSelect(document.getElementById('freqSelectMount'), {
-		options: [
-			{ value: 'daily', icon: '🔁', label: 'Daily' },
-			{ value: 'weekly', icon: '📆', label: 'Weekly' },
-			{ value: 'monthly', icon: '🗓️', label: 'Monthly' }
-			// 'once' is not a routine — it's the One-time toggle state below.
-		],
-		value: freqMode,
-		onSelect: (v) => setFrequency(v) // re-renders the popup, revealing the right sub-picker
-	});
-
-	// Routine ⟷ One-time toggle: routine = daily/weekly/monthly, one-time = 'once'.
-	document.querySelectorAll('.routine-opt').forEach(btn => {
-		btn.addEventListener('click', (e) => {
-			e.stopPropagation();
-			const wantRoutine = btn.dataset.routine === '1';
-			const cur = (rawTiles[activeTileId] && rawTiles[activeTileId].frequency_mode) || 'daily';
-			if (wantRoutine === (cur !== 'once')) return; // already in this mode
-			setFrequency(wantRoutine ? 'daily' : 'once'); // persists + re-renders
-		});
-	});
-
 	// Completed / Cancelled toggles; pressing the active one reopens the tile.
 	const setPopupStatus = status => {
 		raw.status = status;
@@ -978,103 +919,13 @@ function openTilePopup(tileId) {
 		});
 	});
 
-	const remIso = raw.reminder_at;
-	lwSelect(document.getElementById('reminderSelectMount'), {
-		options: [
-			{ value: '', icon: '🔕', label: 'No reminder' },
-			{ value: '1h', icon: '⏰', label: 'In 1 hour' },
-			{ value: '3h', icon: '⏰', label: 'In 3 hours' },
-			{ value: 'eve', icon: '🌇', label: 'This evening (6 PM)' },
-			{ value: 'tom9', icon: '🌅', label: 'Tomorrow 9 AM' },
-			{ value: 'tomeve', icon: '🌇', label: 'Tomorrow 6 PM' },
-			{ value: 'week', icon: '📅', label: 'Next week' },
-			{ value: 'custom', icon: '✏️', label: 'Custom date & time…' }
-		],
-		value: '',
-		compact: true, // reminder labels are long — drop icons + smaller text so they're readable
-		display: remIso ? { label: formatReminderAt(remIso) } : { label: 'No reminder' },
-		onSelect: async (v) => {
-			const wrap = document.getElementById('reminderCustomWrap');
-			const ci = document.getElementById('reminderCustom');
-			if (v === 'custom') {
-				const seed = remIso ? new Date(remIso) : new Date(Date.now() + 3600000);
-				if (ci) ci.value = toLocalInputValue(seed);
-				if (wrap) wrap.style.display = 'block';
-				if (ci) ci.focus();
-				return;
-			}
-			if (wrap) wrap.style.display = 'none';
-			if (v === '') { await setTileReminder(activeTileId, null); openTilePopup(activeTileId); return; }
-			const when = computeReminderAt(v);
-			if (when) { await setTileReminder(activeTileId, when); openTilePopup(activeTileId); }
-		}
-	});
-
-	// Time of day — when during the day this task is meant to happen.
-	lwSelect(document.getElementById('timeOfDaySelectMount'), {
-		options: [
-			{ value: '', icon: '🕒', label: 'Any time' },
-			{ value: 'morning', icon: '🌅', label: 'Morning' },
-			{ value: 'afternoon', icon: '☀️', label: 'Afternoon' },
-			{ value: 'evening', icon: '🌇', label: 'Evening' },
-			{ value: 'night', icon: '🌙', label: 'Night' }
-		],
-		value: tileTimeOfDay(raw),
-		onSelect: async (v) => {
-			// Column is text[] — store [v] (or [] to clear).
-			raw.time_of_day = v ? [v] : [];
-			await updateTask(activeTileId, { time_of_day: v ? [v] : [] });
-			openTilePopup(activeTileId); // re-render so the dropdown shows the new choice
-		}
-	});
-
-	const reminderCustom = document.getElementById('reminderCustom');
-	if (reminderCustom) {
-		reminderCustom.addEventListener('change', async () => {
-			if (!reminderCustom.value) return;
-			const when = new Date(reminderCustom.value); // datetime-local parsed as local time
-			if (isNaN(when.getTime())) return;
-			await setTileReminder(activeTileId, when);
-			openTilePopup(activeTileId);
-		});
-	}
+	// Plan: frequency, date, timing, reminder (planner.js).
+	if (window.mountTilePlan) window.mountTilePlan(tileId);
 
 	// Tags: chips + inline picker (tagchips.js).
 	if (window.mountTileTagChips) window.mountTileTagChips(tileId);
 
 	// (Frequency & Status are handled by the styled dropdowns above.)
-
-	// Wire up weekly day buttons
-	document.querySelectorAll('.day-btn').forEach(btn => {
-		btn.addEventListener('click', e => { e.stopPropagation(); toggleWeeklyDay(btn.dataset.day); });
-	});
-
-	// Wire up once-date picker
-	const onceDateInput = document.getElementById('onceDateInput');
-	if (onceDateInput) {
-		onceDateInput.addEventListener('change', async e => {
-			if (!activeTileId) return;
-			const raw = rawTiles[activeTileId];
-			if (!raw) return;
-			raw.end_date = e.target.value || null;
-			applyFilters();
-			await updateTask(activeTileId, { end_date: raw.end_date });
-		});
-	}
-
-	// Wire up monthly day-of-month selector
-	const monthlyDaySelect = document.getElementById('monthlyDaySelect');
-	if (monthlyDaySelect) {
-		monthlyDaySelect.addEventListener('change', async e => {
-			if (!activeTileId) return;
-			const raw = rawTiles[activeTileId];
-			if (!raw) return;
-			raw.day_of_month = parseInt(e.target.value, 10);
-			applyFilters();
-			scheduleReminders();
-			await updateTask(activeTileId, { day_of_month: raw.day_of_month });
-		});
-	}
 
 	// (Time of Day hidden for now.)
 

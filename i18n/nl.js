@@ -457,5 +457,19 @@ window.I18N_MESSAGES.nl = {
 	"Section": "Sectie",
 	"Remove tag": "Tag verwijderen",
 	"Add tag": "Tag toevoegen",
-	"Show in this section": "In deze sectie tonen"
+	"Show in this section": "In deze sectie tonen",
+	"Every day": "Elke dag",
+	"Weekdays": "Doordeweeks",
+	"Weekends": "Weekend",
+	"Pick days": "Dagen kiezen",
+	"Last day of the month": "Laatste dag van de maand",
+	"Every month on day {n}": "Elke maand op dag {n}",
+	"This weekend": "Dit weekend",
+	"Pick a date": "Kies een datum",
+	"At {time}": "Om {time}",
+	"This evening 18:00": "Vanavond 18:00",
+	"Tomorrow 09:00": "Morgen 09:00",
+	"Pick a time": "Kies een tijd",
+	"Repeats": "Herhaling",
+	"Next: {date}": "Volgende: {date}"
 };
