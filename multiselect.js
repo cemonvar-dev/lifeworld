@@ -2,7 +2,7 @@
 // or Ctrl/Cmd+click a card (Shift+click selects a range). Uses app.js globals:
 // tiles, rawTiles, TAGS, TAGS_BY_ID, tagPath, quickLog, setTilePinned, updateTask,
 // deleteTile, activeTileId, applyFilters, scheduleReminders, todayLocal,
-// openAiChat, escapeHtml, _t, supa.
+// openAiChat, escapeHtml, _t, supa, repeatEvery, mondayOf, i18n.
 (function () {
 	const selected = new Set();
 	let active = false, lastClicked = null, undoTimer = null, busy = false;
@@ -105,7 +105,7 @@
 	// ---- Bottom action bar ----
 	const ACTIONS = [
 		['done', '✅', 'Done'], ['skip', '⏭️', 'Skip'], ['tag', '🏷️', 'Tags'], ['pin', '📌', 'Pin'],
-		['date', '📅', 'Date'], ['complete', '✔️', 'Complete'], ['ai', '✨', 'Ask AI'], ['delete', '🗑️', 'Delete']
+		['date', '📅', 'Date'], ['repeat', '🔁', 'Repeats'], ['complete', '✔️', 'Complete'], ['ai', '✨', 'Ask AI'], ['delete', '🗑️', 'Delete']
 	];
 	function renderBar() {
 		if (!active) return;
@@ -270,6 +270,78 @@
 			});
 	}
 
+	// ---- Repeats: once / daily / weekly (days + every N weeks) / monthly ----
+	const planOf = id => { const r = rawTiles[id]; return { mode: r.frequency_mode || 'daily', days: (r.task_frequency_days || []).map(d => d.day_of_week), every: repeatEvery(r), anchor: r.repeat_anchor || null, end: r.end_date || null }; };
+	async function savePlan(id, p) {
+		const raw = rawTiles[id];
+		const patch = { frequency_mode: p.mode };
+		if (p.mode !== 'once' && raw.end_date) patch.end_date = null;
+		if (p.mode === 'once' && p.end !== undefined) patch.end_date = p.end;
+		if (p.every !== undefined) { patch.repeat_every = p.every; patch.repeat_anchor = p.every > 1 ? p.anchor : null; }
+		Object.assign(raw, patch);
+		const { error } = await supa.from('tasks').update(patch).eq('id', id);
+		if (error) throw error;
+		const days = p.mode === 'weekly' ? p.days : [];
+		const cur = (raw.task_frequency_days || []).map(d => d.day_of_week).sort().join(',');
+		if (cur === [...days].sort().join(',')) return;
+		await supa.from('task_frequency_days').delete().eq('task_id', id);
+		raw.task_frequency_days = [];
+		if (days.length) {
+			const { data, error: e2 } = await supa.from('task_frequency_days').insert(days.map(d => ({ task_id: id, day_of_week: d }))).select();
+			if (e2) throw e2;
+			raw.task_frequency_days = data && data.length === days.length ? data : days.map(d => ({ task_id: id, day_of_week: d }));
+		}
+	}
+	function repeatMenu(anchor) {
+		const list = ids();
+		const plans = list.map(planOf);
+		const weekly = plans.filter(p => p.mode === 'weekly');
+		const same = (a, f) => a.length && a.every(p => f(p) === f(a[0]));
+		let days = weekly.length === plans.length && same(weekly, p => [...p.days].sort().join(',')) ? [...weekly[0].days] : [new Date().getDay()];
+		let every = weekly.length === plans.length && same(weekly, p => p.every) ? weekly[0].every : 1;
+		const MON_FIRST = [1, 2, 3, 4, 5, 6, 0];
+		let place = () => {};
+		const dayName = d => (i18n.dayName ? i18n.dayName(d, 'short') : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]);
+		const pill = on => `border transition ${on ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`;
+		const cur = m => same(plans, p => p.mode) && plans[0].mode === m;
+		const opt = (m, label) => `<button type="button" data-rep="${m}" class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-left hover:bg-slate-50"><span>${escapeHtml(label)}</span>${cur(m) ? '<span class="text-blue-600 font-bold">✓</span>' : ''}</button>`;
+		const weeklyHtml = () => `
+			<div class="flex gap-1 mb-2">${MON_FIRST.map(d => `<button type="button" data-rep-day="${d}" class="flex-1 h-8 rounded-lg text-[11px] font-semibold ${pill(days.includes(d))}">${escapeHtml(dayName(d))}</button>`).join('')}</div>
+			<div class="grid grid-cols-2 gap-1 mb-2">${[1, 2, 3, 4].map(n => `<button type="button" data-rep-every="${n}" class="h-8 rounded-lg text-xs font-semibold ${pill(every === n)}">${escapeHtml(n === 1 ? _t('Every week') : _t('Every {n} weeks', { n }))}</button>`).join('')}</div>
+			<button type="button" data-rep="weekly" ${days.length ? '' : 'disabled'} class="w-full h-9 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-sm font-semibold hover:bg-blue-100 disabled:opacity-40">${escapeHtml(_t('Set'))}</button>`;
+		const m = menu(anchor, `
+			<div class="px-3 pt-1 pb-1.5 text-[11px] text-slate-400">${escapeHtml(_t('{n} selected', { n: list.length }))}</div>
+			${opt('once', _t('Once'))}${opt('daily', _t('Every day'))}${opt('monthly', _t('Monthly'))}
+			<div class="mx-1 mt-1 rounded-xl border border-slate-200 bg-slate-50/60 p-2">
+				<div class="flex items-center justify-between mb-1.5 px-1"><span class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">${escapeHtml(_t('Weekly'))}</span>${cur('weekly') ? '<span class="text-blue-600 font-bold text-sm">✓</span>' : ''}</div>
+				<div data-rep-weekly>${weeklyHtml()}</div>
+			</div>`, (e, el) => {
+			const d = e.target.closest('[data-rep-day]'), n = e.target.closest('[data-rep-every]'), b = e.target.closest('[data-rep]');
+			if (d) { const v = Number(d.dataset.repDay); days = days.includes(v) ? days.filter(x => x !== v) : [...days, v]; el.querySelector('[data-rep-weekly]').innerHTML = weeklyHtml(); place(); return; }
+			if (n) { every = Number(n.dataset.repEvery); el.querySelector('[data-rep-weekly]').innerHTML = weeklyHtml(); place(); return; }
+			if (!b || b.disabled) return;
+			const mode = b.dataset.rep;
+			el.remove();
+			const anchorDay = (() => { const x = mondayOf(new Date()); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; })();
+			run('repeat', async () => {
+				const before = list.map(id => [id, planOf(id)]);
+				for (const id of list) await savePlan(id, mode === 'weekly' ? { mode, days, every, anchor: anchorDay } : { mode });
+				scheduleReminders();
+				toast(_t('{n} cards updated', { n: list.length }), async () => {
+					for (const [id, p] of before) await savePlan(id, p);
+					scheduleReminders(); applyFilters(); update();
+				});
+			});
+		});
+		m.classList.replace('w-64', 'w-72');
+		place = () => {
+			const r = anchor.getBoundingClientRect();
+			m.style.left = Math.max(8, Math.min(r.left + r.width / 2 - 144, innerWidth - 296)) + 'px';
+			m.style.top = Math.max(8, r.top - m.offsetHeight - 8) + 'px';
+		};
+		requestAnimationFrame(place);
+	}
+
 	async function completeAll() {
 		const list = ids();
 		const before = list.map(id => [id, rawTiles[id].status || 'in progress']);
@@ -318,6 +390,7 @@
 		if (act === 'tag') return tagMenu(b);
 		if (act === 'pin') return run('pin', pinAll);
 		if (act === 'date') return dateMenu(b);
+		if (act === 'repeat') return repeatMenu(b);
 		if (act === 'complete') return run('complete', completeAll);
 		if (act === 'delete') return deleteAll(b);
 		if (act === 'ai') return askAi();
