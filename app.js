@@ -2686,7 +2686,14 @@ function matchesSearchTerm(t, rawTerm) {
 
 // One unified chip bar: the active tag filter (if any) + all search chips,
 // each with its own ✕, plus a single "Clear all". Empty -> hidden.
+// Show the search box's × only when there is something to clear.
+function syncSearchClear() {
+	const sb = document.getElementById('searchBox');
+	document.getElementById('searchClearBtn')?.classList.toggle('hidden', !((sb && sb.value) || '').trim() && !searchChips.length);
+}
+
 function renderSearchChips() {
+	syncSearchClear();
 	const box = document.getElementById('searchChips');
 	if (!box) return;
 	const chip = (inner, xClass, extra = '') =>
@@ -3430,7 +3437,16 @@ document.addEventListener('DOMContentLoaded', () => {
 	fetchTilesFromSupabase();
 
 	const searchBox = document.getElementById('searchBox');
-	searchBox.addEventListener('input', () => applyFilters());
+	searchBox.addEventListener('input', () => { applyFilters(); syncSearchClear(); });
+	// Big × inside the box: clears the typed text and the search chips in one tap.
+	const searchClear = document.getElementById('searchClearBtn');
+	if (searchClear) searchClear.addEventListener('click', () => {
+		searchBox.value = '';
+		searchChips = [];
+		renderSearchChips();
+		applyFilters();
+		window.track?.('search_cleared');
+	});
 	searchBox.addEventListener('keydown', (e) => {
 		if (e.key !== 'Enter') return;
 		e.preventDefault();

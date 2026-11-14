@@ -109,7 +109,7 @@
 			<div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
 				<img src="logo.png" alt="Fiblia logo" class="h-10 w-10 shrink-0 rounded-xl shadow-sm ring-1 ring-black/5" />
 				<button id="addTileBtn" aria-label="Add tile" title="Add tile" class="hidden sm:grid place-items-center h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 text-white text-2xl font-light leading-none shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200">+</button>
-				<input type="text" id="searchBox" aria-label="Search tiles" class="flex-1 min-w-0 sm:flex-none sm:w-64 rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur px-4 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300 transition" placeholder="Search tiles..." />
+				<div class="relative flex-1 min-w-0 sm:flex-none sm:w-64"><input type="text" id="searchBox" aria-label="Search tiles" class="w-full rounded-xl border border-slate-200/80 bg-white/70 backdrop-blur pl-4 pr-11 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300 transition" placeholder="Search tiles..." /><button type="button" id="searchClearBtn" aria-label="Clear search" title="Clear search" class="hidden absolute right-0.5 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100 active:bg-slate-200 transition"><span class="grid place-items-center h-6 w-6 rounded-full bg-slate-200/80"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-3.5 h-3.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button></div>
 				<button id="mobileFilterBtn" aria-label="Filters" title="Filters" class="sm:hidden relative grid place-items-center h-10 w-10 shrink-0 rounded-full border border-slate-200/80 bg-white/70 backdrop-blur text-slate-600 shadow-sm active:scale-95 transition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg><span id="mobileFilterBadge" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-blue-500 text-white text-[10px] font-bold leading-[18px] text-center">0</span></button>
 				<!-- Mobile reminder (real notif control) is relocated here by JS -->
 				<div id="mobileTopActions" class="sm:hidden flex items-center gap-2 shrink-0"></div>
@@ -458,7 +458,7 @@
 		<button data-nav="me" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-slate-400 active:scale-95 transition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[22px] h-[22px]" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Me</button>
 	</nav>
 
-	<script src="app.js?v=0.5.2"></script>
+	<script src="app.js?v=0.5.4"></script>
 	<script src="feedback.js?v=1"></script>
 	<script src="onboarding.js?v=3"></script>
 	<script src="progress.js?v=2"></script>
