@@ -49,4 +49,14 @@ if (!xml.includes('android.speech.RecognitionService')) {
   console.log('Speech <queries> already present — skipping.');
 }
 
+// --- 3. Exact alarms -------------------------------------------------------
+// Lets reminders ring on time (Android 12+). On 14+ the user grants it from
+// Settings → Notifications in the app ("Allow exact timing").
+if (!xml.includes('android.permission.SCHEDULE_EXACT_ALARM')) {
+  const at = xml.indexOf('>', xml.indexOf('<manifest')) + 1;
+  xml = xml.slice(0, at) + `
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />` + xml.slice(at);
+  console.log('Injected SCHEDULE_EXACT_ALARM permission');
+}
+
 writeFileSync(path, xml);

@@ -7,7 +7,7 @@
 	<title>Fiblia</title>
 	<link rel="icon" href="logo.png" />
 	<link rel="apple-touch-icon" href="logo.png" />
-	<script src="i18n.js?v=28"></script>
+	<script src="i18n.js?v=29"></script>
 	<script src="https://cdn.tailwindcss.com"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
 	<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -299,7 +299,7 @@
 
 	<!-- Settings Popup -->
 	<div id="settingsOverlay" class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[65] hidden flex items-center justify-center p-4">
-		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm p-6 relative">
+		<div class="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-slate-900/10 border border-white/60 w-[90%] max-w-sm max-h-[90vh] overflow-y-auto p-6 relative">
 			<div class="flex items-center gap-2 mb-5">
 				<span class="w-9 shrink-0 text-lg text-center">⚙️</span>
 				<div class="flex-1 text-lg font-semibold text-slate-500 text-center tracking-tight">Settings</div>
@@ -349,6 +349,7 @@
 						<option value="business">Business · status + 14-day history</option>
 					</select>
 				</div>
+				<div id="notifSettingsMount" class="mt-4 pt-3 border-t border-slate-200"></div>
 			</div>
 
 			<!-- Account Settings -->
@@ -457,17 +458,18 @@
 		<button data-nav="me" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-semibold text-slate-400 active:scale-95 transition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-[22px] h-[22px]" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Me</button>
 	</nav>
 
-	<script src="app.js?v=0.5.1"></script>
+	<script src="app.js?v=0.5.2"></script>
 	<script src="feedback.js?v=1"></script>
 	<script src="onboarding.js?v=3"></script>
 	<script src="progress.js?v=2"></script>
+	<script src="notify.js?v=1"></script>
 	<script src="quicklist.js?v=5"></script>
 	<script src="tiledrag.js?v=3"></script>
 	<script src="tagpanel.js?v=2"></script>
 	<script src="tilecal.js?v=4"></script>
 	<script src="multiselect.js?v=3"></script>
 	<script src="tagchips.js?v=2"></script>
-	<script src="planner.js?v=3"></script>
+	<script src="planner.js?v=4"></script>
 	<script src="tileswipe.js?v=1"></script>
 	<script src="apikeys.js?v=2"></script>
 </body>

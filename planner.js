@@ -44,6 +44,7 @@
 		if (!raw.reminder_at) return '';
 		const d = new Date(raw.reminder_at);
 		if (isNaN(d)) return '';
+		if ((raw.frequency_mode || 'daily') !== 'once') return _t('{time} each time', { time: `${pad(d.getHours())}:${pad(d.getMinutes())}` });
 		return `${relDay(iso(d))} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 	}
 
@@ -51,8 +52,9 @@
 	function reminderForTiming(raw) {
 		const t = TIMING.find(x => x[0] === tileTimeOfDay(raw));
 		if (!t || t[3] == null) return null;
+		const [h, m] = (window.notifBucketTime && notifBucketTime(t[0])) || [t[3], 0];
 		let day = nextDueDateStr(raw) || todayLocal();
-		let when = parse(day); when.setHours(t[3], 0, 0, 0);
+		let when = parse(day); when.setHours(h, m, 0, 0);
 		if (when <= new Date()) {
 			const next = new Date(when); next.setDate(next.getDate() + 1);
 			// For routines, find the following occurrence; for one-time tasks keep tomorrow.
@@ -140,7 +142,7 @@
 		const remNow = reminderLabel(raw);
 		const forTiming = reminderForTiming(raw);
 		const remOpts = [
-			...(forTiming ? [['timing', `⏰ ${_t('At {time}', { time: `${pad(forTiming.getHours())}:00` })} · ${escapeHtml(relDay(iso(forTiming)))}`]] : []),
+			...(forTiming ? [['timing', `⏰ ${_t('At {time}', { time: `${pad(forTiming.getHours())}:${pad(forTiming.getMinutes())}` })} · ${escapeHtml(relDay(iso(forTiming)))}`]] : []),
 			['1h', escapeHtml(_t('In 1 hour'))], ['eve', escapeHtml(_t('This evening 18:00'))], ['tom9', escapeHtml(_t('Tomorrow 09:00'))], ['custom', escapeHtml(_t('Pick a time'))]
 		];
 		return `<div class="mt-2 space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
@@ -196,7 +198,7 @@
 			if ((b = get('plan-start'))) { await setRepeat(tileId, repeatEvery(raw), b.dataset.planStart === 'next'); return; }
 			if ((b = get('plan-days'))) { await setWeekdays(tileId, b.dataset.planDays.split(',').map(Number)); return; }
 			if ((b = get('plan-dom'))) { await setField(tileId, 'day_of_month', Number(b.dataset.planDom)); return; }
-			if ((b = get('plan-tod'))) { const v = b.dataset.planTod; await setField(tileId, 'time_of_day', v && v !== tileTimeOfDay(raw) ? [v] : []); return; }
+			if ((b = get('plan-tod'))) { const v = b.dataset.planTod; const on = v && v !== tileTimeOfDay(raw); await setField(tileId, 'time_of_day', on ? [v] : []); if (on) window.maybeAskNotif?.('timing'); return; }
 			if ((b = get('plan-rem')) !== null && b) {
 				const v = b.dataset.planRem;
 				if (v === 'custom') {
