@@ -474,5 +474,16 @@ window.I18N_MESSAGES.it = {
 	"Next: {date}": "Prossimo: {date}",
 	"Tap the selected one again to clear it.": "Tocca di nuovo la scelta per toglierla.",
 	"Cleared": "Cancellato",
-	"← Skip · Done →": "← Salta · Fatto →"
+	"← Skip · Done →": "← Salta · Fatto →",
+	"Nothing marked done in the last 7 days.": "Niente segnato come fatto negli ultimi 7 giorni.",
+	"Most done": "Più fatte",
+	"Slipped": "In calo",
+	"Untouched all week": "Non toccato tutta la settimana",
+	"{n} cards": "{n} schede",
+	"When you get things done": "Quando fai le cose",
+	"Last 7 days": "Ultimi 7 giorni",
+	"{done} done · {skipped} skipped · {missed} missed": "{done} fatte · {skipped} saltate · {missed} mancate",
+	"Where your week went": "Dove è andata la tua settimana",
+	"Review my week with the coach": "Rivedi la settimana con il coach",
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Rivedi i miei ultimi 7 giorni come il mio coach: cosa è andato bene, cosa è calato, quale area ho trascurato e un suggerimento concreto per la prossima settimana."
 };

@@ -78,3 +78,21 @@ test('an empty account has nothing to celebrate', () => {
 	const p = compute([]);
 	assert.deepStrictEqual([p.thisWeek, p.routinesDue, p.streaks.length, p.wins.length], [0, 0, 0, 0]);
 });
+
+const week = new Function(...Object.keys(env), code + '\nreturn computeWeekReview;')(...Object.values(env));
+test('last 7 days: per day, areas, highlights', () => {
+	const area = key => () => ({ key, label: key, color: '#000' });
+	const walk = daily([log(0), log(1), log(2), log(3), log(4), log(5), log(6)], { name: 'Walk', tag_ids: ['health'] });
+	const pills = daily([log(1), log(3, 'skipped')], { name: 'Pills', tag_ids: ['health'] });
+	const guitar = daily([], { name: 'Guitar', tag_ids: ['hobby'] });
+	const byTag = t => ({ key: t.tag_ids[0], label: t.tag_ids[0], color: '#000' });
+	const w = week([walk, pills, guitar], byTag);
+	assert.strictEqual(w.days.length, 7);
+	assert.strictEqual(w.days[6].key, ago(0));
+	assert.deepStrictEqual(w.totals, { done: 8, skipped: 1, missed: 10 }, 'today is never missed');
+	assert.deepStrictEqual(w.areas.map(a => [a.key, a.pct]), [['health', 100]]);
+	assert.strictEqual(w.top[0].name, 'Walk');
+	assert.deepStrictEqual(w.slipped.map(s => s.name), ['Guitar', 'Pills']);
+	assert.deepStrictEqual(w.untouched.map(a => a.key), ['hobby']);
+	void area;
+});

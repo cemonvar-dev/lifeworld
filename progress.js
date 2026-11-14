@@ -164,11 +164,112 @@ function computeProgress(tasks, now = new Date()) {
 	};
 }
 
+// The last 7 days (today and the 6 before): day by day, areas, highlights and
+// the time of day things get marked done. areaOf(task) -> { key, label, color }.
+function computeWeekReview(tasks, areaOf, now = new Date()) {
+	const todayKey = progressDayKey(now);
+	const keys = Array.from({ length: 7 }, (_, i) => progressDayKey(progressAddDays(now, i - 6)));
+	const inWindow = new Set(keys);
+	const days = keys.map(key => ({ key, done: 0, skipped: 0, missed: 0 }));
+	const byKey = Object.fromEntries(days.map(d => [d.key, d]));
+	const areas = {};
+	const perTask = [];
+	const hours = { morning: 0, afternoon: 0, evening: 0, night: 0 };
+	tasks.forEach(task => {
+		const finished = tilePlant(task, 0).finished;
+		const status = {};
+		(task.task_logs || []).forEach(l => {
+			const d = logDay(l);
+			if (!inWindow.has(d) || !['done', 'completed', 'skipped'].includes(l.status) || status[d]) return;
+			status[d] = l.status === 'skipped' ? 'skipped' : 'done';
+			if (status[d] === 'done' && l.created_at) {
+				const at = new Date(l.created_at);
+				if (progressDayKey(at) === d) { // logged on the day itself, not back-filled
+					const h = at.getHours();
+					hours[h >= 5 && h < 12 ? 'morning' : h < 17 && h >= 12 ? 'afternoon' : h < 22 && h >= 17 ? 'evening' : 'night']++;
+				}
+			}
+		});
+		const area = areaOf(task);
+		const a = areas[area.key] = areas[area.key] || { ...area, done: 0, active: 0, names: [] };
+		if (!finished) a.active++;
+		let due = 0, done = 0;
+		keys.forEach(key => {
+			const st = status[key];
+			if (st) byKey[key][st]++;
+			if (st === 'done') { a.done++; done++; }
+			const scheduled = progressExisted(task, key) && isTaskScheduledOnDate(task, new Date(key + 'T00:00:00'));
+			if (!finished && scheduled) {
+				due++;
+				if (!st && key < todayKey) byKey[key].missed++;
+			}
+		});
+		if (done && !a.names.includes(task.name)) a.names.push(task.name);
+		if (!finished) perTask.push({ id: task.id, name: task.name, routine: (task.frequency_mode || 'daily') !== 'once', due, done });
+	});
+	const areaList = Object.values(areas).filter(a => a.done > 0).sort((x, y) => y.done - x.done);
+	const totalDone = areaList.reduce((n, a) => n + a.done, 0);
+	areaList.forEach(a => { a.pct = totalDone ? Math.round(a.done / totalDone * 100) : 0; });
+	return {
+		days,
+		totals: days.reduce((t, d) => ({ done: t.done + d.done, skipped: t.skipped + d.skipped, missed: t.missed + d.missed }), { done: 0, skipped: 0, missed: 0 }),
+		areas: areaList,
+		top: perTask.filter(t => t.done > 0).sort((x, y) => y.done - x.done || x.name.localeCompare(y.name)).slice(0, 3),
+		slipped: perTask.filter(t => t.routine && t.due >= 2 && t.done / t.due <= 0.5).sort((x, y) => x.done / x.due - y.done / y.due || y.due - x.due).slice(0, 3),
+		untouched: Object.values(areas).filter(a => a.active > 0 && a.done === 0 && a.key !== '__none__').sort((x, y) => y.active - x.active).slice(0, 3),
+		hours
+	};
+}
+
 // ---- Progress screen ----
 (function () {
 	let overlay = null;
 	const card = 'rounded-2xl bg-white border border-slate-200/80 p-4';
 	const heading = 'text-sm font-semibold text-slate-700 mb-2';
+
+	const AREA_FALLBACK = ['#93c5fd', '#a7f3d0', '#fcd34d', '#f9a8d4', '#c4b5fd', '#fdba74', '#99f6e4', '#cbd5e1'];
+	function areaOf(task) {
+		const id = (task.tag_ids || []).find(x => TAGS_BY_ID[x]);
+		if (!id) return { key: '__none__', label: _t('Untagged'), color: '#e2e8f0' };
+		let cur = TAGS_BY_ID[id], guard = 0;
+		while (cur.parent_id && TAGS_BY_ID[cur.parent_id] && guard++ < 30) cur = TAGS_BY_ID[cur.parent_id];
+		const color = (window.tagColor && window.tagColor(cur.id)) || AREA_FALLBACK[Math.abs([...cur.id].reduce((h, c) => h * 31 + c.charCodeAt(0) | 0, 7)) % AREA_FALLBACK.length];
+		return { key: cur.id, label: cur.name, color };
+	}
+
+	function weekReviewHtml(w) {
+		const loc = (window.i18n && i18n.lang) || undefined;
+		const max = Math.max(1, ...w.days.map(d => d.done + d.skipped + d.missed));
+		const seg = (n, cls) => n ? `<span class="${cls}" style="width:${n / max * 100}%"></span>` : '';
+		const rows = w.days.map(d => {
+			const date = new Date(d.key + 'T00:00:00');
+			return `<div class="flex items-center gap-2 text-xs">
+				<span class="w-16 shrink-0 text-slate-500"><span class="font-semibold text-slate-700">${escapeHtml(date.toLocaleDateString(loc, { weekday: 'short' }))}</span> ${date.getDate()}</span>
+				<span class="flex-1 flex h-3 rounded-full bg-slate-100 overflow-hidden">${seg(d.done, 'bg-emerald-300')}${seg(d.skipped, 'bg-amber-200')}${seg(d.missed, 'bg-rose-200')}</span>
+				<span class="w-24 shrink-0 text-right tabular-nums text-[11px] whitespace-nowrap text-slate-500">${d.done}<span class="text-emerald-500"> ✓</span>${d.skipped ? ` · ${d.skipped}<span class="text-amber-500"> ⏭</span>` : ''}${d.missed ? ` · ${d.missed}<span class="text-rose-400"> ○</span>` : ''}</span>
+			</div>`;
+		}).join('');
+		const areaBar = w.areas.length ? `<div class="flex h-3 rounded-full overflow-hidden mb-2">${w.areas.map(a => `<span style="width:${a.pct}%;background:${a.color}" title="${escapeHtml(a.label)} ${a.pct}%"></span>`).join('')}</div>
+			<div class="flex flex-wrap gap-1.5">${w.areas.map(a => `<details class="group"><summary class="list-none cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-slate-200 bg-white text-xs hover:bg-slate-50"><span class="w-2 h-2 rounded-full" style="background:${a.color}"></span><span translate="no" class="font-medium text-slate-700">${escapeHtml(a.label)}</span><span class="text-slate-400">${a.pct}%</span></summary><div translate="no" class="mt-1 ml-2 text-[11px] text-slate-500">${a.names.slice(0, 6).map(escapeHtml).join(' · ')}</div></details>`).join('')}</div>`
+			: `<div class="text-xs text-slate-400">${escapeHtml(_t('Nothing marked done in the last 7 days.'))}</div>`;
+		const list = (title, icon, items, fmt) => items.length ? `<div><div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">${escapeHtml(title)}</div>${items.map(x => `<div class="flex items-center justify-between gap-2 py-0.5 text-sm"><span translate="no" class="truncate text-slate-700">${icon} ${escapeHtml(x.name || x.label)}</span><span class="shrink-0 text-xs tabular-nums text-slate-500">${fmt(x)}</span></div>`).join('')}</div>` : '';
+		const highlights = [
+			list(_t('Most done'), '✅', w.top, x => x.routine && x.due ? `${x.done}/${x.due}` : _t('{n} done', { n: x.done })),
+			list(_t('Slipped'), '⚠️', w.slipped, x => `${x.done}/${x.due}`),
+			list(_t('Untouched all week'), '💤', w.untouched, x => _t('{n} cards', { n: x.active }))
+		].filter(Boolean).join('');
+		const hourTotal = Object.values(w.hours).reduce((a, b) => a + b, 0);
+		const hourRow = hourTotal ? `<div><div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">${escapeHtml(_t('When you get things done'))}</div><div class="grid grid-cols-4 gap-2">${[['morning', '🌅', 'Morning'], ['afternoon', '☀️', 'Afternoon'], ['evening', '🌇', 'Evening'], ['night', '🌙', 'Night']].map(([k, i, l]) => { const pct = Math.round(w.hours[k] / hourTotal * 100); return `<div class="rounded-xl bg-slate-50 border border-slate-100 p-2 text-center"><div class="text-base leading-none">${i}</div><div class="text-sm font-semibold text-slate-700 mt-1">${pct}%</div><div class="text-[10px] text-slate-400">${escapeHtml(_t(l))}</div></div>`; }).join('')}</div></div>` : '';
+		return `<div class="${card}">
+			<div class="flex items-baseline justify-between mb-2"><div class="${heading} mb-0">${escapeHtml(_t('Last 7 days'))}</div><div class="text-xs text-slate-500">${escapeHtml(_t('{done} done · {skipped} skipped · {missed} missed', w.totals))}</div></div>
+			<div class="flex flex-col gap-1.5">${rows}</div>
+			<div class="flex items-center gap-3 mt-2 text-[10px] text-slate-400"><span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-300"></span>${escapeHtml(_t('Done'))}</span><span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-200"></span>${escapeHtml(_t('Skipped'))}</span><span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-rose-200"></span>${escapeHtml(_t('Missed'))}</span></div>
+			<div class="mt-4"><div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">${escapeHtml(_t('Where your week went'))}</div>${areaBar}</div>
+			${highlights ? `<div class="mt-4 grid gap-3">${highlights}</div>` : ''}
+			${hourRow ? `<div class="mt-4">${hourRow}</div>` : ''}
+			<button type="button" data-week-ai class="mt-4 w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold hover:bg-violet-100 transition">✨ ${escapeHtml(_t('Review my week with the coach'))}</button>
+		</div>`;
+	}
 
 	function weekSummaryHtml(p) {
 		const delta = p.thisWeek - p.lastWeekSoFar;
@@ -241,7 +342,7 @@ function computeProgress(tasks, now = new Date()) {
 		const tasks = Object.values(rawTiles);
 		const p = computeProgress(tasks);
 		const body = tasks.length
-			? winsHtml(p) + weekSummaryHtml(p) + trendHtml(p) + heatmapHtml(p) + streaksHtml(p)
+			? winsHtml(p) + weekReviewHtml(computeWeekReview(tasks, areaOf)) + weekSummaryHtml(p) + trendHtml(p) + heatmapHtml(p) + streaksHtml(p)
 			: `<div class="${card} text-center text-sm text-slate-500">${escapeHtml(_t('Create a tile to start tracking your progress.'))}</div>`;
 		overlay.querySelector('#progressBody').innerHTML = body;
 	}
@@ -263,7 +364,15 @@ function computeProgress(tasks, now = new Date()) {
 				<div id="progressBody" class="flex flex-col gap-3 px-5 pb-5 overflow-y-auto"></div>
 			</div>`;
 			document.body.appendChild(overlay);
-			overlay.addEventListener('click', e => { if (e.target === overlay || e.target.closest('[data-progress-close]')) close(); });
+			overlay.addEventListener('click', e => {
+				if (e.target === overlay || e.target.closest('[data-progress-close]')) close();
+				if (e.target.closest('[data-week-ai]')) {
+					close();
+					window.track?.('week_review_requested');
+					if (window.openAiChat) openAiChat();
+					if (window.sendAiMessage) sendAiMessage(_t('Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.'));
+				}
+			});
 			document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) close(); });
 		}
 		render();

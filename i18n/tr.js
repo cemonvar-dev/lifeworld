@@ -474,5 +474,16 @@ window.I18N_MESSAGES.tr = {
 	"Next: {date}": "Sonraki: {date}",
 	"Tap the selected one again to clear it.": "Seçiliye tekrar dokunursan kaldırılır.",
 	"Cleared": "Temizlendi",
-	"← Skip · Done →": "← Atla · Yapıldı →"
+	"← Skip · Done →": "← Atla · Yapıldı →",
+	"Nothing marked done in the last 7 days.": "Son 7 günde yapıldı işaretlenen bir şey yok.",
+	"Most done": "En çok yapılanlar",
+	"Slipped": "Aksayanlar",
+	"Untouched all week": "Bütün hafta dokunulmayan",
+	"{n} cards": "{n} kart",
+	"When you get things done": "İşlerini ne zaman yapıyorsun",
+	"Last 7 days": "Son 7 gün",
+	"{done} done · {skipped} skipped · {missed} missed": "{done} yapıldı · {skipped} atlandı · {missed} kaçırıldı",
+	"Where your week went": "Haftan nereye gitti",
+	"Review my week with the coach": "Haftamı koçla değerlendir",
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Son 7 günümü koçum gibi değerlendir: neler iyi gitti, neler aksadı, hangi alanı ihmal ettim ve gelecek hafta için somut bir öneri."
 };

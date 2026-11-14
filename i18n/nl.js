@@ -474,5 +474,16 @@ window.I18N_MESSAGES.nl = {
 	"Next: {date}": "Volgende: {date}",
 	"Tap the selected one again to clear it.": "Tik nogmaals op de keuze om die te wissen.",
 	"Cleared": "Gewist",
-	"← Skip · Done →": "← Overslaan · Gedaan →"
+	"← Skip · Done →": "← Overslaan · Gedaan →",
+	"Nothing marked done in the last 7 days.": "De afgelopen 7 dagen niets als gedaan gemarkeerd.",
+	"Most done": "Meest gedaan",
+	"Slipped": "Gestokt",
+	"Untouched all week": "De hele week niet aangeraakt",
+	"{n} cards": "{n} kaarten",
+	"When you get things done": "Wanneer je dingen doet",
+	"Last 7 days": "Laatste 7 dagen",
+	"{done} done · {skipped} skipped · {missed} missed": "{done} gedaan · {skipped} overgeslagen · {missed} gemist",
+	"Where your week went": "Waar je week naartoe ging",
+	"Review my week with the coach": "Bespreek mijn week met de coach",
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Bespreek mijn laatste 7 dagen als mijn coach: wat ging goed, wat stokte, welk gebied heb ik verwaarloosd, en één concrete tip voor volgende week."
 };
