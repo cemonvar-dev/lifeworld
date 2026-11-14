@@ -485,5 +485,10 @@ window.I18N_MESSAGES.nl = {
 	"{done} done · {skipped} skipped · {missed} missed": "{done} gedaan · {skipped} overgeslagen · {missed} gemist",
 	"Where your week went": "Waar je week naartoe ging",
 	"Review my week with the coach": "Bespreek mijn week met de coach",
-	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Bespreek mijn laatste 7 dagen als mijn coach: wat ging goed, wat stokte, welk gebied heb ik verwaarloosd, en één concrete tip voor volgende week."
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Bespreek mijn laatste 7 dagen als mijn coach: wat ging goed, wat stokte, welk gebied heb ik verwaarloosd, en één concrete tip voor volgende week.",
+	"Repeat every": "Herhaal elke",
+	"Every week": "Elke week",
+	"Every {n} weeks": "Elke {n} weken",
+	"Starting": "Vanaf",
+	"Could not save. Please try again.": "Opslaan mislukt. Probeer opnieuw."
 };

@@ -485,5 +485,10 @@ window.I18N_MESSAGES.tr = {
 	"{done} done · {skipped} skipped · {missed} missed": "{done} yapıldı · {skipped} atlandı · {missed} kaçırıldı",
 	"Where your week went": "Haftan nereye gitti",
 	"Review my week with the coach": "Haftamı koçla değerlendir",
-	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Son 7 günümü koçum gibi değerlendir: neler iyi gitti, neler aksadı, hangi alanı ihmal ettim ve gelecek hafta için somut bir öneri."
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Son 7 günümü koçum gibi değerlendir: neler iyi gitti, neler aksadı, hangi alanı ihmal ettim ve gelecek hafta için somut bir öneri.",
+	"Repeat every": "Tekrar sıklığı",
+	"Every week": "Her hafta",
+	"Every {n} weeks": "{n} haftada bir",
+	"Starting": "Başlangıç",
+	"Could not save. Please try again.": "Kaydedilemedi. Lütfen tekrar dene."
 };

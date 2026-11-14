@@ -3,7 +3,7 @@
 // chips, weekday presets, a month-day grid, timing icons and reminder options.
 // Uses app.js globals: rawTiles, activeTileId, setFrequency, updateTask, supa,
 // applyFilters, scheduleReminders, setTileReminder, computeReminderAt,
-// nextDueDateStr, tileTimeOfDay, monthlyDom, todayLocal, openTilePopup, i18n, _t, escapeHtml.
+// nextDueDateStr, repeatEvery, isRepeatWeek, mondayOf, tileTimeOfDay, monthlyDom, todayLocal, openTilePopup, i18n, _t, escapeHtml.
 (function () {
 	const OPEN_KEY = 'lw_plan_open';
 	const TIMING = [['morning', '🌅', 'Morning', 9], ['afternoon', '☀️', 'Afternoon', 14], ['evening', '🌇', 'Evening', 20], ['night', '🌙', 'Night', 22], ['', '🕒', 'Any time', null]];
@@ -36,7 +36,7 @@
 		const mode = raw.frequency_mode || 'daily';
 		if (mode === 'once') return raw.end_date ? `📅 ${relDay(raw.end_date)}` : `📅 ${_t('No date')}`;
 		if (mode === 'daily') return `🔁 ${_t('Every day')}`;
-		if (mode === 'weekly') return `🔁 ${weekdayLabel(weekdays(raw))}`;
+		if (mode === 'weekly') { const n = repeatEvery(raw); return `🔁 ${n > 1 ? _t('Every {n} weeks', { n }) + ' · ' : ''}${weekdayLabel(weekdays(raw))}`; }
 		const dom = monthlyDom(raw);
 		return `🗓️ ${dom >= 31 ? _t('Last day of the month') : _t('Every month on day {n}', { n: dom })}`;
 	}
@@ -87,6 +87,18 @@
 		applyFilters(); scheduleReminders(); refresh(tileId);
 		await updateTask(tileId, { [field]: value });
 	}
+	// Every N weeks: the anchor is the Monday of the week it starts in.
+	async function setRepeat(tileId, n, startNextWeek) {
+		const raw = rawTiles[tileId];
+		const monday = mondayOf(new Date());
+		if (startNextWeek) monday.setDate(monday.getDate() + 7);
+		const patch = { repeat_every: n, repeat_anchor: n > 1 ? iso(monday) : null };
+		Object.assign(raw, patch);
+		applyFilters(); scheduleReminders(); refresh(tileId);
+		const { error } = await supa.from('tasks').update(patch).eq('id', tileId);
+		if (error) { console.error('Repeat save error:', error); window.showToast?.(_t('Could not save. Please try again.')); }
+		window.track?.('plan_repeat_set', { every_weeks: n });
+	}
 	async function setFreq(tileId, mode) {
 		const body = document.getElementById('popupBody');
 		const top = body ? body.scrollTop : 0;
@@ -115,7 +127,9 @@
 		} else if (mode === 'weekly') {
 			const days = weekdays(raw);
 			detail = `${label(_t('Days'))}<div class="flex gap-1">${MON_FIRST.map(d => `<button type="button" data-plan-day="${d}" class="flex-1 h-9 rounded-lg text-xs font-semibold border transition ${days.includes(d) ? 'bg-blue-50 text-blue-700 border-blue-300' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${escapeHtml(dayShort(d))}</button>`).join('')}</div>
-				<div class="mt-2 flex flex-wrap gap-1.5">${[['1,2,3,4,5', _t('Weekdays')], ['0,6', _t('Weekends')], ['0,1,2,3,4,5,6', _t('Every day')]].map(([v, l]) => `<button type="button" data-plan-days="${v}" class="px-2.5 h-7 rounded-full text-[11px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">${escapeHtml(l)}</button>`).join('')}</div>`;
+				<div class="mt-2 flex flex-wrap gap-1.5">${[['1,2,3,4,5', _t('Weekdays')], ['0,6', _t('Weekends')], ['0,1,2,3,4,5,6', _t('Every day')]].map(([v, l]) => `<button type="button" data-plan-days="${v}" class="px-2.5 h-7 rounded-full text-[11px] font-semibold border border-slate-200 text-slate-600 hover:bg-slate-50">${escapeHtml(l)}</button>`).join('')}</div>
+				<div class="mt-3">${label(_t('Repeat every'))}${seg([1, 2, 3, 4].map(n => [n, escapeHtml(n === 1 ? _t('Every week') : _t('Every {n} weeks', { n }))]), repeatEvery(raw), 'plan-every')}</div>
+				${repeatEvery(raw) > 1 ? `<div class="mt-3">${label(_t('Starting'))}${seg([['this', escapeHtml(_t('This week'))], ['next', escapeHtml(_t('Next week'))]], isRepeatWeek(raw, new Date()) ? 'this' : 'next', 'plan-start')}</div>` : ''}`;
 		} else if (mode === 'monthly') {
 			const dom = monthlyDom(raw);
 			detail = `${label(_t('Day of month'))}<div class="grid grid-cols-7 gap-1">${Array.from({ length: 30 }, (_, i) => i + 1).map(d => `<button type="button" data-plan-dom="${d}" class="h-8 rounded-lg text-xs tabular-nums border transition ${dom === d ? 'bg-blue-50 text-blue-700 border-blue-300 font-semibold' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}">${d}</button>`).join('')}
@@ -178,6 +192,8 @@
 			if ((b = get('plan-freq'))) { if (b.dataset.planFreq !== (raw.frequency_mode || 'daily')) await setFreq(tileId, b.dataset.planFreq); return; }
 			if ((b = get('plan-date'))) { const v = b.dataset.planDate; await setField(tileId, 'end_date', v && v !== raw.end_date ? v : null); return; }
 			if ((b = get('plan-day'))) { const d = Number(b.dataset.planDay); const cur = weekdays(raw); const next = cur.includes(d) ? cur.filter(x => x !== d) : [...cur, d]; await setWeekdays(tileId, next); return; }
+			if ((b = get('plan-every'))) { const n = Number(b.dataset.planEvery); if (n !== repeatEvery(raw)) await setRepeat(tileId, n, false); return; }
+			if ((b = get('plan-start'))) { await setRepeat(tileId, repeatEvery(raw), b.dataset.planStart === 'next'); return; }
 			if ((b = get('plan-days'))) { await setWeekdays(tileId, b.dataset.planDays.split(',').map(Number)); return; }
 			if ((b = get('plan-dom'))) { await setField(tileId, 'day_of_month', Number(b.dataset.planDom)); return; }
 			if ((b = get('plan-tod'))) { const v = b.dataset.planTod; await setField(tileId, 'time_of_day', v && v !== tileTimeOfDay(raw) ? [v] : []); return; }

@@ -88,12 +88,24 @@ function isDueOn(task, day) {
 	const [y, m, d] = day.split('-').map(Number);
 	if (mode === 'daily') return true;
 	if (mode === 'once') return task.end_date === day;
-	if (mode === 'weekly') return (task.task_frequency_days || []).some(f => f.day_of_week === new Date(Date.UTC(y, m - 1, d)).getUTCDay());
+	if (mode === 'weekly') return (task.task_frequency_days || []).some(f => f.day_of_week === new Date(Date.UTC(y, m - 1, d)).getUTCDay()) && isRepeatWeek(task, day);
 	if (mode === 'monthly') {
 		const dom = parseInt(task.day_of_month, 10) >= 1 ? parseInt(task.day_of_month, 10) : (task.created_at ? new Date(task.created_at).getUTCDate() : 1);
 		return Math.min(dom, new Date(Date.UTC(y, m, 0)).getUTCDate()) === d;
 	}
 	return false;
+}
+
+// Weekly tasks may repeat every N weeks, counted in Monday-start weeks from repeat_anchor (or creation).
+const everyWeeks = t => { const n = parseInt(t.repeat_every, 10); return n >= 1 && n <= 12 ? n : 1; };
+function isRepeatWeek(task, day) {
+	const n = everyWeeks(task);
+	if (n === 1) return true;
+	const a = String(task.repeat_anchor || task.created_at || '').slice(0, 10);
+	if (!DATE_RE.test(a)) return true;
+	const monday = k => { const [y, m, d] = k.split('-').map(Number); const t = Date.UTC(y, m - 1, d); return t - ((new Date(t).getUTCDay() + 6) % 7) * 86400000; };
+	const weeks = Math.round((monday(day) - monday(a)) / (7 * 86400000));
+	return ((weeks % n) + n) % n === 0;
 }
 
 // ---- Tags ----
@@ -162,6 +174,7 @@ function toApiTask(t, tags, today) {
 		name: t.name,
 		frequency: t.frequency_mode || 'daily',
 		weekdays: (t.task_frequency_days || []).map(f => f.day_of_week).sort((a, b) => a - b),
+		every_weeks: everyWeeks(t),
 		day_of_month: t.day_of_month ?? null,
 		date: t.end_date || null,
 		status,
@@ -189,6 +202,11 @@ function readTaskFields(body, { partial }) {
 	if (body.date !== undefined) {
 		if (body.date !== null && !(typeof body.date === 'string' && DATE_RE.test(body.date))) throw bad('date must be YYYY-MM-DD or null.');
 		out.end_date = body.date;
+	}
+	if (body.every_weeks !== undefined) {
+		if (!(Number.isInteger(body.every_weeks) && body.every_weeks >= 1 && body.every_weeks <= 12)) throw bad('every_weeks must be 1-12.');
+		out.repeat_every = body.every_weeks;
+		out.repeat_anchor = todayIn('UTC');
 	}
 	if (body.day_of_month !== undefined) {
 		if (body.day_of_month !== null && !(Number.isInteger(body.day_of_month) && body.day_of_month >= 1 && body.day_of_month <= 31)) throw bad('day_of_month must be 1-31 or null.');

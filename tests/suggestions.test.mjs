@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert';
 const src = readFileSync(new URL('../app.js', import.meta.url), 'utf8').replace(/\r/g, '');
 const between = (a, b) => { const i = src.indexOf(a); assert(i >= 0, a); return src.slice(i, src.indexOf(b, i)); };
-const code = between('function logDay', '// Health icon sets') + between('function todayLocal', '// ---- Data Fetching') + between('// ---- Tile suggestions ----', '// ---- Per-tile reminder helpers ----');
+const code = between('function logDay', '// Health icon sets') + between('// Weekly tiles can repeat every N weeks', 'function isTileScheduledToday') + between('function todayLocal', '// ---- Data Fetching') + between('// ---- Tile suggestions ----', '// ---- Per-tile reminder helpers ----');
 const RealDate = Date, NOW = RealDate.parse('2026-11-08T09:00:00Z');
 class Fixed extends RealDate { constructor(...a) { a.length ? super(...a) : super(NOW); } static now() { return NOW; } }
 const store = {}, localStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = v };

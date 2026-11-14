@@ -485,5 +485,10 @@ window.I18N_MESSAGES.de = {
 	"{done} done · {skipped} skipped · {missed} missed": "{done} erledigt · {skipped} übersprungen · {missed} verpasst",
 	"Where your week went": "Wohin deine Woche ging",
 	"Review my week with the coach": "Woche mit dem Coach auswerten",
-	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Bewerte meine letzten 7 Tage wie mein Coach: was gut lief, was ins Stocken geriet, welchen Bereich ich vernachlässigt habe, und ein konkreter Vorschlag für nächste Woche."
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Bewerte meine letzten 7 Tage wie mein Coach: was gut lief, was ins Stocken geriet, welchen Bereich ich vernachlässigt habe, und ein konkreter Vorschlag für nächste Woche.",
+	"Repeat every": "Wiederholen alle",
+	"Every week": "Jede Woche",
+	"Every {n} weeks": "Alle {n} Wochen",
+	"Starting": "Ab",
+	"Could not save. Please try again.": "Speichern fehlgeschlagen. Bitte erneut versuchen."
 };

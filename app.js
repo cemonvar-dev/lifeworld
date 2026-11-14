@@ -156,7 +156,7 @@ function healthCounts(task) {
 		const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 		let isExpected = false;
 		if (mode === 'daily') isExpected = true;
-		else if (mode === 'weekly') isExpected = freqDays.includes(dayOfWeek);
+		else if (mode === 'weekly') isExpected = freqDays.includes(dayOfWeek) && isRepeatWeek(task, d);
 		else if (mode === 'monthly') {
 			// Expect once per month on the chosen day-of-month (clamped for short months).
 			const md = monthlyDateFor(task, d.getFullYear(), d.getMonth());
@@ -413,10 +413,10 @@ function getNextDueLabel(tileId) {
 	if (mode === 'weekly') {
 		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
 		if (freqDays.length === 0) return '—';
-		const todayDay = today.getDay();
-		// Find next scheduled day
-		for (let offset = 0; offset < 7; offset++) {
-			if (freqDays.includes((todayDay + offset) % 7)) {
+		// Find next scheduled day (every-N-weeks tiles can be up to N weeks out).
+		for (let offset = 0; offset < 7 * repeatEvery(raw); offset++) {
+			const d = new Date(today); d.setDate(today.getDate() + offset);
+			if (isTaskScheduledOnDate(raw, d)) {
 				if (offset === 0) return 'today';
 				if (offset === 1) return 'tomorrow';
 				return `in ${offset} days`;
@@ -450,11 +450,9 @@ function nextDueDateStr(raw) {
 	if (mode === 'weekly') {
 		const freqDays = (raw.task_frequency_days || []).map(d => d.day_of_week);
 		if (!freqDays.length) return null;
-		const todayDay = today.getDay();
-		for (let off = 0; off < 7; off++) {
-			if (freqDays.includes((todayDay + off) % 7)) {
-				const d = new Date(today); d.setDate(today.getDate() + off); return iso(d);
-			}
+		for (let off = 0; off < 7 * repeatEvery(raw); off++) {
+			const d = new Date(today); d.setDate(today.getDate() + off);
+			if (isTaskScheduledOnDate(raw, d)) return iso(d);
 		}
 		return null;
 	}
@@ -2443,7 +2441,7 @@ function isTaskScheduledOnDate(task, dateObj) {
 	}
 	if (mode === 'weekly') {
 		const freqDays = (task.task_frequency_days || []).map(d => d.day_of_week);
-		return freqDays.includes(dateObj.getDay());
+		return freqDays.includes(dateObj.getDay()) && isRepeatWeek(task, dateObj);
 	}
 	if (mode === 'once') {
 		if (!task.end_date) return false;
@@ -2451,6 +2449,27 @@ function isTaskScheduledOnDate(task, dateObj) {
 		return task.end_date === iso;
 	}
 	return true;
+}
+
+// Weekly tiles can repeat every N weeks (tasks.repeat_every, default 1),
+// counted in Monday-start weeks from tasks.repeat_anchor (or the creation day).
+function repeatEvery(task) {
+	const n = parseInt(task && task.repeat_every, 10);
+	return n >= 1 && n <= 12 ? n : 1;
+}
+function mondayOf(dateObj) {
+	const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+	d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+	return d;
+}
+function isRepeatWeek(task, dateObj) {
+	const n = repeatEvery(task);
+	if (n === 1) return true;
+	const a = String(task.repeat_anchor || task.created_at || '').slice(0, 10);
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(a)) return true;
+	const [y, m, d] = a.split('-').map(Number);
+	const weeks = Math.round((mondayOf(dateObj) - mondayOf(new Date(y, m - 1, d))) / (7 * 86400000));
+	return ((weeks % n) + n) % n === 0;
 }
 
 function isTileScheduledToday(tileId) {
@@ -3140,7 +3159,7 @@ function buildTaskContext() {
 		const todayLog = logs.find(l => logDay(l) === todayStr);
 		const recentLogs = logs.slice(0, 7).map(l => `${logDay(l)}: ${l.status}${l.note ? ' — ' + l.note : ''}`).join('; ');
 
-		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagPath).join(', ')}] | freq: ${task.frequency_mode}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}${(h => h ? ' | history: ' + h : '')(coachHistory(task))}`;
+		return `• id=${task.id} "${task.name}" | tags: [${(task.tag_ids || []).map(tagPath).join(', ')}] | freq: ${task.frequency_mode}${task.frequency_mode === 'weekly' && repeatEvery(task) > 1 ? ` (every ${repeatEvery(task)} weeks)` : ''}${task.end_date ? ' | date: ' + task.end_date : ''}${task.day_of_month ? ' | dom: ' + task.day_of_month : ''} | lifecycle: ${task.status || 'in progress'} | health: ${health}% (${plant.label}) | total logs: ${logs.length} | today: ${todayLog ? todayLog.status : 'no action'}${typeof isTileScheduledToday === 'function' && isTileScheduledToday(task.id) ? ' (due today)' : ''} | recent: ${recentLogs || 'none'} | facts: ${tileCoachFacts(task)}${(h => h ? ' | history: ' + h : '')(coachHistory(task))}`;
 	});
 
 	const overallHealth = tiles.length > 0 ? Math.round(tiles.reduce((s, t) => s + (t.health || 0), 0) / tiles.length) : 0;

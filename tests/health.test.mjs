@@ -3,7 +3,7 @@ process.env.TZ = 'Europe/Istanbul';
 import { readFileSync } from 'node:fs';
 const src = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const between = (a, b) => { const i = src.indexOf(a); return src.slice(i, src.indexOf(b, i)); };
-const code = between('function logDay', '// Health icon sets') + '\n' + between('function todayLocal', '// ---- Data Fetching');
+const code = between('function logDay', '// Health icon sets') + '\n' + between('// Weekly tiles can repeat every N weeks', 'function isTileScheduledToday') + '\n' +between('function todayLocal', '// ---- Data Fetching');
 const RealDate = Date;
 function build(iso) {
   class Fixed extends RealDate { constructor(...a) { a.length ? super(...a) : super(iso); } }

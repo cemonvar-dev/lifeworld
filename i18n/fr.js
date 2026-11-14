@@ -485,5 +485,10 @@ window.I18N_MESSAGES.fr = {
 	"{done} done · {skipped} skipped · {missed} missed": "{done} faits · {skipped} passés · {missed} manqués",
 	"Where your week went": "Où est passée ta semaine",
 	"Review my week with the coach": "Faire le point avec le coach",
-	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Fais le point sur mes 7 derniers jours comme mon coach : ce qui a bien marché, ce qui a flanché, le domaine que j’ai négligé, et une suggestion concrète pour la semaine prochaine."
+	"Review my last 7 days like my coach: what went well, what slipped, which area I neglected, and one concrete suggestion for next week.": "Fais le point sur mes 7 derniers jours comme mon coach : ce qui a bien marché, ce qui a flanché, le domaine que j’ai négligé, et une suggestion concrète pour la semaine prochaine.",
+	"Repeat every": "Répéter tous les",
+	"Every week": "Chaque semaine",
+	"Every {n} weeks": "Toutes les {n} semaines",
+	"Starting": "À partir de",
+	"Could not save. Please try again.": "Échec de l'enregistrement. Réessaie."
 };
