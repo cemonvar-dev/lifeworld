@@ -65,6 +65,8 @@
 			await saveIdeas(current, { ideas: result.ideas, tip: result.tip || '', at: new Date().toISOString() });
 			window.track?.('task_ideas_found', { count: result.ideas.length });
 			if (!popupShows(tileId)) toast(current);
+			// App in the background (or closed to the tray): tell them on the phone too.
+			if (document.hidden) window.notifyTileIdeas?.(current, result.ideas.length);
 		}
 		if (popupShows(tileId)) render(current, tileId);
 	}

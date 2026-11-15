@@ -534,5 +534,9 @@ window.I18N_MESSAGES.tr = {
 	"Added ✓": "Eklendi ✓",
 	"AI-generated from web results; check details before booking.": "Web sonuçlarından yapay zekâ ile derlendi; rezervasyondan önce ayrıntıları kontrol et.",
 	"Fiblia found ideas for": "Fiblia şunun için fikir buldu:",
-	"View": "Göster"
+	"View": "Göster",
+	"Ideas for “{name}”": "“{name}” için fikirler",
+	"{n} options found on the web. Tap to see them.": "Webde {n} seçenek bulundu. Görmek için dokun.",
+	"Ideas for new tasks": "Yeni görevler için fikirler",
+	"When Fiblia finds options on the web for a task you added": "Eklediğin bir görev için Fiblia webde seçenek bulduğunda"
 };

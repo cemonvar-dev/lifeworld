@@ -534,5 +534,9 @@ window.I18N_MESSAGES.de = {
 	"Added ✓": "Hinzugefügt ✓",
 	"AI-generated from web results; check details before booking.": "KI-generiert aus Webergebnissen; prüfe die Details vor der Buchung.",
 	"Fiblia found ideas for": "Fiblia hat Ideen gefunden für",
-	"View": "Ansehen"
+	"View": "Ansehen",
+	"Ideas for “{name}”": "Ideen für „{name}“",
+	"{n} options found on the web. Tap to see them.": "{n} Optionen im Web gefunden. Tippe, um sie zu sehen.",
+	"Ideas for new tasks": "Ideen für neue Aufgaben",
+	"When Fiblia finds options on the web for a task you added": "Wenn Fiblia im Web Optionen für eine neue Aufgabe findet"
 };
