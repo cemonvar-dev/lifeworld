@@ -23,7 +23,7 @@ const NOTIF_ACTION_TYPE = 'reminderActions';
 function notifDefaults() {
 	const buckets = {};
 	SUMMARY_BUCKETS.forEach(b => { buckets[b.key] = { on: true, time: b.time }; });
-	return { buckets, anytime: true, streak: true, weekly: true, comeback: true, ideas: true, quiet: { on: false, from: '22:30', to: '07:30' } };
+	return { buckets, anytime: true, streak: true, weekly: true, comeback: true, ideas: true, picks: true, quiet: { on: false, from: '22:30', to: '07:30' } };
 }
 function notifPrefs() {
 	const d = notifDefaults();
@@ -260,6 +260,7 @@ async function onNotificationAction(event) {
 	}
 	// Plain tap: take the user to what the notification was about.
 	if (extra.taskId) { if (await notifWhenLoaded(() => rawTiles[extra.taskId])) openTilePopup(extra.taskId); return; }
+	if (extra.kind === 'picks') { await notifWhenLoaded(() => typeof currentUserId !== 'undefined' && currentUserId); window.openPicks?.(); return; }
 	if (extra.kind === 'weekly') { await notifWhenLoaded(() => Object.keys(rawTiles).length); window.openProgress?.(); return; }
 	if (extra.kind === 'summary' || extra.kind === 'streak') { await notifWhenLoaded(() => Object.keys(rawTiles).length); openNotifMenu(extra.summary); }
 }
@@ -384,34 +385,57 @@ async function scheduleReminders() {
 	}
 }
 
-// Web ideas found for a new task (tileideas.js) while the app is in the background:
-// fire one right away; tapping it opens the card. Skipped in quiet hours.
-async function notifyTileIdeas(task, count) {
-	const prefs = notifPrefs();
-	if (!prefs.ideas || !task || inQuietHours(new Date(), prefs)) return false;
-	const title = `💡 ${_t('Ideas for “{name}”', { name: task.name })}`;
-	const body = _t('{n} options found on the web. Tap to see them.', { n: count });
+// Fire one notification right away (app in the background). Skipped in quiet hours.
+// Ids 1..N belong to the rebuilt schedule, so callers pass ids well clear of them.
+async function notifyNow({ id, title, body, extra, tag, onTap }) {
 	const LN = nativeLN();
 	if (LN) {
 		try {
 			if ((await LN.checkPermissions()).display !== 'granted') return false;
 			try { await LN.createChannel({ id: 'reminders', name: 'Reminders', importance: 4, visibility: 1 }); } catch (e) {}
-			// Ids 1..N belong to the rebuilt schedule; keep these well clear of them.
-			const id = 800000 + (parseInt(String(task.id).replace(/[^0-9a-f]/gi, '').slice(0, 5), 16) % 99999 || 1);
-			await LN.schedule({ notifications: [{ id, title, body, channelId: 'reminders', extra: { kind: 'ideas', taskId: task.id }, schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true } }] });
+			await LN.schedule({ notifications: [{ id, title, body, channelId: 'reminders', extra, schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true } }] });
 			return true;
-		} catch (e) { console.error('ideas notification error:', e); return false; }
+		} catch (e) { console.error('notification error:', e); return false; }
 	}
 	if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
 		try {
-			const n = new Notification(title, { body, tag: 'lw-ideas-' + task.id });
-			n.onclick = () => { window.focus(); openTilePopup(task.id); n.close(); };
+			const n = new Notification(title, { body, tag });
+			n.onclick = () => { window.focus(); onTap(); n.close(); };
 			return true;
 		} catch (e) {}
 	}
 	return false;
 }
+
+// Web ideas found for a new task (tileideas.js); tapping opens the card.
+async function notifyTileIdeas(task, count) {
+	const prefs = notifPrefs();
+	if (!prefs.ideas || !task || inQuietHours(new Date(), prefs)) return false;
+	return notifyNow({
+		id: 800000 + (parseInt(String(task.id).replace(/[^0-9a-f]/gi, '').slice(0, 5), 16) % 99999 || 1),
+		title: `💡 ${_t('Ideas for “{name}”', { name: task.name })}`,
+		body: _t('{n} options found on the web. Tap to see them.', { n: count }),
+		extra: { kind: 'ideas', taskId: task.id },
+		tag: 'lw-ideas-' + task.id,
+		onTap: () => openTilePopup(task.id)
+	});
+}
 window.notifyTileIdeas = notifyTileIdeas;
+
+// Weekly picks from the user's interests (picks.js); tapping opens them in the coach chat.
+async function notifyPicks(count) {
+	const prefs = notifPrefs();
+	if (!prefs.picks || inQuietHours(new Date(), prefs)) return false;
+	return notifyNow({
+		id: 799000,
+		title: `✨ ${_t('Your picks for this week are ready')}`,
+		body: _t('{n} things to do around you, based on what you enjoy.', { n: count }),
+		extra: { kind: 'picks' },
+		tag: 'lw-picks',
+		onTap: () => window.openPicks?.()
+	});
+}
+window.notifyPicks = notifyPicks;
 
 // ---- Asking for permission, with context ----
 const ASK_KEY = 'lw_notif_asked';
@@ -497,6 +521,7 @@ window.mountNotifSettings = async function () {
 		${toggle('data-notif-flag="weekly"', prefs.weekly, `📊 ${escapeHtml(_t('Weekly review'))}`, _t('Sunday {time}', { time: WEEKLY_TIME }))}
 		${toggle('data-notif-flag="comeback"', prefs.comeback, `👋 ${escapeHtml(_t('Nudge me if I’m away for a week'))}`)}
 		${toggle('data-notif-flag="ideas"', prefs.ideas, `💡 ${escapeHtml(_t('Ideas for new tasks'))}`, _t('When Fiblia finds options on the web for a task you added'))}
+		${toggle('data-notif-flag="picks"', prefs.picks, `✨ ${escapeHtml(_t('Weekly picks'))}`, _t('Things to do around you, based on your interests'))}
 		${toggle('data-notif-quiet', prefs.quiet.on, `🌙 ${escapeHtml(_t('Quiet hours'))}`, _t('Summaries and nudges wait; your own reminders still ring.'))}
 		${prefs.quiet.on ? `<div class="flex items-center gap-2 pb-1 pl-1 text-sm text-slate-600">${timeInput('data-notif-quiet-from', prefs.quiet.from)}<span>–</span>${timeInput('data-notif-quiet-to', prefs.quiet.to)}</div>` : ''}
 		${native && perm === 'granted' ? `<button type="button" data-notif-test class="mt-2 w-full py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200">${escapeHtml(_t('Send a test notification'))}</button>` : ''}`;

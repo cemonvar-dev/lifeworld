@@ -298,10 +298,59 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nWHAT YOU REMEMBER ABO
 const IDEAS_DAILY_LIMIT = parseInt(process.env.AI_IDEAS_DAILY_LIMIT || '10', 10);
 const IDEAS_MODEL = process.env.OPENAI_IDEAS_MODEL || 'gpt-4.1-mini';
 
-async function ideasQuotaId(userId) {
+// A stable, separate ai_usage key per feature (uuid-shaped hash), so each has its own daily cap.
+async function featureQuotaId(feature, userId) {
 	const { createHash } = await import('node:crypto');
-	const h = createHash('sha256').update('ideas:' + userId).digest('hex');
+	const h = createHash('sha256').update(feature + ':' + userId).digest('hex');
 	return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
+const ideasQuotaId = userId => featureQuotaId('ideas', userId);
+
+// Where the user is, for local results: memory may know the city; otherwise the
+// timezone's city is a fair guess (Europe/Istanbul -> Istanbul).
+function userPlace(memory, timezone) {
+	const memCity = (String(memory || '').match(/\b(?:[Ll]ives in|[Bb]ased in|[Cc]ity:?)\s+([A-ZÇĞİÖŞÜ][\p{L}', -]{1,50}?)(?=[.;\n(]|$)/mu) || [])[1];
+	return (memCity || (String(timezone || '').split('/').pop() || '').replace(/_/g, ' ')).trim().slice(0, 60);
+}
+
+// Validated location fields shared by the web-search modes.
+function locationFields(body) {
+	return {
+		timezone: typeof body.timezone === 'string' && /^[A-Za-z_\/+-]{1,64}$/.test(body.timezone) ? body.timezone : '',
+		country: typeof body.country === 'string' && /^[A-Z]{2}$/.test(body.country) ? body.country : '',
+		today: typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10)
+	};
+}
+
+// One Responses API call with web search; returns the JSON object the model wrote, or null.
+async function webSearchJson(apiKey, instructions, { place, timezone, country }, { contextSize = 'low', maxTokens = 900 } = {}) {
+	const location = { type: 'approximate' };
+	if (timezone) location.timezone = timezone;
+	if (country) location.country = country;
+	if (place) location.city = place;
+	const send = toolType => fetch('https://api.openai.com/v1/responses', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+		body: JSON.stringify({
+			model: IDEAS_MODEL,
+			tools: [{ type: toolType, search_context_size: contextSize, user_location: location }],
+			input: instructions,
+			max_output_tokens: maxTokens
+		})
+	});
+	let resp = await send('web_search');
+	if (!resp.ok && resp.status !== 401) {
+		console.error('web_search rejected, trying preview tool:', resp.status, await resp.text().catch(() => ''));
+		resp = await send('web_search_preview');
+	}
+	if (!resp.ok) {
+		console.error('Web search error:', resp.status, await resp.text().catch(() => ''));
+		return null;
+	}
+	const data = await resp.json();
+	const message = (data.output || []).filter(o => o.type === 'message').pop();
+	const part = (message?.content || []).find(c => c.type === 'output_text');
+	return parseJsonObject(part?.text || data.output_text || '');
 }
 
 // Pull the first JSON object out of a model's text (it may wrap it in prose or fences).
@@ -353,33 +402,7 @@ Prefer options you actually found in the search results, each with its real URL.
 Write in ${lang}, in a natural, friendly tone. Each idea: a short title (max 8 words) and one helpful sentence (max 25 words) saying why it fits or what to do.
 Add one short "tip" (max 20 words) with a practical next step (e.g. "Book 2-3 days ahead for evening slots").
 Reply with JSON only, no prose and no markdown: {"ideas":[{"title":"...","detail":"...","url":"https://..."}],"tip":"..."}`;
-	const location = { type: 'approximate' };
-	if (timezone) location.timezone = timezone;
-	if (country) location.country = country;
-	if (place) location.city = place;
-	const send = toolType => fetch('https://api.openai.com/v1/responses', {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-		body: JSON.stringify({
-			model: IDEAS_MODEL,
-			tools: [{ type: toolType, search_context_size: 'low', user_location: location }],
-			input: instructions,
-			max_output_tokens: 900
-		})
-	});
-	let resp = await send('web_search');
-	if (!resp.ok && resp.status !== 401) {
-		console.error('Ideas web_search rejected, trying preview tool:', resp.status, await resp.text().catch(() => ''));
-		resp = await send('web_search_preview');
-	}
-	if (!resp.ok) {
-		console.error('Ideas search error:', resp.status, await resp.text().catch(() => ''));
-		return null;
-	}
-	const data = await resp.json();
-	const message = (data.output || []).filter(o => o.type === 'message').pop();
-	const part = (message?.content || []).find(c => c.type === 'output_text');
-	const out = parseJsonObject(part?.text || data.output_text || '');
+	const out = await webSearchJson(apiKey, instructions, { place, timezone, country });
 	if (!out || !Array.isArray(out.ideas)) return null;
 	const ideas = out.ideas.slice(0, 4).map(i => ({
 		title: String(i?.title || '').trim().slice(0, 80),
@@ -394,13 +417,8 @@ async function handleIdeas(req, res, apiKey, user, body) {
 	const name = typeof body.name === 'string' ? body.name.trim().slice(0, 200) : '';
 	if (!name) return res.status(400).json({ error: 'name required' });
 	const tags = typeof body.tags === 'string' ? body.tags.slice(0, 300) : '';
-	const timezone = typeof body.timezone === 'string' && /^[A-Za-z_\/+-]{1,64}$/.test(body.timezone) ? body.timezone : '';
-	const country = typeof body.country === 'string' && /^[A-Z]{2}$/.test(body.country) ? body.country : '';
-	const today = typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
-	// City: memory may know it; otherwise the timezone's city is a fair guess (Europe/Istanbul -> Istanbul).
-	const memory = await getMemory(user.id);
-	const memCity = (memory.match(/\b(?:[Ll]ives in|[Bb]ased in|[Cc]ity:?)\s+([A-ZÇĞİÖŞÜ][\p{L}', -]{1,50}?)(?=[.;\n(]|$)/mu) || [])[1];
-	const place = (memCity || (timezone.split('/').pop() || '').replace(/_/g, ' ')).trim().slice(0, 60);
+	const { timezone, country, today } = locationFields(body);
+	const place = userPlace(await getMemory(user.id), timezone);
 	try {
 		const gate = await ideasGate(apiKey, name, tags, place);
 		if (!gate || !gate.research) return res.status(200).json({ ideas: [] });
@@ -416,6 +434,97 @@ async function handleIdeas(req, res, apiKey, user, body) {
 		return res.status(500).json({ error: 'Internal server error' });
 	}
 }
+
+// ---- Weekly picks from the user's interests (mode: 'picks') ----
+// The app asks about once a week; one web search covers all interests and
+// returns a handful of concrete, dated things to do in the coming days.
+const PICKS_DAILY_LIMIT = parseInt(process.env.AI_PICKS_DAILY_LIMIT || '2', 10);
+const MAX_INTERESTS = 15;
+
+// [{label, detail}] from whatever the client or the model sent.
+function sanitizeInterests(list, max = MAX_INTERESTS) {
+	if (!Array.isArray(list)) return [];
+	const seen = new Set();
+	const out = [];
+	for (const raw of list) {
+		const label = String((raw && (raw.label || raw)) || '').trim().slice(0, 40);
+		if (!label || typeof label !== 'string' || seen.has(label.toLowerCase())) continue;
+		seen.add(label.toLowerCase());
+		out.push({ label, detail: String((raw && raw.detail) || '').trim().slice(0, 120) });
+		if (out.length >= max) break;
+	}
+	return out;
+}
+
+async function handlePicks(req, res, apiKey, user, body) {
+	const interests = sanitizeInterests(body.interests);
+	if (!interests.length) return res.status(400).json({ error: 'interests required' });
+	const dislikes = (Array.isArray(body.dislikes) ? body.dislikes : []).filter(d => typeof d === 'string').map(d => d.trim().slice(0, 80)).filter(Boolean).slice(-20);
+	const { timezone, country, today } = locationFields(body);
+	const memory = await getMemory(user.id);
+	const place = userPlace(memory, timezone);
+	const isPremium = !!user.app_metadata?.premium;
+	const quota = await consumeQuota(await featureQuotaId('picks', user.id), isPremium ? PICKS_DAILY_LIMIT * 3 : PICKS_DAILY_LIMIT);
+	if (!quota) return res.status(500).json({ error: 'Could not verify your usage quota.' });
+	if (!quota.allowed) return res.status(429).json({ error: 'You already got fresh picks today. Try again tomorrow.', code: 'picks_limit' });
+	const lang = LANGUAGE_NAMES[body.language] || 'English';
+	const weekday = new Date(today + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+	const instructions = `You find personal "picks" for a user of a life-planning app: concrete things they could do in the next 10 days, based on what they enjoy.
+Today is ${weekday} ${today}. They live${place ? ` in or near ${place}` : ' near the location given'}.
+THEIR INTERESTS:
+${interests.map(i => `- ${i.label}${i.detail ? ` (${i.detail})` : ''}`).join('\n')}
+${dislikes.length ? `NOT FOR THEM (avoid similar): ${dislikes.join('; ')}\n` : ''}${memory ? `WHAT THE COACH KNOWS ABOUT THEM (may be outdated):\n${memory.slice(0, 800)}\n` : ''}
+Search the web for what is actually on or available soon: films showing in cinemas this week, concerts and events with dates, exhibitions, matches, courses starting soon, a good day trip or weekend getaway for the season, a new restaurant, and so on. Cover different interests; at most 2 picks per interest.
+Give 5 or 6 picks. Prefer real, dated, local things you found in the results, each with its real URL. Never invent names, dates, prices or URLs; if you are unsure of a date, leave "date" empty and describe it in "when".
+Write in ${lang}, warm and brief, like a friend who knows their taste.
+Each pick: "interest" (exactly one of their interest labels), "title" (max 8 words), "detail" (one sentence, max 25 words: what it is and why it suits them), "when" (short, e.g. "Sat 21 Nov, 20:00" or "Any weekend"), "date" (YYYY-MM-DD of the best day to do it, or ""), "url", and "task" (a short to-do title to add to their planner, e.g. "Get tickets for Dune 3").
+Reply with JSON only, no prose and no markdown: {"picks":[{"interest":"...","title":"...","detail":"...","when":"...","date":"","url":"https://...","task":"..."}]}`;
+	try {
+		const out = await webSearchJson(apiKey, instructions, { place, timezone, country }, { contextSize: 'medium', maxTokens: 2000 });
+		const labels = new Map(interests.map(i => [i.label.toLowerCase(), i.label]));
+		const picks = (out && Array.isArray(out.picks) ? out.picks : []).slice(0, 8).map(p => ({
+			interest: labels.get(String(p?.interest || '').toLowerCase()) || '',
+			title: String(p?.title || '').trim().slice(0, 80),
+			detail: String(p?.detail || '').trim().slice(0, 240),
+			when: String(p?.when || '').trim().slice(0, 60),
+			date: typeof p?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.date) && p.date >= today ? p.date : '',
+			url: cleanUrl(p?.url),
+			task: String(p?.task || p?.title || '').trim().slice(0, 120)
+		})).filter(p => p.title);
+		return res.status(200).json({ picks });
+	} catch (err) {
+		console.error('Picks error:', err);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
+}
+
+// The coach saves what the user enjoys, so weekly picks can follow their taste.
+const SAVE_INTERESTS_TOOL = {
+	type: 'function',
+	function: {
+		name: 'save_interests',
+		description: 'Add, refine or remove the user\'s interests (things they enjoy doing in their free time). Used to find weekly picks for them. Call it when the user clearly says they enjoy (or no longer enjoy) something, or agrees to save it.',
+		parameters: {
+			type: 'object',
+			properties: {
+				message: { type: 'string', description: 'One short, warm line confirming what you saved.' },
+				add: {
+					type: 'array',
+					items: {
+						type: 'object',
+						properties: {
+							label: { type: 'string', description: 'Short interest name in the user\'s language, e.g. "Cinema". Reuse an existing label to refine it.' },
+							detail: { type: 'string', description: 'Their taste within it, e.g. "sci-fi, original language".' }
+						},
+						required: ['label']
+					}
+				},
+				remove: { type: 'array', items: { type: 'string' }, description: 'Labels of existing interests to drop.' }
+			},
+			required: ['message']
+		}
+	}
+};
 
 export default async function handler(req, res) {
 	// CORS
@@ -444,6 +553,7 @@ export default async function handler(req, res) {
 	const body = req.body || {};
 	if (body.mode === 'greeting') return handleGreeting(req, res, apiKey, user, body);
 	if (body.mode === 'ideas') return handleIdeas(req, res, apiKey, user, body);
+	if (body.mode === 'picks') return handlePicks(req, res, apiKey, user, body);
 	const { responseFormat } = body;
 	if (!Array.isArray(body.messages)) return res.status(400).json({ error: 'messages required' });
 	const jsonMode = responseFormat?.type === 'json_object';
@@ -520,6 +630,11 @@ FRESH IDEAS (beyond the board)
 - Use what you know: their tags and tasks, the date and season, and their location (the city from memory, otherwise a guess from the timezone; say "in Istanbul" only if you're fairly sure). Suggest kinds of things ("a weekend ceramics workshop", "a day trip to a nearby town by the sea"), never specific venues, prices, dates or events you can't verify, and suggest where to look if useful.
 - One idea at a time, woven naturally into your answer, then offer to add it as a task. If they say yes, use propose_task_changes to create it (a one-time task, tagged with the matching existing tag).
 
+INTERESTS AND PICKS
+- The data may list INTERESTS (what they enjoy in their free time) and THIS WEEK'S PICKS (concrete things found on the web for them). Use them: when free time, the weekend, family time, rest or low mood comes up, suggest one fitting pick by name and offer to add it as a dated task (propose_task_changes, frequency once, end_date = the pick's date).
+- Learn their taste. When they mention enjoying something (a film genre, hiking, jazz, cooking), or not enjoying it, save it with save_interests. If the list is empty and the talk turns to free time, ask one light question about what they enjoy and offer to remember it.
+- Interests are saved right away (no review needed); confirm in one short line. Weekly picks then follow them automatically.
+
 ACCURACY
 - Understand what each task really is from its name and its full tag path. Tags are nested with "›": "family › hilal" means something for or with Hilal, a person in their family; "work › r&d" is a work project. Describe tasks by what they are ("helping Hilal with her LGS practice tests"), never just by their bucket ("family tasks").
 - Tell apart never started, abandoned (a long gap), deliberately skipped, inconsistent, and declining. Never say something is skipped unless the facts show skips.
@@ -556,7 +671,7 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 				// Auto-reschedule uses strict JSON; chat can propose task changes.
 				...(jsonMode
 					? { response_format: { type: 'json_object' } }
-					: { tools: [TASK_CHANGES_TOOL, SAVE_PLAN_TOOL], tool_choice: 'auto' })
+					: { tools: [TASK_CHANGES_TOOL, SAVE_PLAN_TOOL, SAVE_INTERESTS_TOOL], tool_choice: 'auto' })
 		});
 
 		if (!response.ok) {
@@ -569,17 +684,22 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOU
 		const data = await response.json();
 		const toolCalls = data.choices?.[0]?.message?.tool_calls || [];
 		if (toolCalls.length) {
-			let reply = '', actions = [], plan = null;
+			let reply = '', actions = [], plan = null, interests = null;
 			for (const call of toolCalls) {
 				let args = {};
 				try { args = JSON.parse(call.function?.arguments || '{}'); } catch { /* treated as nothing valid */ }
 				const msg = typeof args.message === 'string' ? args.message.slice(0, 500) : '';
 				if (call.function?.name === 'propose_task_changes') { actions = actions.concat(sanitizeActions(args.actions)); reply = reply || msg; }
 				else if (call.function?.name === 'save_plan') { plan = sanitizePlan(args) || plan; reply = reply || msg; }
+				else if (call.function?.name === 'save_interests') {
+					const add = sanitizeInterests(args.add), remove = (Array.isArray(args.remove) ? args.remove : []).filter(x => typeof x === 'string').map(x => x.slice(0, 40)).slice(0, MAX_INTERESTS);
+					if (add.length || remove.length) interests = { add, remove };
+					reply = reply || msg;
+				}
 			}
 			const content = data.choices?.[0]?.message?.content;
 			if (typeof content === 'string' && content.trim()) reply = content.slice(0, 6000) + (reply ? '\n\n' + reply : '');
-			return res.status(200).json({ reply, actions: actions.slice(0, MAX_ACTIONS), ...(plan ? { plan } : {}) });
+			return res.status(200).json({ reply, actions: actions.slice(0, MAX_ACTIONS), ...(plan ? { plan } : {}), ...(interests ? { interests } : {}) });
 		}
 		const reply = data.choices?.[0]?.message?.content || 'No response from AI.';
 		// Fold durable facts from this exchange into the user's long-term memory.

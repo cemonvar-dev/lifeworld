@@ -1917,6 +1917,7 @@ function openSettings(initialTab) {
 	const languageSel = document.getElementById('settingsLanguage');
 	if (languageSel) languageSel.value = i18n.lang;
 	window.mountNotifSettings?.();
+	window.mountInterestsSettings?.();
 	// Show the signed-in account email
 	supa.auth.getSession().then(({ data }) => {
 		const el = document.getElementById('settingsAccountEmail');
@@ -2928,7 +2929,7 @@ Overall avg health: ${overallHealth}%
 Today's progress: ${doneToday} done, ${skippedToday} skipped, ${noActionToday} still due today
 
 USAGE:
-${coachUsage(Object.values(rawTiles))}${coachPlanContext()}
+${coachUsage(Object.values(rawTiles))}${coachPlanContext()}${window.picksContext?.() || ''}
 
 SUMMARY:
 ${coachSummary(Object.values(rawTiles))}
@@ -2941,6 +2942,7 @@ function openAiChat() {
 	document.getElementById('aiChatOverlay').classList.remove('hidden');
 	document.getElementById('aiChatInput').focus();
 	if (aiChatHistory.length === 0 && !document.getElementById('aiChatMessages').children.length) openCoachGreeting();
+	window.onCoachOpened?.(); // fresh weekly picks show under the greeting (picks.js)
 }
 
 // Today's progress, used to pick (and cache) the coach's opening line.
@@ -3378,8 +3380,9 @@ async function sendAiMessage(text, options = {}) {
 
 		   const data = await response.json();
 		   window.track?.('ai_message_sent', { language: i18n.lang });
-		   const reply = data.reply || (data.plan ? '' : _t('No response.'));
+		   const reply = data.reply || (data.plan || data.interests ? '' : _t('No response.'));
 		   if (data.plan) await saveCoachPlan(data.plan);
+		   if (data.interests) await window.applyCoachInterests?.(data.interests);
 		   if (Array.isArray(data.actions) && data.actions.length) {
 			   if (options.listTag) data.actions.forEach(a => {
 				   if (a.type !== 'create') return;
