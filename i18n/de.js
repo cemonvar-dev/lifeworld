@@ -527,5 +527,12 @@ window.I18N_MESSAGES.de = {
 	"Send a test notification": "Testbenachrichtigung senden",
 	"Notifications work. You’ll get this in 5 seconds.": "Benachrichtigungen funktionieren. Du bekommst diese in 5 Sekunden.",
 	"Sent, check in 5 seconds": "Gesendet, in 5 Sekunden prüfen",
-	"{time} each time": "Jedes Mal um {time}"
+	"{time} each time": "Jedes Mal um {time}",
+	"Looking for ideas…": "Suche nach Ideen…",
+	"Ideas from the web": "Ideen aus dem Web",
+	"Add to notes": "Zu Notizen hinzufügen",
+	"Added ✓": "Hinzugefügt ✓",
+	"AI-generated from web results; check details before booking.": "KI-generiert aus Webergebnissen; prüfe die Details vor der Buchung.",
+	"Fiblia found ideas for": "Fiblia hat Ideen gefunden für",
+	"View": "Ansehen"
 };

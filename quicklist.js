@@ -113,6 +113,7 @@
 		}
 		error?.classList.add('hidden');
 		window.track?.('task_created', { frequency: 'once', source: 'quick_list' });
+		window.requestTileIdeas?.(created.id);
 		input.focus();
 	}
 

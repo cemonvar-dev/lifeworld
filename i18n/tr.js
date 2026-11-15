@@ -527,5 +527,12 @@ window.I18N_MESSAGES.tr = {
 	"Send a test notification": "Deneme bildirimi gönder",
 	"Notifications work. You’ll get this in 5 seconds.": "Bildirimler çalışıyor. Bunu 5 saniye içinde alacaksın.",
 	"Sent, check in 5 seconds": "Gönderildi, 5 saniye içinde bak",
-	"{time} each time": "Her seferinde {time}"
+	"{time} each time": "Her seferinde {time}",
+	"Looking for ideas…": "Fikirler aranıyor…",
+	"Ideas from the web": "Webden fikirler",
+	"Add to notes": "Notlara ekle",
+	"Added ✓": "Eklendi ✓",
+	"AI-generated from web results; check details before booking.": "Web sonuçlarından yapay zekâ ile derlendi; rezervasyondan önce ayrıntıları kontrol et.",
+	"Fiblia found ideas for": "Fiblia şunun için fikir buldu:",
+	"View": "Göster"
 };

@@ -7,6 +7,7 @@
 //   SUPABASE_SERVICE_ROLE_KEY - service role key (server-only; bypasses RLS for quota)
 // Optional:
 //   AI_DAILY_LIMIT            - free-tier messages per user per day (default 25)
+//   AI_IDEAS_DAILY_LIMIT      - web-researched ideas for new tasks per user per day (default 10, x4 premium)
 //   ALLOWED_ORIGIN            - exact origin to allow via CORS (default "*")
 //
 // One-time DB setup: run scripts/ai-quota.sql in the Supabase SQL editor.
@@ -289,6 +290,133 @@ ${taskContext || 'No task data available.'}${memory ? `\n\nWHAT YOU REMEMBER ABO
 	}
 }
 
+// ---- Ideas for a new task (mode: 'ideas') ----
+// When the user adds a task, a cheap model first decides whether outside research
+// would help (booking a venue, finding a course, planning a trip...). Only then
+// does a web-search model look things up and return a few concrete options.
+// Habits like "drink water" or "call mom" get nothing and cost no quota.
+const IDEAS_DAILY_LIMIT = parseInt(process.env.AI_IDEAS_DAILY_LIMIT || '10', 10);
+const IDEAS_MODEL = process.env.OPENAI_IDEAS_MODEL || 'gpt-4.1-mini';
+
+async function ideasQuotaId(userId) {
+	const { createHash } = await import('node:crypto');
+	const h = createHash('sha256').update('ideas:' + userId).digest('hex');
+	return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
+
+// Pull the first JSON object out of a model's text (it may wrap it in prose or fences).
+function parseJsonObject(text) {
+	const s = String(text || '');
+	const start = s.indexOf('{'), end = s.lastIndexOf('}');
+	if (start < 0 || end <= start) return null;
+	try { return JSON.parse(s.slice(start, end + 1)); } catch { return null; }
+}
+
+// Step 1: does this task benefit from a web search? Returns { research, query } or null.
+async function ideasGate(apiKey, name, tags, place) {
+	const system = `You triage tasks in a personal to-do / habit app. Decide whether a quick web search would give the user genuinely useful, concrete options for THIS task.
+Say yes (research=true) only when the task involves finding or choosing something out in the world: a place or venue to book (a pitch, court, restaurant, hall), a course, class, club or workshop, a trip or day out, an event, a gift or product to buy, a service or professional to hire, tickets, or organising an activity with others.
+Say no for routines and habits (exercise sets, drinking water, prayer, medicine, reading, studying, journaling), simple personal actions (call someone, pay a bill, clean the house, reply to an email), work items, and anything too vague or private to search usefully.
+If yes, write a short search query in the task's language that would find concrete options${place ? ` near ${place}` : ''}.
+Reply with JSON only: {"research": true|false, "query": "..."}`;
+	const resp = await openaiChat(apiKey, {
+		model: FALLBACK_MODEL,
+		messages: [{ role: 'system', content: system }, { role: 'user', content: `Task: ${name}${tags ? `\nTags: ${tags}` : ''}` }],
+		max_tokens: 80,
+		temperature: 0,
+		response_format: { type: 'json_object' }
+	});
+	if (!resp.ok) return null;
+	const data = await resp.json();
+	const out = parseJsonObject(data.choices?.[0]?.message?.content);
+	if (!out || out.research !== true) return { research: false };
+	return { research: true, query: String(out.query || name).slice(0, 200) };
+}
+
+// Web-search citations carry a tracking parameter; keep only clean http(s) links.
+function cleanUrl(u) {
+	if (typeof u !== 'string') return '';
+	try {
+		const p = new URL(u.trim());
+		if (p.protocol !== 'https:' && p.protocol !== 'http:') return '';
+		p.searchParams.delete('utm_source');
+		return p.href.slice(0, 500);
+	} catch { return ''; }
+}
+
+// Step 2: search the web and turn results into a few options.
+async function ideasSearch(apiKey, { name, tags, query, place, timezone, country, language, today }) {
+	const lang = LANGUAGE_NAMES[language] || 'English';
+	const instructions = `The user just added this task to their personal planner: "${name}"${tags ? ` (tags: ${tags})` : ''}.
+Search the web (suggested query: "${query}") and give them 3 or 4 concrete, practical ideas that help them get it done: specific places, venues, booking sites, apps, courses or options, ideally${place ? ` in or near ${place}` : ' near where they live'}. Today is ${today}.
+Prefer options you actually found in the search results, each with its real URL. Never invent names, prices, addresses or URLs. If you mention a price or opening time, it must come from the results.
+Write in ${lang}, in a natural, friendly tone. Each idea: a short title (max 8 words) and one helpful sentence (max 25 words) saying why it fits or what to do.
+Add one short "tip" (max 20 words) with a practical next step (e.g. "Book 2-3 days ahead for evening slots").
+Reply with JSON only, no prose and no markdown: {"ideas":[{"title":"...","detail":"...","url":"https://..."}],"tip":"..."}`;
+	const location = { type: 'approximate' };
+	if (timezone) location.timezone = timezone;
+	if (country) location.country = country;
+	if (place) location.city = place;
+	const send = toolType => fetch('https://api.openai.com/v1/responses', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+		body: JSON.stringify({
+			model: IDEAS_MODEL,
+			tools: [{ type: toolType, search_context_size: 'low', user_location: location }],
+			input: instructions,
+			max_output_tokens: 900
+		})
+	});
+	let resp = await send('web_search');
+	if (!resp.ok && resp.status !== 401) {
+		console.error('Ideas web_search rejected, trying preview tool:', resp.status, await resp.text().catch(() => ''));
+		resp = await send('web_search_preview');
+	}
+	if (!resp.ok) {
+		console.error('Ideas search error:', resp.status, await resp.text().catch(() => ''));
+		return null;
+	}
+	const data = await resp.json();
+	const message = (data.output || []).filter(o => o.type === 'message').pop();
+	const part = (message?.content || []).find(c => c.type === 'output_text');
+	const out = parseJsonObject(part?.text || data.output_text || '');
+	if (!out || !Array.isArray(out.ideas)) return null;
+	const ideas = out.ideas.slice(0, 4).map(i => ({
+		title: String(i?.title || '').trim().slice(0, 80),
+		detail: String(i?.detail || '').trim().slice(0, 240),
+		url: cleanUrl(i?.url)
+	})).filter(i => i.title);
+	if (!ideas.length) return null;
+	return { ideas, tip: String(out.tip || '').trim().slice(0, 200) };
+}
+
+async function handleIdeas(req, res, apiKey, user, body) {
+	const name = typeof body.name === 'string' ? body.name.trim().slice(0, 200) : '';
+	if (!name) return res.status(400).json({ error: 'name required' });
+	const tags = typeof body.tags === 'string' ? body.tags.slice(0, 300) : '';
+	const timezone = typeof body.timezone === 'string' && /^[A-Za-z_\/+-]{1,64}$/.test(body.timezone) ? body.timezone : '';
+	const country = typeof body.country === 'string' && /^[A-Z]{2}$/.test(body.country) ? body.country : '';
+	const today = typeof body.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
+	// City: memory may know it; otherwise the timezone's city is a fair guess (Europe/Istanbul -> Istanbul).
+	const memory = await getMemory(user.id);
+	const memCity = (memory.match(/\b(?:[Ll]ives in|[Bb]ased in|[Cc]ity:?)\s+([A-ZÇĞİÖŞÜ][\p{L}', -]{1,50}?)(?=[.;\n(]|$)/mu) || [])[1];
+	const place = (memCity || (timezone.split('/').pop() || '').replace(/_/g, ' ')).trim().slice(0, 60);
+	try {
+		const gate = await ideasGate(apiKey, name, tags, place);
+		if (!gate || !gate.research) return res.status(200).json({ ideas: [] });
+		// Quota is only spent on tasks that actually get researched.
+		const isPremium = !!user.app_metadata?.premium;
+		const quota = await consumeQuota(await ideasQuotaId(user.id), isPremium ? IDEAS_DAILY_LIMIT * 4 : IDEAS_DAILY_LIMIT);
+		if (!quota) return res.status(500).json({ error: 'Could not verify your usage quota.' });
+		if (!quota.allowed) return res.status(429).json({ error: 'Ideas limit reached', code: 'ideas_limit' });
+		const result = await ideasSearch(apiKey, { name, tags, query: gate.query, place, timezone, country, language: body.language, today });
+		return res.status(200).json(result || { ideas: [] });
+	} catch (err) {
+		console.error('Ideas error:', err);
+		return res.status(500).json({ error: 'Internal server error' });
+	}
+}
+
 export default async function handler(req, res) {
 	// CORS
 	res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
@@ -315,6 +443,7 @@ export default async function handler(req, res) {
 	// forwarded, so a caller can't supply its own system prompt. ---
 	const body = req.body || {};
 	if (body.mode === 'greeting') return handleGreeting(req, res, apiKey, user, body);
+	if (body.mode === 'ideas') return handleIdeas(req, res, apiKey, user, body);
 	const { responseFormat } = body;
 	if (!Array.isArray(body.messages)) return res.status(400).json({ error: 'messages required' });
 	const jsonMode = responseFormat?.type === 'json_object';

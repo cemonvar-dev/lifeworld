@@ -527,5 +527,12 @@ window.I18N_MESSAGES.fr = {
 	"Send a test notification": "Envoyer une notification test",
 	"Notifications work. You’ll get this in 5 seconds.": "Les notifications fonctionnent. Tu la recevras dans 5 secondes.",
 	"Sent, check in 5 seconds": "Envoyée, regarde dans 5 secondes",
-	"{time} each time": "À {time} à chaque fois"
+	"{time} each time": "À {time} à chaque fois",
+	"Looking for ideas…": "Recherche d’idées…",
+	"Ideas from the web": "Idées trouvées sur le web",
+	"Add to notes": "Ajouter aux notes",
+	"Added ✓": "Ajouté ✓",
+	"AI-generated from web results; check details before booking.": "Généré par IA à partir de résultats web ; vérifie les détails avant de réserver.",
+	"Fiblia found ideas for": "Fiblia a trouvé des idées pour",
+	"View": "Voir"
 };

@@ -527,5 +527,12 @@ window.I18N_MESSAGES.nl = {
 	"Send a test notification": "Testmelding sturen",
 	"Notifications work. You’ll get this in 5 seconds.": "Meldingen werken. Je krijgt deze over 5 seconden.",
 	"Sent, check in 5 seconds": "Verstuurd, kijk over 5 seconden",
-	"{time} each time": "Elke keer om {time}"
+	"{time} each time": "Elke keer om {time}",
+	"Looking for ideas…": "Ideeën zoeken…",
+	"Ideas from the web": "Ideeën van het web",
+	"Add to notes": "Toevoegen aan notities",
+	"Added ✓": "Toegevoegd ✓",
+	"AI-generated from web results; check details before booking.": "AI-gegenereerd uit webresultaten; controleer de details voordat je boekt.",
+	"Fiblia found ideas for": "Fiblia vond ideeën voor",
+	"View": "Bekijken"
 };

@@ -835,6 +835,7 @@ function openTilePopup(tileId) {
 		<textarea id="tileNotesInput" rows="3" maxlength="5000" placeholder="Add notes…" class="w-full shrink-0 rounded-lg border px-2 py-1.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300"></textarea>
 		<div id="tileNotesError" class="hidden mt-1 text-xs text-red-500">Couldn't save your notes. Please try again.</div>` : ''}
 		<div id="tileSuggestionMount"></div>
+		<div id="tileIdeasMount"></div>
 		<hr class="my-3 border-slate-200">
 		<!-- Tabbed view: Timeline (default) / Attachments -->
 		<div class="flex items-center gap-1 border-b border-slate-200 mb-3">
@@ -894,6 +895,7 @@ function openTilePopup(tileId) {
 	wireTileNotes(raw, tileId);
 	document.getElementById('tilePinBtn').addEventListener('click', () => setTilePinned(tileId, !raw.pinned));
 	renderTileSuggestion(raw, tileId);
+	window.renderTileIdeas?.(raw, tileId);
 
 	// Completed / Cancelled toggles; pressing the active one reopens the tile.
 	const setPopupStatus = status => {
@@ -2049,7 +2051,8 @@ async function submitNewTile() {
 	const name = (input && input.value || '').trim();
 	if (!name) { if (input) input.focus(); return; }
 	closeNewTileModal();
-	await createTileByName(name); // handles insert + render + reminders
+	const created = await createTileByName(name); // handles insert + render + reminders
+	if (created) window.requestTileIdeas?.(created.id); // background web ideas, only for tasks that need them
 }
 
 // --- Speech-to-text for the title ---
