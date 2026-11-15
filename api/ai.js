@@ -420,7 +420,10 @@ async function handleIdeas(req, res, apiKey, user, body) {
 	const { timezone, country, today } = locationFields(body);
 	const place = userPlace(await getMemory(user.id), timezone);
 	try {
-		const gate = await ideasGate(apiKey, name, tags, place);
+		// The user asked from the task card: always search. Otherwise only when it would help.
+		const gate = body.manual === true
+			? { research: true, query: `${name}${place ? ' ' + place : ''}` }
+			: await ideasGate(apiKey, name, tags, place);
 		if (!gate || !gate.research) return res.status(200).json({ ideas: [] });
 		// Quota is only spent on tasks that actually get researched.
 		const isPremium = !!user.app_metadata?.premium;

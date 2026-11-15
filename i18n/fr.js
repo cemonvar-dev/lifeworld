@@ -575,5 +575,9 @@ window.I18N_MESSAGES.fr = {
 	"Courses & workshops": "Cours & ateliers",
 	"Family outings": "Sorties en famille",
 	"Books": "Livres",
-	"Games": "Jeux"
+	"Games": "Jeux",
+	"Find ideas on the web": "Trouver des idées sur le web",
+	"New ideas": "Nouvelles idées",
+	"You've used today's ideas. Try again tomorrow.": "Tu as utilisé tes idées du jour. Réessaie demain.",
+	"Couldn't find anything useful for this one. Try a more specific name.": "Je n’ai rien trouvé d’utile pour celle-ci. Essaie un nom plus précis."
 };

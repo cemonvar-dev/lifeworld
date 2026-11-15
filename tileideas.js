@@ -28,11 +28,15 @@
 
 	const popupShows = id => activeTileId === id && !document.getElementById('tileOverlay')?.classList.contains('hidden');
 
-	// Fire-and-forget: called right after the user creates a task.
-	async function requestTileIdeas(tileId) {
+	// Fire-and-forget: called right after the user creates a task (the server decides
+	// whether it's worth a search), or with manual=true from the card's button (always searches).
+	const notice = new Map(); // tileId -> short message after a manual request found nothing
+	async function requestTileIdeas(tileId, manual) {
 		const raw = rawTiles[tileId];
-		if (!raw || pending.has(tileId) || getIdeas(raw)) return;
+		if (!raw || pending.has(tileId) || (!manual && getIdeas(raw))) return;
 		pending.add(tileId);
+		notice.delete(tileId);
+		let limited = false;
 		if (popupShows(tileId)) render(raw, tileId);
 		let result = null;
 		try {
@@ -50,10 +54,12 @@
 					language: i18n.lang,
 					timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 					country: region && /^[A-Z]{2}$/.test(region) ? region : undefined,
-					today: todayLocal()
+					today: todayLocal(),
+					manual: !!manual
 				})
 			});
 			if (response.ok) result = await response.json();
+			limited = response.status === 429;
 		} catch (e) {
 			console.error('Ideas request failed:', e);
 		} finally {
@@ -63,10 +69,14 @@
 		if (!current) return;
 		if (result && Array.isArray(result.ideas) && result.ideas.length) {
 			await saveIdeas(current, { ideas: result.ideas, tip: result.tip || '', at: new Date().toISOString() });
-			window.track?.('task_ideas_found', { count: result.ideas.length });
+			window.track?.('task_ideas_found', { count: result.ideas.length, manual: !!manual });
 			if (!popupShows(tileId)) toast(current);
 			// App in the background (or closed to the tray): tell them on the phone too.
 			if (document.hidden) window.notifyTileIdeas?.(current, result.ideas.length);
+		} else if (manual) {
+			notice.set(tileId, limited
+				? _t("You've used today's ideas. Try again tomorrow.")
+				: _t("Couldn't find anything useful for this one. Try a more specific name."));
 		}
 		if (popupShows(tileId)) render(current, tileId);
 	}
@@ -95,8 +105,18 @@
 			return;
 		}
 		const saved = getIdeas(raw);
-		if (!saved || saved.dismissed || !Array.isArray(saved.ideas) || !saved.ideas.length) { mount.innerHTML = ''; return; }
 		const button = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50';
+		const ask = () => { window.track?.('task_ideas_requested'); requestTileIdeas(tileId, true); };
+		if (!saved || saved.dismissed || !Array.isArray(saved.ideas) || !saved.ideas.length) {
+			// No ideas showing: offer to look them up on request.
+			const msg = notice.get(tileId);
+			mount.innerHTML = `<div class="mt-2 flex flex-wrap items-center gap-2">
+				<button type="button" data-ideas-ask class="${button} bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100">💡 Find ideas on the web</button>
+				${msg ? `<span class="text-xs text-slate-500">${escapeHtml(msg)}</span>` : ''}
+			</div>`;
+			mount.querySelector('[data-ideas-ask]').addEventListener('click', ask);
+			return;
+		}
 		const item = i => {
 			const title = escapeHtml(i.title);
 			const head = i.url
@@ -110,10 +130,13 @@
 			${saved.tip ? `<div translate="no" class="text-xs text-slate-500 mt-1 italic">${escapeHtml(saved.tip)}</div>` : ''}
 			<div class="flex flex-wrap gap-2 mt-2">
 				${'notes' in raw ? `<button type="button" data-ideas-notes class="${button} bg-violet-100 text-violet-700 hover:bg-violet-200">Add to notes</button>` : ''}
+				<button type="button" data-ideas-again class="${button} text-violet-700 hover:bg-violet-100">↻ New ideas</button>
 				<button type="button" data-ideas-hide class="${button} text-slate-500 hover:bg-violet-100">Hide</button>
 			</div>
+			${notice.get(tileId) ? `<div class="text-xs text-slate-500 mt-1">${escapeHtml(notice.get(tileId))}</div>` : ''}
 			<div class="text-[10px] text-slate-400 mt-1">AI-generated from web results; check details before booking.</div>
 		</div>`;
+		mount.querySelector('[data-ideas-again]').addEventListener('click', ask);
 		mount.querySelector('[data-ideas-hide]').addEventListener('click', async () => {
 			await saveIdeas(raw, { ...saved, dismissed: true });
 			window.track?.('task_ideas_hidden');

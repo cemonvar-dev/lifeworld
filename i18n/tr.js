@@ -575,5 +575,9 @@ window.I18N_MESSAGES.tr = {
 	"Courses & workshops": "Kurs ve atölyeler",
 	"Family outings": "Aile gezileri",
 	"Books": "Kitaplar",
-	"Games": "Oyunlar"
+	"Games": "Oyunlar",
+	"Find ideas on the web": "Webde fikir bul",
+	"New ideas": "Yeni fikirler",
+	"You've used today's ideas. Try again tomorrow.": "Bugünkü fikir hakkını kullandın. Yarın tekrar dene.",
+	"Couldn't find anything useful for this one. Try a more specific name.": "Bunun için işe yarar bir şey bulamadım. Daha net bir ad dene."
 };
