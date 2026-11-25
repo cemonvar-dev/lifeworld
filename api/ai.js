@@ -323,7 +323,16 @@ function locationFields(body) {
 }
 
 // One Responses API call with web search; returns the JSON object the model wrote, or null.
-async function webSearchJson(apiKey, instructions, { place, timezone, country }, { contextSize = 'low', maxTokens = 900 } = {}) {
+async function webSearchJson(apiKey, instructions, loc, opts) {
+	const r = await webSearchText(apiKey, instructions, loc, opts);
+	if (!r) return null;
+	const out = parseJsonObject(r.text);
+	if (!out) console.error('Web search reply was not JSON:', r.status, r.reason, String(r.text).slice(0, 400));
+	return out;
+}
+
+// One Responses API call with web search; returns { text, status, reason } or null on an HTTP error.
+async function webSearchText(apiKey, instructions, { place, timezone, country }, { contextSize = 'low', maxTokens = 900 } = {}) {
 	const location = { type: 'approximate' };
 	if (timezone) location.timezone = timezone;
 	if (country) location.country = country;
@@ -350,10 +359,33 @@ async function webSearchJson(apiKey, instructions, { place, timezone, country },
 	const data = await resp.json();
 	const message = (data.output || []).filter(o => o.type === 'message').pop();
 	const part = (message?.content || []).find(c => c.type === 'output_text');
-	const text = part?.text || data.output_text || '';
-	const out = parseJsonObject(text);
-	if (!out) console.error('Web search reply was not JSON:', data.status, data.incomplete_details?.reason || '', String(text).slice(0, 400));
-	return out;
+	return { text: part?.text || data.output_text || '', status: data.status, reason: data.incomplete_details?.reason || '' };
+}
+
+// ---- Web search from the coach chat (tool: search_web) ----
+const SEARCH_WEB_TOOL = {
+	type: 'function',
+	function: {
+		name: 'search_web',
+		description: 'Search the web for concrete, current options: tickets, matches, concerts, events, venues, classes, courses, products, restaurants, trips, services. Use it before recommending anything specific out in the world.',
+		parameters: {
+			type: 'object',
+			properties: {
+				query: { type: 'string', description: 'A focused search query in the most useful language for the place (e.g. Turkish for Istanbul), including the city and time frame when relevant.' }
+			},
+			required: ['query']
+		}
+	}
+};
+
+// Runs the coach's search and returns a short factual digest the coach can quote from.
+async function coachSearch(apiKey, query, loc, today, language) {
+	const lang = LANGUAGE_NAMES[language] || 'English';
+	const instructions = `Search the web for: ${query}
+Today is ${today}${loc.place ? `; the user is in or near ${loc.place}` : ''}.
+Return a short factual digest (max 12 lines, in ${lang}) of the most relevant concrete options you found that are still upcoming or available: for each, the name, date and time if any, venue or seller, price only if stated in the results, and its URL. Then one line on where to buy or book if that is clear. Only facts from the results; never invent anything. If nothing concrete was found, say so in one line and name the best official place to check, with its URL.`;
+	const r = await webSearchText(apiKey, instructions, loc, { contextSize: 'medium', maxTokens: 1200 });
+	return r && r.text ? r.text.slice(0, 4000) : 'The search failed. Tell the user you could not search right now and suggest where to look.';
 }
 
 // Pull the first JSON object out of a model's text (it may wrap it in prose or fences).
@@ -640,8 +672,15 @@ When the user asks for a plan (a week, a month, three months...):
 
 FRESH IDEAS (beyond the board)
 - You are not limited to the tiles. When an area is thin, stale, or the user asks what to do, you may suggest one fresh idea that isn't on the board yet and fits that area and this person: for family, a weekend day trip or a shared activity with the specific people in their tags; for hobbies, a beginner course, a workshop or a club for that exact hobby in their city; for health, an activity that suits what they already try to do.
-- Use what you know: their tags and tasks, the date and season, and their location (the city from memory, otherwise a guess from the timezone; say "in Istanbul" only if you're fairly sure). Suggest kinds of things ("a weekend ceramics workshop", "a day trip to a nearby town by the sea"), never specific venues, prices, dates or events you can't verify, and suggest where to look if useful.
+- Use what you know: their tags and tasks, the date and season, and their location (the city from memory, otherwise a guess from the timezone; say "in Istanbul" only if you're fairly sure). Suggest kinds of things ("a weekend ceramics workshop", "a day trip to a nearby town by the sea"); name specific venues, prices, dates or events only when they came from search_web.
 - One idea at a time, woven naturally into your answer, then offer to add it as a task. If they say yes, use propose_task_changes to create it (a one-time task, tagged with the matching existing tag).
+
+FINDING THINGS (search_web)
+- When the user asks you to find, suggest, recommend, book or buy something specific out in the world (a ticket, match, concert, show, event, venue, class, course, product, restaurant, trip, service), call search_web FIRST. Do not answer from general knowledge, and do not ask clarifying questions first: pick sensible defaults from what you know about them (their city, interests, the coming days and weekend) and search.
+- After the results, be decisive: lead with your single best pick for this person by name, with date and time, venue and link, and one short reason it fits them (their interests, free time, people in their tags). Then one line with one or two alternatives. Prices only if they were in the results. Never invent events, dates, prices or links.
+- Then, in the same reply, call propose_task_changes to add the best pick as a one-time task (end_date = its date, tagged with a fitting existing tag). The user reviews it, so just say you've lined it up to add.
+- If the search found nothing concrete, say so in one line, give the best place to check (with its link), and suggest the next-best concrete step.
+- Write links as plain URLs.
 
 INTERESTS AND PICKS
 - The data may list INTERESTS (what they enjoy in their free time) and THIS WEEK'S PICKS (concrete things found on the web for them). Use them: when free time, the weekend, family time, rest or low mood comes up, suggest one fitting pick by name and offer to add it as a dated task (propose_task_changes, frequency once, end_date = the pick's date).
@@ -673,28 +712,50 @@ USER'S TASK DATA:
 ${taskContext || 'No task data available.'}${memory ? `\n\nLONG-TERM MEMORY ABOUT THIS USER (learned from past chats — durable context, may be outdated; the task data above is authoritative for current stats):\n${memory}` : ''}`;
 
 	try {
-		const response = await openaiChat(apiKey, {
-				model: jsonMode ? FALLBACK_MODEL : (planRequest ? PLAN_MODEL : CHAT_MODEL),
-				messages: [
-					{ role: 'system', content: systemPrompt },
-					...messages
-				],
-				max_tokens: 1500,
-				temperature: jsonMode ? 0.5 : 0.7,
-				// Auto-reschedule uses strict JSON; chat can propose task changes.
-				...(jsonMode
-					? { response_format: { type: 'json_object' } }
-					: { tools: [TASK_CHANGES_TOOL, SAVE_PLAN_TOOL, SAVE_INTERESTS_TOOL], tool_choice: 'auto' })
+		const model = jsonMode ? FALLBACK_MODEL : (planRequest ? PLAN_MODEL : CHAT_MODEL);
+		const baseTools = [TASK_CHANGES_TOOL, SAVE_PLAN_TOOL, SAVE_INTERESTS_TOOL];
+		const ask = (msgs, tools) => openaiChat(apiKey, {
+			model,
+			messages: msgs,
+			max_tokens: 1500,
+			temperature: jsonMode ? 0.5 : 0.7,
+			// Auto-reschedule uses strict JSON; chat can propose task changes and search the web.
+			...(jsonMode ? { response_format: { type: 'json_object' } } : { tools, tool_choice: 'auto' })
 		});
-
-		if (!response.ok) {
+		const unavailable = async response => {
 			const errData = await response.json().catch(() => ({}));
 			console.error('OpenAI error:', response.status, errData);
 			// Never forward OpenAI's status: its 429 would look like the user's own quota.
 			return res.status(502).json({ error: 'The AI assistant is temporarily unavailable. Please try again shortly.', code: 'ai_unavailable', upstream: response.status });
-		}
+		};
+		const convo = [{ role: 'system', content: systemPrompt }, ...messages];
+		let response = await ask(convo, [...baseTools, SEARCH_WEB_TOOL]);
+		if (!response.ok) return unavailable(response);
+		let data = await response.json();
 
-		const data = await response.json();
+		// The coach asked to search: run it (web-search quota), hand back the digest, ask again.
+		const firstMsg = data.choices?.[0]?.message;
+		const searchCalls = (firstMsg?.tool_calls || []).filter(c => c.function?.name === 'search_web');
+		if (!jsonMode && searchCalls.length) {
+			const quota = await consumeQuota(await ideasQuotaId(user.id), isPremium ? IDEAS_DAILY_LIMIT * 4 : IDEAS_DAILY_LIMIT);
+			const lf = locationFields(body);
+			const loc = { ...lf, place: userPlace(memory, lf.timezone) };
+			const results = [];
+			for (const call of firstMsg.tool_calls) {
+				let content = 'Not run.';
+				if (call.function?.name === 'search_web' && call === searchCalls[0]) {
+					let query = '';
+					try { query = String(JSON.parse(call.function.arguments || '{}').query || '').slice(0, 300); } catch { /* empty query */ }
+					content = !quota || !quota.allowed
+						? 'Web search limit reached for today. Tell the user, and suggest where to look instead.'
+						: query ? await coachSearch(apiKey, query, loc, loc.today, body.language) : 'No query given.';
+				}
+				results.push({ role: 'tool', tool_call_id: call.id, content });
+			}
+			response = await ask([...convo, { role: 'assistant', content: firstMsg.content || null, tool_calls: firstMsg.tool_calls }, ...results], baseTools);
+			if (!response.ok) return unavailable(response);
+			data = await response.json();
+		}
 		const toolCalls = data.choices?.[0]?.message?.tool_calls || [];
 		if (toolCalls.length) {
 			let reply = '', actions = [], plan = null, interests = null;

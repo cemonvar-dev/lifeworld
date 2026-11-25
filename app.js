@@ -3194,10 +3194,17 @@ function appendAiMessage(role, content) {
 
 function formatAiResponse(text) {
 	// Basic markdown-like formatting
+	// Links first (markdown [text](url), then bare URLs) so the emphasis rules can't break them.
+	const links = [];
+	const keep = html => `\u0000${links.push(html) - 1}\u0000`;
+	const a = (href, label) => keep(`<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-violet-700 underline break-all">${label}</a>`);
 	return escapeHtml(text)
+		.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, href) => a(href, label))
+		.replace(/https?:\/\/[^\s<>()"]+[^\s<>()".,;:!?]/g, href => a(href, href.replace(/^https?:\/\/(www\.)?/, '')))
 		.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 		.replace(/\*(.*?)\*/g, '<em>$1</em>')
-		.replace(/`(.*?)`/g, '<code class="bg-slate-200 px-1 rounded text-xs">$1</code>');
+		.replace(/`(.*?)`/g, '<code class="bg-slate-200 px-1 rounded text-xs">$1</code>')
+		.replace(/\u0000(\d+)\u0000/g, (_, i) => links[i]);
 }
 
 // Backend base URL. Same-origin on the web; absolute when the app runs from a
@@ -3427,7 +3434,11 @@ async function sendAiMessage(text, options = {}) {
 			body: JSON.stringify({
 				messages: aiChatHistory,
 				taskContext,
-				language: i18n.lang
+				language: i18n.lang,
+				// Where and when, so the coach's web searches find local, upcoming things.
+				timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+				country: ((navigator.language || '').split('-')[1] || '').toUpperCase() || undefined,
+				today: todayLocal()
 			})
 		});
 
