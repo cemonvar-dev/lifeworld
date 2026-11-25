@@ -59,8 +59,8 @@ function gettingStartedProgress(tasks, triedAi) {
 		}
 		if (step === 1) {
 			return `<div class="grid grid-cols-2 gap-2 mb-4">
-					<img src="${healthBannerSrc('thriving')}" alt="Thriving" class="w-full h-16 object-cover rounded-lg" />
-					<img src="${healthBannerSrc('dying')}" alt="Dying" class="w-full h-16 object-cover rounded-lg" />
+					<div class="flex items-center justify-center gap-2 h-16 rounded-lg bg-emerald-50">${healthRingHtml(92, tilePlant({}, 92), 44)}<span class="text-xs font-semibold text-emerald-700">${_t('Thriving')}</span></div>
+					<div class="flex items-center justify-center gap-2 h-16 rounded-lg bg-rose-50">${healthRingHtml(12, tilePlant({}, 12), 44)}<span class="text-xs font-semibold text-rose-600">${_t('Dying')}</span></div>
 				</div>
 				<h2 class="text-xl font-semibold text-slate-800 mb-2">Tiles show how you're doing</h2>
 				<p class="text-sm text-slate-600">Mark a tile Done and its health grows. Miss it and it fades. Use Skip for rest days, which don't count against you.</p>`;

@@ -204,6 +204,46 @@ function healthEmoji(label) {
 	return set[label] || '';
 }
 
+// Health ring: a circle that fills with the score (pastel by tier), the health
+// icon in the middle. `tp` is tilePlant(); finished tiles show their status icon.
+const HEALTH_RING_COLOR = { Thriving: '#7fd1a8', Healthy: '#9adbb8', Growing: '#c5da86', Wilting: '#f1c27c', Dying: '#f2a29a' };
+function healthRingHtml(health, tp, size = 48) {
+	const r = size / 2 - 4, c = 2 * Math.PI * r;
+	const pct = tp.finished ? 100 : Math.max(0, Math.min(100, health));
+	const color = tp.finished ? '#cbd5e1' : HEALTH_RING_COLOR[tp.label] || '#c7d2fe';
+	return `<div class="relative shrink-0" style="width:${size}px;height:${size}px" title="${escapeHtml(_t(tp.label))}${tp.finished ? '' : ` · ${health}%`}">
+		<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)" aria-hidden="true">
+			<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="#fff" stroke="#f1eef7" stroke-width="5"/>
+			<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct / 100)}"/>
+		</svg>
+		<span class="absolute inset-0 grid place-items-center" style="font-size:${Math.round(size * .42)}px">${tp.emoji}</span>
+	</div>`;
+}
+
+// Last 7 days (oldest → today) as small bars: done, skipped, missed, or not scheduled.
+function tileWeekDotsHtml(raw) {
+	if (!raw) return '';
+	const created = raw.created_at ? new Date(raw.created_at) : null;
+	if (created) created.setHours(0, 0, 0, 0);
+	const today = new Date(); today.setHours(0, 0, 0, 0);
+	const cells = [];
+	for (let i = 6; i >= 0; i--) {
+		const d = new Date(today); d.setDate(today.getDate() - i);
+		const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+		const label = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+		let cls = 'bg-slate-100', state = '';
+		const st = statusOnDate(raw, key);
+		if (st === 'done') { cls = 'bg-emerald-300'; state = _t('Done'); }
+		else if (st === 'skipped') { cls = 'bg-amber-200'; state = _t('Skipped'); }
+		else if ((!created || d >= created) && isTaskScheduledOnDate(raw, d)) {
+			if (i === 0) { cls = 'bg-white ring-1 ring-inset ring-indigo-200'; state = _t('Today'); }
+			else { cls = 'bg-rose-200'; state = _t('Missed'); }
+		}
+		cells.push(`<span class="flex-1 h-1.5 rounded-full ${cls}" title="${escapeHtml(label)}${state ? ' · ' + escapeHtml(state) : ''}"></span>`);
+	}
+	return `<div class="flex gap-1 w-full" aria-hidden="true">${cells.join('')}</div>`;
+}
+
 const HEALTH_COLOR = {
 	Thriving: 'bg-green-50 border-green-200',
 	Healthy: 'bg-emerald-50 border-emerald-200',
@@ -568,37 +608,46 @@ function renderGallery(filteredTiles) {
 			const businessCard = getHealthIconStyle() === 'business' && window.businessTileHtml;
 			tileDiv.className = businessCard
 				? 'tile relative rounded-xl border border-slate-200 bg-white shadow-sm p-4 pl-5 flex flex-col gap-2.5 hover:shadow-md hover:border-slate-300 transition cursor-pointer'
-				: `tile relative rounded-xl shadow border p-4 flex flex-col items-center gap-2 hover:shadow-lg transition cursor-pointer`;
+				: 'tile relative rounded-2xl border border-slate-200/80 bg-white shadow-sm p-3.5 flex flex-col gap-2.5 hover:shadow-lg hover:-translate-y-0.5 transition cursor-pointer';
 			tileDiv.setAttribute('data-tilecolor', businessCard ? 'bg-white' : tileColor);
+			if (!businessCard) {
+				// Soft tint from the tile's area (group tag, else its first tag).
+				const tintId = tag !== PINNED_GROUP && tag !== 'Untagged' ? tag : (tile.tags || [])[0];
+				const tint = tintId && window.tagColor ? window.tagColor(tintId) : '';
+				if (tint) tileDiv.style.cssText = `background:color-mix(in srgb, ${tint} 7%, white);border-color:color-mix(in srgb, ${tint} 28%, white)`;
+			}
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const lastDone = tile.lastDone ? new Date(tile.lastDone).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const createdAt = tile.createdAt ? new Date(tile.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
 			const nextDue = getNextDueLabel(tile.id);
 			const nextDueClass = nextDue === 'today' ? 'text-blue-500 font-semibold' : nextDue === 'tomorrow' ? 'text-indigo-400' : nextDue === 'overdue' ? 'text-red-500 font-semibold' : 'text-slate-400';
-			// Health shown as a weather-landscape banner across the tile header
-			// (thriving → dying). Finished tiles show their status flag instead.
-			const tierLabel = tile.health >= 80 ? 'thriving' : tile.health >= 60 ? 'healthy' : tile.health >= 40 ? 'growing' : tile.health >= 20 ? 'wilting' : 'dying';
-			const healthHeader = tp.finished
-				? `<div class="-mt-4 -mx-4 rounded-t-xl bg-slate-100 flex items-center justify-center text-3xl" style="width:calc(100% + 2rem);height:72px" title="${tp.label}">${tp.emoji}</div>`
-				: `<div class="-mt-4 -mx-4 rounded-t-xl overflow-hidden" style="width:calc(100% + 2rem);height:72px" title="${tp.label}"><img src="${healthBannerSrc(tierLabel)}" alt="${tp.label}" loading="lazy" class="block w-full h-full object-cover object-center" /></div>`;
+			// Health shown as a ring that fills with the score, the health icon in the
+			// middle (thriving → dying). Finished tiles show their status flag instead.
+			const raw = rawTiles[tile.id];
+			const isOnce = ((raw && raw.frequency_mode) || 'daily') === 'once';
+			const labelCls = tp.finished ? 'text-slate-500' : tile.health >= 60 ? 'text-emerald-600' : tile.health >= 40 ? 'text-lime-700' : tile.health >= 20 ? 'text-amber-600' : 'text-rose-500';
+			const healthHeader = `<div class="flex items-center gap-2.5 w-full pr-6">
+					${healthRingHtml(tile.health, tp, 44)}
+					<div class="min-w-0 text-xs font-semibold leading-tight ${labelCls}">${escapeHtml(_t(tp.label))}${!tp.finished && !isOnce ? `<div class="text-[11px] font-medium text-slate-400 tabular-nums">${tile.health}%</div>` : ''}</div>
+				</div>
+				<div translate="no" class="text-sm font-semibold text-slate-800 leading-snug line-clamp-2 w-full overflow-hidden">${escapeHtml(tile.name)}</div>`;
 			// Short nudge on struggling tiles only, to keep the list calm.
 			const cardHint = !tp.finished && tile.health < 40 ? tileSuggestion(rawTiles[tile.id])?.hint : '';
 			const isPinned = !!(rawTiles[tile.id] && rawTiles[tile.id].pinned);
 			tileDiv.innerHTML = businessCard ? window.businessTileHtml(tile, { isPinned, nextDue, nextDueClass, lastDone, tp, groupTag: tag, tagChip: tag === PINNED_GROUP ? pinnedTagChip(tile) : '' }) : `
-				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs shadow-sm transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'bg-white/80 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
+				   <button type="button" class="tile-pin absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs transition ${isPinned ? 'bg-amber-100 ring-1 ring-amber-300' : 'opacity-40 hover:opacity-100 hover:bg-white grayscale'}" title="${isPinned ? 'Unpin' : 'Pin to top'}" aria-label="${isPinned ? 'Unpin tile' : 'Pin tile to top'}" aria-pressed="${isPinned}">📌</button>
 				   ${healthHeader}
-				   <div translate="no" class="text-sm font-normal text-left w-full line-clamp-3">${escapeHtml(tile.name)}</div>
 				   ${tag === PINNED_GROUP ? pinnedTagChip(tile) : ''}
-				   ${tp.finished ? `<div class="text-xs font-semibold text-slate-600">${tp.label}</div>` : ''}
-				   <div class="flex items-center justify-between w-full mt-1">
+				   ${tp.finished || isOnce ? '' : tileWeekDotsHtml(raw)}
+				   <div class="flex items-center justify-between w-full">
 					   <span class="text-xs whitespace-nowrap ${nextDueClass}">🔔 ${nextDue}</span>
 					   <span class="text-xs text-slate-400 whitespace-nowrap" title="Last done">✅ ${lastDone}</span>
 				   </div>
 				   ${cardHint ? `<div class="w-full text-left text-[11px] text-slate-500 truncate">${cardHint}</div>` : ''}
 				   <div class="flex gap-2 mt-auto w-full">
-					   <button class="quick-done flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-emerald-100 text-emerald-700 ring-1 ring-inset ring-emerald-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">✅ Done</button>
-					   <button class="quick-skip flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}" data-tile-id="${tile.id}">⏭️ Skip</button>
+					   <button class="quick-done flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${tile.status === 'done' || tile.status === 'completed' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-200' : 'bg-white/80 text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:ring-emerald-200'}" data-tile-id="${tile.id}">✅ Done</button>
+					   <button class="quick-skip flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${tile.status === 'skipped' ? 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200' : 'bg-white/80 text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-amber-50 hover:text-amber-700 hover:ring-amber-200'}" data-tile-id="${tile.id}">⏭️ Skip</button>
 				   </div>
 			   `;
 
