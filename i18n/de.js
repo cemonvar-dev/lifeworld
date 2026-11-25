@@ -586,6 +586,7 @@ window.I18N_MESSAGES.de = {
 	"New ideas": "Neue Ideen",
 	"You've used today's ideas. Try again tomorrow.": "Du hast deine Ideen für heute aufgebraucht. Versuch es morgen wieder.",
 	"Couldn't find anything useful for this one. Try a more specific name.": "Dazu habe ich nichts Hilfreiches gefunden. Versuch einen genaueren Namen.",
+	"The search didn't work this time. Try again.": "Die Suche hat diesmal nicht geklappt. Versuch es noch einmal.",
 	"All tiles": "Alle Kacheln",
 	"Overdue": "Überfällig",
 	"Details": "Details",

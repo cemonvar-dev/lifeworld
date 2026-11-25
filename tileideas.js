@@ -36,7 +36,7 @@
 		if (!raw || pending.has(tileId) || (!manual && getIdeas(raw))) return;
 		pending.add(tileId);
 		notice.delete(tileId);
-		let limited = false;
+		let limited = false, failed = true;
 		if (popupShows(tileId)) render(raw, tileId);
 		let result = null;
 		try {
@@ -60,6 +60,8 @@
 			});
 			if (response.ok) result = await response.json();
 			limited = response.status === 429;
+			failed = !response.ok && !limited || !!(result && result.failed);
+			if (failed) console.error('Ideas search failed:', response.status);
 		} catch (e) {
 			console.error('Ideas request failed:', e);
 		} finally {
@@ -76,7 +78,9 @@
 		} else if (manual) {
 			notice.set(tileId, limited
 				? _t("You've used today's ideas. Try again tomorrow.")
-				: _t("Couldn't find anything useful for this one. Try a more specific name."));
+				: failed
+					? _t("The search didn't work this time. Try again.")
+					: _t("Couldn't find anything useful for this one. Try a more specific name."));
 		}
 		if (popupShows(tileId)) render(current, tileId);
 	}

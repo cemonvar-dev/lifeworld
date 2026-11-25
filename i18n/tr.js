@@ -586,6 +586,7 @@ window.I18N_MESSAGES.tr = {
 	"New ideas": "Yeni fikirler",
 	"You've used today's ideas. Try again tomorrow.": "Bugünkü fikir hakkını kullandın. Yarın tekrar dene.",
 	"Couldn't find anything useful for this one. Try a more specific name.": "Bunun için işe yarar bir şey bulamadım. Daha net bir ad dene.",
+	"The search didn't work this time. Try again.": "Arama bu sefer olmadı. Tekrar dene.",
 	"All tiles": "Tüm kartlar",
 	"Overdue": "Gecikti",
 	"Details": "Ayrıntılar",

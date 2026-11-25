@@ -350,7 +350,10 @@ async function webSearchJson(apiKey, instructions, { place, timezone, country },
 	const data = await resp.json();
 	const message = (data.output || []).filter(o => o.type === 'message').pop();
 	const part = (message?.content || []).find(c => c.type === 'output_text');
-	return parseJsonObject(part?.text || data.output_text || '');
+	const text = part?.text || data.output_text || '';
+	const out = parseJsonObject(text);
+	if (!out) console.error('Web search reply was not JSON:', data.status, data.incomplete_details?.reason || '', String(text).slice(0, 400));
+	return out;
 }
 
 // Pull the first JSON object out of a model's text (it may wrap it in prose or fences).
@@ -394,16 +397,23 @@ function cleanUrl(u) {
 }
 
 // Step 2: search the web and turn results into a few options.
-async function ideasSearch(apiKey, { name, tags, query, place, timezone, country, language, today }) {
+async function ideasSearch(apiKey, { name, tags, query, place, timezone, country, language, today, manual }) {
 	const lang = LANGUAGE_NAMES[language] || 'English';
-	const instructions = `The user just added this task to their personal planner: "${name}"${tags ? ` (tags: ${tags})` : ''}.
+	// Asked from the card: any task (work, study, chores, personal), so look for whatever
+	// helps get it done, not only local venues.
+	const instructions = manual ? `The user asked for help with this task from their personal planner: "${name}"${tags ? ` (tags: ${tags})` : ''}.
+First work out what the task is really about (it may be a work item, a study topic, a chore, a purchase, an outing or a personal goal), then search the web with your own query for resources that help get it done: how-to guides, official docs, tools or apps, templates or checklists, services, products, or places${place ? ` in or near ${place}` : ''} when the task is about going somewhere. Today is ${today}.
+Give 3 or 4 concrete ideas, each with its real URL from the results. Never invent names, prices, addresses or URLs. If the name is too vague or private to search, give general practical ideas for that kind of task anyway (url may then be "").
+Write in ${lang}, in a natural, friendly tone. Each idea: a short title (max 8 words) and one helpful sentence (max 25 words) saying why it fits or what to do.
+Add one short "tip" (max 20 words) with a practical next step.
+Reply with JSON only, no prose and no markdown: {"ideas":[{"title":"...","detail":"...","url":"https://..."}],"tip":"..."}` : `The user just added this task to their personal planner: "${name}"${tags ? ` (tags: ${tags})` : ''}.
 Search the web (suggested query: "${query}") and give them 3 or 4 concrete, practical ideas that help them get it done: specific places, venues, booking sites, apps, courses or options, ideally${place ? ` in or near ${place}` : ' near where they live'}. Today is ${today}.
 Prefer options you actually found in the search results, each with its real URL. Never invent names, prices, addresses or URLs. If you mention a price or opening time, it must come from the results.
 Write in ${lang}, in a natural, friendly tone. Each idea: a short title (max 8 words) and one helpful sentence (max 25 words) saying why it fits or what to do.
 Add one short "tip" (max 20 words) with a practical next step (e.g. "Book 2-3 days ahead for evening slots").
 Reply with JSON only, no prose and no markdown: {"ideas":[{"title":"...","detail":"...","url":"https://..."}],"tip":"..."}`;
-	const out = await webSearchJson(apiKey, instructions, { place, timezone, country });
-	if (!out || !Array.isArray(out.ideas)) return null;
+	const out = await webSearchJson(apiKey, instructions, { place, timezone, country }, { contextSize: manual ? 'medium' : 'low', maxTokens: 1500 });
+	if (!out || !Array.isArray(out.ideas)) return { ideas: [], failed: true };
 	const ideas = out.ideas.slice(0, 4).map(i => ({
 		title: String(i?.title || '').trim().slice(0, 80),
 		detail: String(i?.detail || '').trim().slice(0, 240),
@@ -422,7 +432,7 @@ async function handleIdeas(req, res, apiKey, user, body) {
 	try {
 		// The user asked from the task card: always search. Otherwise only when it would help.
 		const gate = body.manual === true
-			? { research: true, query: `${name}${place ? ' ' + place : ''}` }
+			? { research: true, query: name }
 			: await ideasGate(apiKey, name, tags, place);
 		if (!gate || !gate.research) return res.status(200).json({ ideas: [] });
 		// Quota is only spent on tasks that actually get researched.
@@ -430,7 +440,7 @@ async function handleIdeas(req, res, apiKey, user, body) {
 		const quota = await consumeQuota(await ideasQuotaId(user.id), isPremium ? IDEAS_DAILY_LIMIT * 4 : IDEAS_DAILY_LIMIT);
 		if (!quota) return res.status(500).json({ error: 'Could not verify your usage quota.' });
 		if (!quota.allowed) return res.status(429).json({ error: 'Ideas limit reached', code: 'ideas_limit' });
-		const result = await ideasSearch(apiKey, { name, tags, query: gate.query, place, timezone, country, language: body.language, today });
+		const result = await ideasSearch(apiKey, { name, tags, query: gate.query, place, timezone, country, language: body.language, today, manual: body.manual === true });
 		return res.status(200).json(result || { ideas: [] });
 	} catch (err) {
 		console.error('Ideas error:', err);

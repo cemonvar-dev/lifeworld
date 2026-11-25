@@ -586,6 +586,7 @@ window.I18N_MESSAGES.nl = {
 	"New ideas": "Nieuwe ideeën",
 	"You've used today's ideas. Try again tomorrow.": "Je ideeën voor vandaag zijn op. Probeer het morgen weer.",
 	"Couldn't find anything useful for this one. Try a more specific name.": "Ik vond hier niets bruikbaars voor. Probeer een specifiekere naam.",
+	"The search didn't work this time. Try again.": "Het zoeken lukte deze keer niet. Probeer het opnieuw.",
 	"All tiles": "Alle tegels",
 	"Overdue": "Achterstallig",
 	"Details": "Details",
