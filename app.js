@@ -486,6 +486,7 @@ function renderGallery(filteredTiles) {
 	const gallery = document.getElementById("gallery");
 	if (window.refreshGettingStarted) window.refreshGettingStarted();
 	if (window.refreshQuickAdd) window.refreshQuickAdd();
+	if (window.refreshFocusView) window.refreshFocusView(); // Today view (focus.js)
 	if (typeof refreshNotifications === 'function') refreshNotifications(); // keep the bell count in step
 	gallery.innerHTML = "";
 	if (!filteredTiles.length) {
@@ -3646,6 +3647,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				// today filter is on (refreshes the gallery), and scroll to the top.
 				document.querySelectorAll('[id$="Overlay"]:not(.hidden)').forEach(o => o.classList.add('hidden'));
 				setTimelineFilter('today');
+				if (window.setLwView) window.setLwView('today');
 				window.scrollTo({ top: 0, behavior: 'smooth' });
 			}
 			else if (dest === 'plan') document.getElementById('calendarMenuBtn').click();
