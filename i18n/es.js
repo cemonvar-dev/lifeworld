@@ -616,5 +616,10 @@ window.I18N_MESSAGES.es = {
 	"Free day": "Día libre",
 	"Ask your coach": "Pregunta a tu coach",
 	"{name} could use some care. Want a hand?": "{name} necesita un poco de cuidado. ¿Te ayudo?",
-	"Help me get back on track with {name}": "Ayúdame a retomar {name}"
+	"Help me get back on track with {name}": "Ayúdame a retomar {name}",
+	"Theme": "Tema",
+	"Light, or the softer low-light Dusk.": "Claro, o el más suave y tenue Atardecer.",
+	"Light": "Claro",
+	"Dusk": "Atardecer",
+	"Match device": "Como el dispositivo"
 };

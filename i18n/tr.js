@@ -616,5 +616,10 @@ window.I18N_MESSAGES.tr = {
 	"Free day": "Boş gün",
 	"Ask your coach": "Koçuna sor",
 	"{name} could use some care. Want a hand?": "{name} biraz ilgi bekliyor. Yardım edeyim mi?",
-	"Help me get back on track with {name}": "{name} için yeniden ritmi yakalamama yardım et"
+	"Help me get back on track with {name}": "{name} için yeniden ritmi yakalamama yardım et",
+	"Theme": "Tema",
+	"Light, or the softer low-light Dusk.": "Açık ya da daha yumuşak, loş Alacakaranlık.",
+	"Light": "Açık",
+	"Dusk": "Alacakaranlık",
+	"Match device": "Cihaza uy"
 };

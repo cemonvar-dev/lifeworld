@@ -616,5 +616,10 @@ window.I18N_MESSAGES.nl = {
 	"Free day": "Vrije dag",
 	"Ask your coach": "Vraag je coach",
 	"{name} could use some care. Want a hand?": "{name} kan wel wat zorg gebruiken. Zal ik helpen?",
-	"Help me get back on track with {name}": "Help me om {name} weer op te pakken"
+	"Help me get back on track with {name}": "Help me om {name} weer op te pakken",
+	"Theme": "Thema",
+	"Light, or the softer low-light Dusk.": "Licht, of het zachtere, gedempte Schemer.",
+	"Light": "Licht",
+	"Dusk": "Schemer",
+	"Match device": "Zoals apparaat"
 };

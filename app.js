@@ -191,6 +191,25 @@ function getHealthIconStyle() {
 function setHealthIconStyle(style) {
 	try { localStorage.setItem('lw_health_icons', style); } catch (e) {}
 }
+
+// Theme: light (lavender), dusk (muted indigo) or auto (follow the device). styling/theme.css
+// does the styling; an inline script in app.html applies it before first paint.
+function getThemePref() {
+	try { const t = localStorage.getItem('lw_theme'); return t === 'dusk' || t === 'auto' ? t : 'light'; } catch (e) { return 'light'; }
+}
+function applyTheme(pref = getThemePref()) {
+	const dark = pref === 'dusk' || (pref === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+	document.documentElement.setAttribute('data-theme', dark ? 'dusk' : 'light');
+	const meta = document.querySelector('meta[name="theme-color"]');
+	if (meta) meta.content = dark ? '#27243b' : '#fbf8ff';
+}
+function setThemePref(pref) {
+	try { localStorage.setItem('lw_theme', pref); } catch (e) {}
+	applyTheme(pref);
+	window.track?.('theme_changed', { theme: pref });
+}
+applyTheme();
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (getThemePref() === 'auto') applyTheme(); });
 // Tile header banner for a health tier, matching the chosen icon set.
 function healthBannerSrc(tier) {
 	const style = getHealthIconStyle();
@@ -210,10 +229,10 @@ const HEALTH_RING_COLOR = { Thriving: '#7fd1a8', Healthy: '#9adbb8', Growing: '#
 function healthRingHtml(health, tp, size = 48) {
 	const r = size / 2 - 4, c = 2 * Math.PI * r;
 	const pct = tp.finished ? 100 : Math.max(0, Math.min(100, health));
-	const color = tp.finished ? '#cbd5e1' : HEALTH_RING_COLOR[tp.label] || '#c7d2fe';
+	const color = tp.finished ? '#a9b4c6' : HEALTH_RING_COLOR[tp.label] || '#c7d2fe';
 	return `<div class="relative shrink-0" style="width:${size}px;height:${size}px" title="${escapeHtml(_t(tp.label))}${tp.finished ? '' : ` · ${health}%`}">
 		<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg)" aria-hidden="true">
-			<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="#fff" stroke="#f1eef7" stroke-width="5"/>
+			<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="var(--lw-surface)" stroke="var(--lw-track)" stroke-width="5"/>
 			<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="${color}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - pct / 100)}"/>
 		</svg>
 		<span class="absolute inset-0 grid place-items-center" style="font-size:${Math.round(size * .42)}px">${tp.emoji}</span>
@@ -236,7 +255,7 @@ function tileWeekDotsHtml(raw) {
 		if (st === 'done') { cls = 'bg-emerald-300'; state = _t('Done'); }
 		else if (st === 'skipped') { cls = 'bg-amber-200'; state = _t('Skipped'); }
 		else if ((!created || d >= created) && isTaskScheduledOnDate(raw, d)) {
-			if (i === 0) { cls = 'bg-white ring-1 ring-inset ring-indigo-200'; state = _t('Today'); }
+			if (i === 0) { cls = 'bg-transparent ring-1 ring-inset ring-indigo-200'; state = _t('Today'); }
 			else { cls = 'bg-rose-200'; state = _t('Missed'); }
 		}
 		cells.push(`<span class="flex-1 h-1.5 rounded-full ${cls}" title="${escapeHtml(label)}${state ? ' · ' + escapeHtml(state) : ''}"></span>`);
@@ -614,7 +633,7 @@ function renderGallery(filteredTiles) {
 				// Soft tint from the tile's area (group tag, else its first tag).
 				const tintId = tag !== PINNED_GROUP && tag !== 'Untagged' ? tag : (tile.tags || [])[0];
 				const tint = tintId && window.tagColor ? window.tagColor(tintId) : '';
-				if (tint) tileDiv.style.cssText = `background:color-mix(in srgb, ${tint} 7%, white);border-color:color-mix(in srgb, ${tint} 28%, white)`;
+				if (tint) tileDiv.style.cssText = `background:color-mix(in srgb, ${tint} 8%, var(--lw-surface));border-color:color-mix(in srgb, ${tint} 30%, var(--lw-surface))`;
 			}
 			tileDiv.dataset.tileId = tile.id;
 			const lastUpd = tile.lastUpdate ? new Date(tile.lastUpdate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
@@ -1964,6 +1983,8 @@ function openSettings(initialTab) {
 	if (sel) sel.value = getVoiceLang();
 	const iconSel = document.getElementById('settingsHealthIcons');
 	if (iconSel) iconSel.value = getHealthIconStyle();
+	const themeSel = document.getElementById('settingsTheme');
+	if (themeSel) themeSel.value = getThemePref();
 	const languageSel = document.getElementById('settingsLanguage');
 	if (languageSel) languageSel.value = i18n.lang;
 	window.mountNotifSettings?.();
@@ -3566,6 +3587,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		scheduleReminders();
 		if (activeTileId && !document.getElementById('tileOverlay').classList.contains('hidden')) openTilePopup(activeTileId);
 	});
+	document.getElementById('settingsTheme')?.addEventListener('change', e => setThemePref(e.target.value));
 	document.getElementById('settingsHealthIcons').addEventListener('change', e => {
 		setHealthIconStyle(e.target.value);
 		applyFilters(); // re-render the gallery with the new icon set

@@ -9,16 +9,16 @@
 (function () {
 	const NUDGE_KEY = 'lw_coach_nudge';
 	const css = `
-	#coachFab{position:fixed;right:22px;bottom:22px;z-index:45;height:56px;padding:0 20px 0 7px;border-radius:999px;background:#fff;border:1px solid #dcd5ff;box-shadow:0 18px 44px rgba(76,62,140,.18);display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:#6b5fd6;transition:transform .18s,box-shadow .18s}
+	#coachFab{position:fixed;right:22px;bottom:22px;z-index:45;height:56px;padding:0 20px 0 7px;border-radius:999px;background:var(--lw-surface);border:1px solid var(--lw-brand-line);box-shadow:0 18px 44px rgba(76,62,140,.18);display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;color:var(--lw-brand);transition:transform .18s,box-shadow .18s}
 	#coachFab:hover{transform:translateY(-2px);box-shadow:0 22px 50px rgba(76,62,140,.22)}
 	#coachFab .face{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#efe9ff,#e3f3ff);display:grid;place-items:center;font-size:19px;transition:transform .25s}
 	#coachFab.open .face{transform:rotate(90deg)}
 	#coachFab .dot{width:8px;height:8px;border-radius:50%;background:#f59aa0;display:none}
 	#coachFab.has-nudge .dot{display:block}
-	#coachNudge{position:fixed;right:22px;bottom:90px;z-index:45;width:min(300px,calc(100vw - 44px));background:#fff;border:1px solid #e6e0f8;border-radius:18px 18px 6px 18px;box-shadow:0 18px 44px rgba(76,62,140,.16);padding:12px 36px 12px 14px;font-size:13.5px;line-height:1.45;color:#3f3a5e;cursor:pointer;animation:coachIn .35s cubic-bezier(.2,.8,.2,1)}
+	#coachNudge{position:fixed;right:22px;bottom:90px;z-index:45;width:min(300px,calc(100vw - 44px));background:var(--lw-surface);border:1px solid var(--lw-line);border-radius:18px 18px 6px 18px;box-shadow:0 18px 44px rgba(76,62,140,.16);padding:12px 36px 12px 14px;font-size:13.5px;line-height:1.45;color:var(--lw-ink);cursor:pointer;animation:coachIn .35s cubic-bezier(.2,.8,.2,1)}
 	#coachNudge b{font-weight:700}
-	#coachNudge .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;color:#a19db6;font-size:15px;line-height:1}
-	#coachNudge .x:hover{background:#f5f2ff;color:#6a6683}
+	#coachNudge .x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;color:var(--lw-ink3);font-size:15px;line-height:1}
+	#coachNudge .x:hover{background:var(--lw-brand-bg);color:var(--lw-ink2)}
 	@keyframes coachIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}
 	@media (max-width:639px){#coachFab,#coachNudge{display:none!important}}
 	@media (min-width:640px){
