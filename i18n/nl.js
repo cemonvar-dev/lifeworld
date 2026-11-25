@@ -613,5 +613,8 @@ window.I18N_MESSAGES.nl = {
 	"Week": "Week",
 	"Last week": "Vorige week",
 	"Previous week": "Vorige week",
-	"Free day": "Vrije dag"
+	"Free day": "Vrije dag",
+	"Ask your coach": "Vraag je coach",
+	"{name} could use some care. Want a hand?": "{name} kan wel wat zorg gebruiken. Zal ik helpen?",
+	"Help me get back on track with {name}": "Help me om {name} weer op te pakken"
 };

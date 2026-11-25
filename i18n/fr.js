@@ -613,5 +613,8 @@ window.I18N_MESSAGES.fr = {
 	"Week": "Semaine",
 	"Last week": "La semaine dernière",
 	"Previous week": "Semaine précédente",
-	"Free day": "Jour libre"
+	"Free day": "Jour libre",
+	"Ask your coach": "Demande à ton coach",
+	"{name} could use some care. Want a hand?": "{name} aurait besoin d’un peu d’attention. Un coup de main ?",
+	"Help me get back on track with {name}": "Aide-moi à reprendre {name}"
 };

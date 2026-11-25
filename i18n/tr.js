@@ -613,5 +613,8 @@ window.I18N_MESSAGES.tr = {
 	"Week": "Hafta",
 	"Last week": "Geçen hafta",
 	"Previous week": "Önceki hafta",
-	"Free day": "Boş gün"
+	"Free day": "Boş gün",
+	"Ask your coach": "Koçuna sor",
+	"{name} could use some care. Want a hand?": "{name} biraz ilgi bekliyor. Yardım edeyim mi?",
+	"Help me get back on track with {name}": "{name} için yeniden ritmi yakalamama yardım et"
 };
