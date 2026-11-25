@@ -10,7 +10,7 @@
 	const SLOT_ICON = { morning: '🌅', afternoon: '☀️', evening: '🌇', night: '🌙' };
 	const FINISHED = ['completed', 'cancelled', 'failed'];
 	let view = 'today';
-	try { view = localStorage.getItem(VIEW_KEY) === 'tiles' ? 'tiles' : 'today'; } catch (e) {}
+	try { const v = localStorage.getItem(VIEW_KEY); view = v === 'tiles' || v === 'week' ? v : 'today'; } catch (e) {}
 	let selDay = null;      // 'YYYY-MM-DD' of the selected strip day; null = today
 	let busy = false;       // focus-card animation running: hold re-renders until it ends
 	let pending = false;
@@ -19,6 +19,8 @@
 	const css = `
 	#viewTabs{display:flex;gap:4px;padding:4px;margin:0 auto 14px;width:max-content;max-width:100%;border-radius:999px;background:rgba(255,255,255,.75);border:1px solid #e9e5f3;box-shadow:0 4px 14px rgba(76,62,140,.06)}
 	#viewTabs button{height:36px;padding:0 16px;border-radius:999px;font-weight:700;font-size:14px;color:#6a6683;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+	#viewTabs button{white-space:nowrap}
+	@media (max-width:420px){#viewTabs button{padding:0 11px;font-size:13px;gap:4px}}
 	#viewTabs button.on{background:#f0edff;color:#6b5fd6;box-shadow:inset 0 0 0 1px #dcd5ff}
 	#focusView{--fv-line:#ece7f5;--fv-ink2:#6a6683;--fv-ink3:#a19db6}
 	.fv-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;margin-bottom:12px;scrollbar-width:none}
@@ -102,7 +104,44 @@
 	.fv-leaf{position:fixed;z-index:9999;pointer-events:none;font-size:22px;transform:translate(-50%,-50%);animation:fvFly 1.1s cubic-bezier(.15,.8,.3,1) forwards}
 	@keyframes fvFly{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}15%{opacity:1}75%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) rotate(var(--rot))}}
 	@media (max-width:640px){.fv-focus{padding:18px}.fv-main{gap:14px;margin:16px 0}.fv-bar{width:100px}.fv-big{padding:0 16px}}
-	@media (prefers-reduced-motion:reduce){#focusView *{animation:none!important;transition:none!important}}`;
+	@media (prefers-reduced-motion:reduce){#focusView *{animation:none!important;transition:none!important}}
+	.wk-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+	.wk-head h1{font-size:clamp(24px,3vw,32px);font-weight:800;letter-spacing:-.02em;color:#33304a;line-height:1.1}
+	.wk-head p{margin-top:4px;color:#6a6683;font-size:14px}
+	.wk-nav{display:flex;gap:6px}
+	.wk-nav button{min-width:38px;height:38px;padding:0 10px;border-radius:12px;background:#fff;border:1px solid #ece7f5;font-size:20px;font-weight:700;color:#6a6683}
+	.wk-nav button.txt{font-size:13px;color:#6b5fd6;background:#f0edff;border-color:#dcd5ff}
+	.wk-nav button:hover{border-color:#dcd5ff}
+	.wk-legend{display:flex;flex-wrap:wrap;gap:14px;margin:0 2px 12px;font-size:12px;font-weight:600;color:#a19db6}
+	.wk-legend i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:5px;vertical-align:-1px;background:#fff;box-shadow:inset 0 0 0 1.5px #d9d4e8}
+	.wk-legend i.d{background:#bde8d4;box-shadow:none}.wk-legend i.s{background:#f5dfac;box-shadow:none}.wk-legend i.m{background:#fff;box-shadow:inset 0 0 0 1.5px #f2b8b3}
+	.wk-board{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}
+	.wk-col{background:rgba(255,255,255,.65);border:1px solid #ece7f5;border-radius:20px;padding:10px 8px;min-height:300px}
+	.wk-col.now{background:#fff;border-color:#dcd5ff;box-shadow:0 0 0 3px #f0edff}
+	.wk-col h4{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 10px;font-size:13px;font-weight:800;color:#6a6683;cursor:pointer}
+	.wk-col h4 b{font-weight:700;color:#a19db6}
+	.wk-col.now h4,.wk-col.now h4 b{color:#6b5fd6}
+	.wk-items{display:flex;flex-direction:column;gap:6px}
+	.wk-chip{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:13px;background:var(--a-bg,#f4f1ff);border:1px solid var(--a-line,#e6e1f5);font-size:12.5px;font-weight:600;color:#33304a;cursor:pointer;min-width:0;transition:transform .15s}
+	.wk-chip:hover{transform:translateY(-1px)}
+	.wk-chip span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+	.wk-k{width:17px;height:17px;border-radius:6px;border:2px solid var(--a,#b7aef0);flex:none;display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff;background:#fff;padding:0}
+	button.wk-k:hover{background:#e6f7ef;border-color:#8fd6b4}
+	.wk-chip.done .wk-k{background:var(--a,#8fd6b4);border-color:var(--a,#8fd6b4)}
+	.wk-chip.skipped .wk-k{background:#fff4de;border-color:#f5dfac;color:#b07a1a}
+	.wk-chip.done,.wk-chip.skipped{opacity:.65}
+	.wk-chip.done span:last-child,.wk-chip.skipped span:last-child{text-decoration:line-through}
+	.wk-chip.missed{background:#fff;border-style:dashed;border-color:#f2b8b3}
+	.wk-free{font-size:12.5px;color:#a19db6;padding:4px}
+	@media (max-width:700px){
+		.wk-board{grid-template-columns:1fr;overflow:visible;gap:8px}
+		.wk-col{min-height:0;display:flex;gap:10px;align-items:flex-start;padding:10px}
+		.wk-col h4{flex-direction:column;align-items:center;width:42px;margin:0;flex:none;padding-top:3px;gap:0}
+		.wk-col h4 b{font-size:18px;color:#33304a}
+		.wk-col.past{opacity:.85}
+		.wk-items{flex:1;flex-direction:row;flex-wrap:wrap;min-width:0}
+		.wk-chip{max-width:100%}
+	}`;
 
 	const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 	const parse = s => new Date(s + 'T00:00:00');
@@ -379,16 +418,62 @@
 		if (prev !== status) toast(`${status === 'done' ? healthIcon(tile) : '⏭️'} ${tile.name} · ${_t(status === 'done' ? 'Done' : 'Skipped')}`, undoTo(id, prev));
 	}
 
+	// ---- Week board: Mon–Sun columns (a vertical day list on phones) ----
+	let weekOffset = 0;   // 0 = this week, -1 = last week, …
+	function renderWeek() {
+		const box = document.getElementById('weekView');
+		if (!box) return;
+		const today = new Date(); today.setHours(0, 0, 0, 0);
+		const todayStr = iso(today);
+		const mon = new Date(today); mon.setDate(today.getDate() - (today.getDay() + 6) % 7 + weekOffset * 7);
+		const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+		const fmt = d => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+		let total = 0, handled = 0;
+		const cols = [];
+		for (let i = 0; i < 7; i++) {
+			const d = new Date(mon); d.setDate(mon.getDate() + i);
+			const day = iso(d);
+			const isToday = day === todayStr, future = day > todayStr;
+			const { done, skipped, remaining } = getTodaySummary(isToday ? undefined : day);
+			if (!future) { total += done.length + skipped.length + remaining.length; handled += done.length + skipped.length; }
+			const chip = (t, state) => {
+				const tick = isToday && (state === 'open' || state === 'done') ? `<button type="button" class="wk-k" data-wk-tick="${t.id}" aria-label="${esc(_t('Done'))}">${state === 'done' ? '✓' : ''}</button>` : `<span class="wk-k">${state === 'done' ? '✓' : state === 'skipped' ? '–' : ''}</span>`;
+				return `<div class="wk-chip ${state}" style="${tint(t)}" data-fv-open="${t.id}" title="${esc(t.name)}">${tick}<span translate="no">${esc(t.name)}</span></div>`;
+			};
+			const slot = t => SLOT_ORDER[tileTimeOfDay(rawTiles[t.id])] ?? 9;
+			const items = remaining.sort((a, b) => slot(a) - slot(b)).map(t => chip(t, future || isToday ? 'open' : 'missed'))
+				.concat(done.map(t => chip(t, 'done')), skipped.map(t => chip(t, 'skipped')));
+			cols.push(`<div class="wk-col ${isToday ? 'now' : ''} ${day < todayStr ? 'past' : ''}">
+				<h4 data-day-open="${day}"><span>${esc(d.toLocaleDateString(undefined, { weekday: 'short' }))}</span><b>${d.getDate()}</b></h4>
+				<div class="wk-items">${items.join('') || `<div class="wk-free">${esc(_t('Free day'))} ☁️</div>`}</div></div>`);
+		}
+		box.innerHTML = `
+			<div class="wk-head">
+				<div><h1>${esc(weekOffset === 0 ? _t('This week') : weekOffset === -1 ? _t('Last week') : weekOffset === 1 ? _t('Next week') : `${fmt(mon)} – ${fmt(sun)}`)}</h1>
+					<p>${esc(`${fmt(mon)} – ${fmt(sun)}`)}${total ? ` · ${esc(_t('{n} of {total} done', { n: handled, total }))}` : ''}</p></div>
+				<div class="wk-nav">
+					<button type="button" data-wk-shift="-1" aria-label="${esc(_t('Previous week'))}">‹</button>
+					${weekOffset ? `<button type="button" data-wk-shift="0" class="txt">${esc(_t('This week'))}</button>` : ''}
+					<button type="button" data-wk-shift="1" aria-label="${esc(_t('Next week'))}">›</button>
+				</div>
+			</div>
+			<div class="wk-legend"><span><i class="d"></i>${esc(_t('Done'))}</span><span><i class="s"></i>${esc(_t('Skipped'))}</span><span><i class="m"></i>${esc(_t('Missed'))}</span><span><i></i>${esc(_t('Planned'))}</span></div>
+			<div class="wk-board">${cols.join('')}</div>`;
+	}
+
 	function setView(v) {
-		view = v === 'tiles' ? 'tiles' : 'today';
+		view = ['tiles', 'week'].includes(v) ? v : 'today';
 		try { localStorage.setItem(VIEW_KEY, view); } catch (e) {}
 		const fv = document.getElementById('focusView');
+		const wk = document.getElementById('weekView');
 		const gallery = document.getElementById('gallery');
 		if (!fv || !gallery) return;
 		fv.classList.toggle('hidden', view !== 'today');
-		gallery.closest('section').classList.toggle('hidden', view === 'today');
+		wk.classList.toggle('hidden', view !== 'week');
+		gallery.closest('section').classList.toggle('hidden', view !== 'tiles');
 		document.querySelectorAll('#viewTabs [data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
 		if (view === 'today') render();
+		if (view === 'week') renderWeek();
 	}
 
 	function mount() {
@@ -400,8 +485,10 @@
 		gallerySection.insertAdjacentHTML('beforebegin', `
 			<nav id="viewTabs" aria-label="${esc(_t('View'))}">
 				<button type="button" data-view="today">☀️ <span>${esc(_t('Today'))}</span></button>
+				<button type="button" data-view="week">🗓️ <span>${esc(_t('Week'))}</span></button>
 				<button type="button" data-view="tiles">🪴 <span>${esc(_t('All tiles'))}</span></button>
 			</nav>
+			<section id="weekView" class="flex-1 hidden"></section>
 			<section id="focusView" class="flex-1 hidden">
 				<div class="fv-strip" id="fvStrip"></div>
 				<div class="fv-grid">
@@ -435,17 +522,27 @@
 			else if (d.fvTag) { if (window.openTagList) window.openTagList(d.fvTag); }
 			else if (d.fvAdd !== undefined) addNewTile();
 		});
+		document.getElementById('weekView').addEventListener('click', async e => {
+			const el = e.target.closest('[data-wk-tick],[data-wk-shift],[data-fv-open],[data-day-open]');
+			if (!el) return;
+			const d = el.dataset;
+			if (d.wkTick) { e.stopPropagation(); await logFromQueue(d.wkTick, 'done'); }
+			else if (d.wkShift !== undefined) { weekOffset = d.wkShift === '0' ? 0 : weekOffset + Number(d.wkShift); renderWeek(); }
+			else if (d.fvOpen) openTilePopup(d.fvOpen);
+			else if (d.dayOpen) { selDay = d.dayOpen === todayLocal() ? null : d.dayOpen; setView('today'); }   // a day heading opens it in Today
+		});
 		// Searching only filters the tile grid, so typing switches to it.
-		document.getElementById('searchBox')?.addEventListener('input', e => { if (e.target.value.trim() && view === 'today') setView('tiles'); });
+		document.getElementById('searchBox')?.addEventListener('input', e => { if (e.target.value.trim() && view !== 'tiles') setView('tiles'); });
 		window.addEventListener('i18n-change', () => {
 			document.querySelector('#viewTabs [data-view="today"] span').textContent = _t('Today');
+			document.querySelector('#viewTabs [data-view="week"] span').textContent = _t('Week');
 			document.querySelector('#viewTabs [data-view="tiles"] span').textContent = _t('All tiles');
-			render();
+			window.refreshFocusView();
 		});
 		setView(view);
 	}
 
-	window.refreshFocusView = () => { if (view === 'today') render(); };
+	window.refreshFocusView = () => { if (view === 'today') render(); else if (view === 'week') renderWeek(); };
 	window.setLwView = v => { if (v === 'today') selDay = null; setView(v); };
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })();

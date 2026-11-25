@@ -609,5 +609,9 @@ window.I18N_MESSAGES.nl = {
 	"Your garden": "Je tuin",
 	"health by area": "gezondheid per gebied",
 	"Nice!": "Top!",
-	"{name} grew to {label}!": "{name} is nu {label}!"
+	"{name} grew to {label}!": "{name} is nu {label}!",
+	"Week": "Week",
+	"Last week": "Vorige week",
+	"Previous week": "Vorige week",
+	"Free day": "Vrije dag"
 };

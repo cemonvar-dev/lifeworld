@@ -609,5 +609,9 @@ window.I18N_MESSAGES.tr = {
 	"Your garden": "Bahçen",
 	"health by area": "alana göre sağlık",
 	"Nice!": "Süper!",
-	"{name} grew to {label}!": "{name} artık {label}!"
+	"{name} grew to {label}!": "{name} artık {label}!",
+	"Week": "Hafta",
+	"Last week": "Geçen hafta",
+	"Previous week": "Önceki hafta",
+	"Free day": "Boş gün"
 };

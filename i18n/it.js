@@ -609,5 +609,9 @@ window.I18N_MESSAGES.it = {
 	"Your garden": "Il tuo giardino",
 	"health by area": "salute per area",
 	"Nice!": "Ottimo!",
-	"{name} grew to {label}!": "{name} ora è {label}!"
+	"{name} grew to {label}!": "{name} ora è {label}!",
+	"Week": "Settimana",
+	"Last week": "La settimana scorsa",
+	"Previous week": "Settimana precedente",
+	"Free day": "Giorno libero"
 };
