@@ -381,6 +381,7 @@ window.I18N_MESSAGES.fr = {
 	"{n}d ago": "il y a {n} j",
 	"New tag name": "Nom du nouveau tag",
 	"Sub-tag name": "Nom du sous-tag",
+	"Sub-tag": "Sous-étiquette",
 	"Tag name": "Nom du tag",
 	"No tags yet. Create your first one.": "Aucun tag pour l’instant. Crée le premier.",
 	"No tags match “{q}”": "Aucun tag ne correspond à « {q} »",

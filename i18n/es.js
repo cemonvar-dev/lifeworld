@@ -381,6 +381,7 @@ window.I18N_MESSAGES.es = {
 	"{n}d ago": "hace {n} d",
 	"New tag name": "Nombre de la nueva etiqueta",
 	"Sub-tag name": "Nombre de la subetiqueta",
+	"Sub-tag": "Subetiqueta",
 	"Tag name": "Nombre de la etiqueta",
 	"No tags yet. Create your first one.": "Aún no hay etiquetas. Crea la primera.",
 	"No tags match “{q}”": "Ninguna etiqueta coincide con «{q}»",

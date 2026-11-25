@@ -381,6 +381,7 @@ window.I18N_MESSAGES.tr = {
 	"{n}d ago": "{n} g önce",
 	"New tag name": "Yeni etiket adı",
 	"Sub-tag name": "Alt etiket adı",
+	"Sub-tag": "Alt etiket",
 	"Tag name": "Etiket adı",
 	"No tags yet. Create your first one.": "Henüz etiket yok. İlkini oluştur.",
 	"No tags match “{q}”": "“{q}” ile eşleşen etiket yok",

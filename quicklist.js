@@ -180,6 +180,7 @@
 		const count = pinnedMode ? tiles.filter(t => rawTiles[t.id] && rawTiles[t.id].pinned).length : tiles.filter(t => (t.tags || []).includes(tagId)).length;
 		if (bar && bar.dataset.tag === barKey) {
 			bar.querySelector('[data-quick-count]').textContent = _t('{n} tasks', { n: count });
+			if (tagId) renderSubtags(bar, tagId);
 			return;
 		}
 		bar?.remove();
@@ -188,9 +189,10 @@
 		bar.dataset.tag = barKey;
 		bar.className = 'mt-4 rounded-2xl bg-white/90 border border-slate-200/80 shadow-sm p-3';
 		bar.innerHTML = `<div class="flex items-center justify-between gap-2 mb-2">
-				<div class="min-w-0 flex items-baseline gap-2">${pinnedMode ? `<span class="text-base font-semibold text-slate-800 truncate">📌 ${escapeHtml(_t('Pinned'))}</span>` : `<span translate="no" class="text-base font-semibold text-slate-800 truncate inline-flex items-center gap-2">${window.tagColor && window.tagColor(tagId) ? `<span class="inline-block w-2.5 h-2.5 rounded-full shrink-0" style="background:${window.tagColor(tagId)}"></span>` : '📝 '}${escapeHtml(tagPath(tagId))}</span>`}<span data-quick-count class="text-xs text-slate-400 whitespace-nowrap">${escapeHtml(_t('{n} tasks', { n: count }))}</span></div>
+				<div class="min-w-0 flex items-baseline gap-2">${pinnedMode ? `<span class="text-base font-semibold text-slate-800 truncate">📌 ${escapeHtml(_t('Pinned'))}</span>` : `<span translate="no" class="text-base font-semibold text-slate-800 truncate inline-flex items-center gap-2">${window.tagColor && window.tagColor(tagId) ? `<span class="inline-block w-2.5 h-2.5 rounded-full shrink-0" style="background:${window.tagColor(tagId)}"></span>` : '📝 '}<span class="truncate">${crumbsHtml(tagId)}</span></span>`}<span data-quick-count class="text-xs text-slate-400 whitespace-nowrap">${escapeHtml(_t('{n} tasks', { n: count }))}</span></div>
 				<button type="button" data-quick-exit class="shrink-0 px-3 py-1 rounded-full text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Exit list</button>
 			</div>
+			${tagId ? '<div data-subtags class="flex flex-wrap items-center gap-1.5 mb-2"></div>' : ''}
 			<input id="quickAddInput" type="text" maxlength="200" placeholder="Add a task and press Enter" aria-label="Add a task and press Enter" class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-300" />
 			<div id="quickAddError" class="hidden mt-1 text-xs text-red-500">That didn't save. Please try again.</div>
 			${!pinnedMode && 'notes' in (TAGS_BY_ID[tagId] || {}) ? `<div class="mt-3">
@@ -205,8 +207,77 @@
 			if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); quickAdd(input, tagId, pinnedMode); }
 		});
 		bar.querySelector('[data-quick-exit]').addEventListener('click', exitList);
-		if (tagId) wireListNotes(bar, tagId);
+		bar.addEventListener('click', e => {
+			const c = e.target.closest('[data-crumb]');
+			if (c) { window.openTagList(c.dataset.crumb); window.track?.('list_opened', { source: 'breadcrumb' }); }
+		});
+		if (tagId) { wireListNotes(bar, tagId); renderSubtags(bar, tagId); }
 	};
+
+	// Title as a breadcrumb: ancestors are links up the tree, the leaf is plain.
+	function crumbsHtml(tagId) {
+		const chain = [];
+		let cur = TAGS_BY_ID[tagId], guard = 0;
+		while (cur && guard++ < 30) { chain.unshift(cur); cur = cur.parent_id ? TAGS_BY_ID[cur.parent_id] : null; }
+		return chain.map((t, i) => i === chain.length - 1
+			? `<span>${escapeHtml(t.name)}</span>`
+			: `<button type="button" data-crumb="${t.id}" class="font-medium text-slate-400 hover:text-slate-700 hover:underline">${escapeHtml(t.name)}</button><span class="text-slate-300 font-normal"> › </span>`).join('');
+	}
+
+	// Sub-tags of the open list as chips, plus "+ Sub-tag" to make one in place.
+	async function createSubTag(name, parentId) {
+		const sibs = TAGS.filter(t => (t.parent_id || null) === parentId);
+		const order = sibs.length ? Math.max(...sibs.map(s => s.sort_order || 0)) + 1 : 0;
+		const { data, error } = await supa.from('tags').insert({ user_id: currentUserId, name: name.slice(0, 60), parent_id: parentId, sort_order: order }).select().single();
+		if (error || !data) throw error || new Error('tag insert failed');
+		if (!TAGS.some(t => t.id === data.id)) TAGS.push(data);
+		rebuildTagIndex();
+		window.track?.('tag_created', { nested: true, source: 'list_header' });
+		return data;
+	}
+	function renderSubtags(bar, tagId) {
+		const box = bar.querySelector('[data-subtags]');
+		if (!box || box.contains(document.activeElement)) return; // don't wipe a name being typed
+		const kids = TAGS.filter(t => t.parent_id === tagId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+		const dot = id => { const c = window.tagColor && window.tagColor(id); return c ? `<span class="w-2 h-2 rounded-full shrink-0" style="background:${c}"></span>` : ''; };
+		box.innerHTML = kids.map(k => `<button type="button" data-sub-open="${k.id}" translate="no" class="inline-flex items-center gap-1.5 max-w-[14rem] px-2.5 h-7 rounded-full border border-slate-200 bg-white text-xs font-medium text-slate-600 hover:bg-slate-50"><span class="truncate">${dot(k.id)}${escapeHtml(k.name)}</span></button>`).join('')
+			+ `<button type="button" data-sub-new class="inline-flex items-center gap-1 px-2.5 h-7 rounded-full border border-dashed border-slate-300 text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700">＋ ${escapeHtml(_t('Sub-tag'))}</button>`;
+		box.onclick = e => {
+			const o = e.target.closest('[data-sub-open]');
+			if (o) { window.openTagList(o.dataset.subOpen); return; }
+			const n = e.target.closest('[data-sub-new]');
+			if (!n) return;
+			const input = document.createElement('input');
+			input.type = 'text'; input.maxLength = 60;
+			input.placeholder = _t('Sub-tag name');
+			input.setAttribute('aria-label', _t('Sub-tag name'));
+			input.className = 'h-7 w-44 px-3 rounded-full border border-blue-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-200';
+			n.replaceWith(input);
+			input.focus();
+			let saving = false;
+			const done = () => { if (!saving) { input.blur(); renderSubtags(bar, tagId); } };
+			input.addEventListener('keydown', async ev => {
+				if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); done(); return; }
+				if (ev.key !== 'Enter' || ev.isComposing) return;
+				ev.preventDefault();
+				const name = input.value.trim();
+				if (!name) { done(); return; }
+				const hit = TAGS.find(t => t.parent_id === tagId && t.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+				if (hit) { window.openTagList(hit.id); return; }
+				saving = true; input.disabled = true;
+				try {
+					const tag = await createSubTag(name, tagId);
+					window.openTagList(tag.id);
+					window.refreshTagTree?.();
+				} catch (err) {
+					console.error('Sub-tag create failed:', err);
+					saving = false; input.disabled = false; input.focus();
+					bar.querySelector('#quickAddError')?.classList.remove('hidden');
+				}
+			});
+			input.addEventListener('blur', () => { if (!input.value.trim()) setTimeout(done, 100); });
+		};
+	}
 
 	document.addEventListener('DOMContentLoaded', () => {
 		document.getElementById('newListBtn')?.addEventListener('click', () => {

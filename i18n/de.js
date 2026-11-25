@@ -381,6 +381,7 @@ window.I18N_MESSAGES.de = {
 	"{n}d ago": "vor {n} T.",
 	"New tag name": "Name des neuen Tags",
 	"Sub-tag name": "Name des Unter-Tags",
+	"Sub-tag": "Unter-Tag",
 	"Tag name": "Tag-Name",
 	"No tags yet. Create your first one.": "Noch keine Tags. Erstelle dein erstes.",
 	"No tags match “{q}”": "Keine Tags passend zu „{q}“",

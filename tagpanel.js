@@ -205,6 +205,7 @@
 				${meta}
 				<span class="text-xs text-slate-400 tabular-nums w-6 text-right">${s.count}</span>
 			</button>
+			<button type="button" data-addsub class="shrink-0 grid place-items-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100" title="${escapeHtml(_t('Add sub-tag'))}" aria-label="${escapeHtml(_t('Add sub-tag'))}">${icon('<path d="M10 4v12M4 10h12"/>')}</button>
 			<button type="button" data-menu class="shrink-0 grid place-items-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100" aria-label="${escapeHtml(_t('More actions'))}" aria-haspopup="menu">${icon(DOTS)}</button>`;
 		row.querySelector('[data-toggle]')?.addEventListener('click', e => {
 			e.stopPropagation();
@@ -214,6 +215,7 @@
 		});
 		row.querySelector('[data-open]').addEventListener('click', () => openTag(tag.id));
 		row.querySelector('[data-menu]').addEventListener('click', e => { e.stopPropagation(); openMenu(tag.id, e.currentTarget); });
+		row.querySelector('[data-addsub]').addEventListener('click', e => { e.stopPropagation(); editingId = null; addingUnder = tag.id; collapsed.delete(tag.id); saveCollapsed(); render(); });
 		return row;
 	}
 

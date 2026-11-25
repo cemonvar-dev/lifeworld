@@ -381,6 +381,7 @@ window.I18N_MESSAGES.nl = {
 	"{n}d ago": "{n} d geleden",
 	"New tag name": "Naam nieuwe tag",
 	"Sub-tag name": "Naam subtag",
+	"Sub-tag": "Sublabel",
 	"Tag name": "Tagnaam",
 	"No tags yet. Create your first one.": "Nog geen tags. Maak je eerste.",
 	"No tags match “{q}”": "Geen tags gevonden voor “{q}”",
