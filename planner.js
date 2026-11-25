@@ -132,10 +132,9 @@
 	function editorHtml(raw, tileId) {
 		const mode = raw.frequency_mode || 'daily';
 		const plus = n => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
-		const saturday = (() => { const d = new Date(); const add = (6 - d.getDay() + 7) % 7; d.setDate(d.getDate() + add); return iso(d); })();
 		const rows = [row(_t('Repeats'), segmented([['once', escapeHtml(_t('Once'))], ['daily', escapeHtml(_t('Daily'))], ['weekly', escapeHtml(_t('Weekly'))], ['monthly', escapeHtml(_t('Monthly'))]], mode, 'plan-freq'))];
 		if (mode === 'once') {
-			const chips = [[plus(0), _t('Today')], [plus(1), _t('Tomorrow')], [saturday, _t('Weekend')]];
+			const chips = [[plus(0), _t('Today')], [plus(1), _t('Tomorrow')]];
 			const custom = raw.end_date && !chips.some(c => c[0] === raw.end_date);
 			const pick = `<span class="inline-flex items-center h-8 rounded-full text-xs font-semibold border transition ${custom ? ON : OFF}">
 				<label class="relative inline-flex items-center gap-1 h-full pl-3 ${custom ? 'pr-1' : 'pr-3'} cursor-pointer">📅 <span>${escapeHtml(custom ? relDay(raw.end_date) : _t('Pick a date'))}</span><input type="date" data-plan-date-pick value="${raw.end_date || ''}" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></label>
